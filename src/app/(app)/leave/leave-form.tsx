@@ -121,7 +121,8 @@ export function LeaveForm({
         return;
       }
       setSubmitted(true);
-      flash(`Request submitted — sent to ${teamLeadName ?? "your Team Lead"} (L1)`, "ok");
+      const lopNote = res.lopDays && res.lopDays > 0 ? ` · ${res.lopDays} day(s) over balance flagged LOP` : "";
+      flash(`Request submitted — sent to ${teamLeadName ?? "your Team Lead"} (L1)${lopNote}`, "ok");
     });
   }
 
