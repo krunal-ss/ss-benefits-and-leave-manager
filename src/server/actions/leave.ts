@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db";
 import { auditLog, emailLog, leaveRequests, leaveTypes, users } from "@/db/schema";
@@ -15,7 +15,7 @@ const schema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a start date."),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick an end date."),
   halfDay: z.boolean(),
-  reason: z.string().default(""),
+  reason: z.string().trim().min(3, "Add a reason for your request."),
   teamLeadId: z.string().uuid("Select a Team Lead."),
   projectManagerId: z.string().uuid("Select a Project Manager."),
 });
@@ -34,6 +34,25 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
 
   const kind = parsed.data.requestType === "WFH" ? "wfh" : "leave";
   const db = getDb();
+
+  // Block double-booking: reject if the range overlaps an existing request that
+  // still counts against the calendar (anything but rejected/cancelled).
+  // Two ranges overlap iff existing.from <= new.to AND existing.to >= new.from.
+  const clash = await db
+    .select({ from: leaveRequests.fromDate, to: leaveRequests.toDate })
+    .from(leaveRequests)
+    .where(
+      and(
+        eq(leaveRequests.userId, user.id),
+        notInArray(leaveRequests.status, ["rejected", "cancelled"]),
+        lte(leaveRequests.fromDate, parsed.data.to),
+        gte(leaveRequests.toDate, parsed.data.from),
+      ),
+    )
+    .limit(1);
+  if (clash.length > 0) {
+    return { ok: false, error: "You already have a leave/WFH request on one of these dates." };
+  }
 
   // Validate the chosen approvers actually hold the right roles — a request must
   // never be routed to an arbitrary user (the dropdown is convenience, not trust).

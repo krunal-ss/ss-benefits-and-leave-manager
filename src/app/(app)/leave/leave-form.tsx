@@ -31,12 +31,15 @@ export function LeaveForm({
   projectManagers,
   defaultTeamLeadId,
   defaultProjectManagerId,
+  existingRanges = [],
 }: {
   balances: Record<LeaveTypeKey, number>;
   teamLeads: ApproverOption[];
   projectManagers: ApproverOption[];
   defaultTeamLeadId?: string | null;
   defaultProjectManagerId?: string | null;
+  /** Active (non-rejected/cancelled) requests, used to block double-booking. */
+  existingRanges?: { from: string; to: string }[];
 }) {
   const { flash } = useToast();
   const [leave, setLeave] = useState(() => ({
@@ -45,6 +48,7 @@ export function LeaveForm({
     projectManagerId: defaultProjectManagerId ?? "",
   }));
   const [submitted, setSubmitted] = useState(false);
+  const [submitTried, setSubmitTried] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const set = (patch: Partial<typeof leave>) => {
@@ -60,6 +64,12 @@ export function LeaveForm({
   const isLOP = leave.type === "LOP";
   const bal = balances[leave.type];
   const exceeds = !isWFH && !isLOP && wd > bal;
+
+  // ISO yyyy-mm-dd strings compare lexicographically, so range overlap is a
+  // plain string comparison: existing.from <= new.to AND existing.to >= new.from.
+  const reasonMissing = leave.reason.trim().length < 3;
+  const overlaps =
+    wd > 0 && existingRanges.some((r) => r.from <= leave.to && r.to >= leave.from);
 
   const balBox = isWFH
     ? { msg: "WFH does not deduct any leave balance.", cls: "bg-violet-600/10 text-violet-600", Icon: House }
@@ -79,8 +89,21 @@ export function LeaveForm({
   const balText = isWFH ? `${bal} days left this month` : isLOP ? "N/A (unpaid)" : `${bal} days`;
 
   function submit() {
+    setSubmitTried(true);
+    if (wd <= 0) {
+      flash("Pick a valid date range first.", "warn");
+      return;
+    }
     if (!leave.teamLeadId || !leave.projectManagerId) {
       flash("Select your Team Lead and Project Manager first.", "warn");
+      return;
+    }
+    if (reasonMissing) {
+      flash("Please add a reason for your request.", "warn");
+      return;
+    }
+    if (overlaps) {
+      flash("You already have a leave/WFH request on one of these dates.", "warn");
       return;
     }
     startTransition(async () => {
@@ -214,13 +237,27 @@ export function LeaveForm({
           </div>
 
           <div>
-            <Label>Reason</Label>
+            <Label>
+              Reason <span className="text-destructive">*</span>
+            </Label>
             <Textarea
               value={leave.reason}
               onChange={(e) => set({ reason: e.target.value })}
               placeholder="Add context for your approvers…"
+              aria-invalid={submitTried && reasonMissing}
+              aria-required
             />
+            {submitTried && reasonMissing && (
+              <p className="mt-1.5 text-[12px] text-destructive">A reason is required.</p>
+            )}
           </div>
+
+          {overlaps && (
+            <div className="flex items-center gap-2.5 rounded-[9px] bg-red-500/[0.11] px-[13px] py-[11px] text-[12.5px] text-destructive">
+              <TriangleAlert className="size-[15px] shrink-0" strokeWidth={2} />
+              <span>You already have a leave/WFH request that covers one of these dates.</span>
+            </div>
+          )}
 
           {submitted && (
             <div className="flex items-center gap-[11px] rounded-[10px] border border-emerald-500/35 bg-emerald-500/10 px-4 py-[13px]">
@@ -237,7 +274,7 @@ export function LeaveForm({
           )}
 
           <div className="flex gap-2.5 pt-0.5">
-            <Button onClick={submit} disabled={pending} className="flex-1">
+            <Button onClick={submit} disabled={pending || overlaps} className="flex-1">
               {pending ? "Submitting…" : "Submit request"}
             </Button>
             <Button
@@ -245,6 +282,7 @@ export function LeaveForm({
               onClick={() => {
                 setLeave(EMPTY);
                 setSubmitted(false);
+                setSubmitTried(false);
               }}
             >
               Reset
