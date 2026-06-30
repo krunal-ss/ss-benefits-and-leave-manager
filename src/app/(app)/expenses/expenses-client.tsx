@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CircleCheckBig, FileText, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Label, Textarea } from "@/components/ui/input";
-import { useQueues, useToast } from "@/components/providers";
-import { HARD_FLAGS, type QueuedClaim } from "@/server/hr-queue";
+import { useToast } from "@/components/providers";
+import { HARD_FLAGS, type QueuedClaim } from "@/server/hr/queue-types";
+import { decideExpenseAction } from "@/server/actions/decide-expense";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
+
+type Stats = { pending: number; reservedPaise: number; approvedCount: number; approvedPaise: number; rejectedCount: number };
 
 function flagClasses(flag: string) {
   return HARD_FLAGS.has(flag)
@@ -23,9 +28,14 @@ function confidenceColor(confidence: string) {
   return "text-emerald-500";
 }
 
-export function ExpensesClient() {
-  const { hrClaims, decideClaim } = useQueues();
+export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedClaim[]; stats: Stats }) {
   const { flash } = useToast();
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  // Optimistically drop a decided claim so the row disappears immediately; the
+  // server action + router.refresh re-syncs the queue (and the stats) from the DB.
+  const [decidedIds, setDecidedIds] = useState<Set<string>>(new Set());
+  const hrClaims = claims.filter((c) => !decidedIds.has(c.id));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
@@ -37,30 +47,41 @@ export function ExpensesClient() {
   };
 
   const decide = (approve: boolean) => {
-    if (!selected) return;
+    if (!selected || pending) return;
     if (!approve && !reason.trim()) {
       flash("Add a reason the employee will see", "warn");
       return;
     }
-    const { msg, ok } = decideClaim(selected.id, approve);
+    const claimId = selected.id;
+    const note = reason.trim();
     close();
-    flash(msg, ok ? "ok" : "warn");
+    startTransition(async () => {
+      const res = await decideExpenseAction({ claimId, approve, reason: note });
+      if (res.ok) setDecidedIds((s) => new Set(s).add(claimId));
+      flash(res.message, res.ok ? "ok" : "warn");
+      router.refresh();
+    });
   };
 
   const stats = [
     { label: "Pending review", value: String(hrClaims.length), sub: "Awaiting your decision", color: "text-foreground" },
-    { label: "Auto-approved today", value: "23", sub: "88% straight-through", color: "text-emerald-500" },
-    { label: "Rejected this week", value: "4", sub: "With reasons logged", color: "text-foreground" },
-    { label: "Reserved balance", value: formatINR(284500), sub: "Across all employees", color: "text-foreground" },
+    { label: "Approved this FY", value: String(liveStats.approvedCount), sub: `${formatINR(liveStats.approvedPaise / 100)} total`, color: "text-emerald-500" },
+    { label: "Rejected this FY", value: String(liveStats.rejectedCount), sub: "With reasons logged", color: "text-foreground" },
+    { label: "Reserved balance", value: formatINR(liveStats.reservedPaise / 100), sub: "Across all employees", color: "text-foreground" },
   ];
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-[23px] font-semibold tracking-[-0.02em]">Expense approval queue</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Claims that failed automated verification, with extracted fields and flags.
-        </p>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="text-[23px] font-semibold tracking-[-0.02em]">Expense approval queue</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Claims that failed automated verification, with extracted fields and flags.
+          </p>
+        </div>
+        <Link href="/expenses/history" className="text-[13px] font-medium text-muted-foreground hover:text-foreground">
+          Decided claims →
+        </Link>
       </div>
 
       <div className="grid grid-cols-4 gap-3.5">
@@ -137,7 +158,9 @@ export function ExpensesClient() {
         )}
       </Card>
 
-      {selected && <ReviewDrawer claim={selected} reason={reason} setReason={setReason} onClose={close} onDecide={decide} />}
+      {selected && (
+        <ReviewDrawer claim={selected} reason={reason} setReason={setReason} onClose={close} onDecide={decide} pending={pending} />
+      )}
     </div>
   );
 }
@@ -148,12 +171,14 @@ function ReviewDrawer({
   setReason,
   onClose,
   onDecide,
+  pending,
 }: {
   claim: QueuedClaim;
   reason: string;
   setReason: (v: string) => void;
   onClose: () => void;
   onDecide: (approve: boolean) => void;
+  pending: boolean;
 }) {
   return (
     <>
@@ -163,7 +188,7 @@ function ReviewDrawer({
           <div>
             <div className="text-base font-semibold">{claim.name}</div>
             <div className="text-[12.5px] text-muted-foreground">
-              {claim.dept} · claim {claim.id}
+              {claim.dept} · claim {claim.ref}
             </div>
           </div>
           <button
@@ -178,7 +203,7 @@ function ReviewDrawer({
         <div className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-[22px] py-5">
           <div className="flex h-[150px] flex-col items-center justify-center gap-[7px] rounded-[11px] border bg-muted text-muted-foreground">
             <FileText className="size-6" strokeWidth={1.8} />
-            <span className="text-[12.5px]">receipt-{claim.id}.pdf</span>
+            <span className="text-[12.5px]">receipt-{claim.ref}.pdf</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -233,11 +258,11 @@ function ReviewDrawer({
         </div>
 
         <div className="flex gap-2.5 border-t px-[22px] py-4">
-          <Button variant="destructive-outline" onClick={() => onDecide(false)} className="flex-1">
+          <Button variant="destructive-outline" onClick={() => onDecide(false)} disabled={pending} className="flex-1">
             Reject
           </Button>
-          <Button onClick={() => onDecide(true)} className="flex-1">
-            Approve {formatINR(claim.claimed)}
+          <Button onClick={() => onDecide(true)} disabled={pending} className="flex-1">
+            {pending ? "Saving…" : `Approve ${formatINR(claim.claimed)}`}
           </Button>
         </div>
       </div>

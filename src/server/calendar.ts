@@ -5,7 +5,7 @@ import "server-only";
 import { and, eq, gte, lte, notInArray, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { holidays as holidaysTable, leaveRequests, leaveTypes, users, type User } from "@/db/schema";
-import { todayISO } from "@/lib/fy";
+import { currentFy, todayISO } from "@/lib/fy";
 
 export type EventKind = "leave" | "wfh";
 
@@ -75,12 +75,60 @@ export function buildCalendar(input: BuildInput): CalWeek[] {
   return weeks;
 }
 
-/** Real team calendar for the current month, scoped to the viewer's role. */
-export async function getTeamCalendar(user: User): Promise<{ weeks: CalWeek[]; monthLabel: string }> {
+export type CalendarView = {
+  weeks: CalWeek[];
+  monthLabel: string;
+  /** `YYYY-MM` for the adjacent month, or null when at the FY boundary. */
+  prevMonth: string | null;
+  nextMonth: string | null;
+  /** `YYYY-MM` of the real current month (for a "This month" jump), null when already viewing it. */
+  thisMonth: string | null;
+  fyLabel: string;
+};
+
+function ymOf(year: number, month0: number): string {
+  return `${year}-${pad(month0 + 1)}`;
+}
+
+/** Parse a `YYYY-MM` param to a {year, month0}, or null if malformed. */
+function parseYearMonth(s: string | undefined): { year: number; month0: number } | null {
+  const m = s ? /^(\d{4})-(\d{2})$/.exec(s) : null;
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month0 = Number(m[2]) - 1;
+  return month0 >= 0 && month0 <= 11 ? { year, month0 } : null;
+}
+
+/**
+ * Real team calendar, scoped to the viewer's role. `monthParam` (`YYYY-MM`) selects
+ * the month; it is clamped to the current financial year (1 Apr – 31 Mar) and
+ * defaults to the current month. Navigation targets are bounded to that FY.
+ */
+export async function getTeamCalendar(user: User, monthParam?: string): Promise<CalendarView> {
   const db = getDb();
   const today = todayISO();
-  const [year, month] = today.split("-").map(Number); // month is 1-based here
-  const month0 = month - 1;
+  const [todayY, todayM] = today.split("-").map(Number); // month is 1-based
+
+  // FY month range (inclusive), expressed as absolute month indices (year*12 + month0).
+  const fy = currentFy();
+  const [fsY, fsM] = fy.start.split("-").map(Number);
+  const [feY, feM] = fy.end.split("-").map(Number);
+  const fyStartIdx = fsY * 12 + (fsM - 1);
+  const fyEndIdx = feY * 12 + (feM - 1);
+  const thisIdx = todayY * 12 + (todayM - 1);
+
+  // Requested month, clamped into the FY; fall back to the current month.
+  const requested = parseYearMonth(monthParam);
+  let idx = requested ? requested.year * 12 + requested.month0 : thisIdx;
+  if (idx < fyStartIdx || idx > fyEndIdx) idx = thisIdx;
+  const year = Math.floor(idx / 12);
+  const month0 = idx % 12;
+  const month = month0 + 1;
+
+  const prevMonth = idx - 1 >= fyStartIdx ? ymOf(Math.floor((idx - 1) / 12), (idx - 1) % 12) : null;
+  const nextMonth = idx + 1 <= fyEndIdx ? ymOf(Math.floor((idx + 1) / 12), (idx + 1) % 12) : null;
+  const thisMonth = idx !== thisIdx ? ymOf(todayY, todayM - 1) : null;
+
   const daysInMonth = new Date(year, month, 0).getDate();
   const monthStart = `${year}-${pad(month)}-01`;
   const monthEnd = `${year}-${pad(month)}-${pad(daysInMonth)}`;
@@ -132,5 +180,12 @@ export async function getTeamCalendar(user: User): Promise<{ weeks: CalWeek[]; m
   for (const h of holRows) holidayMap[h.date] = h.name;
 
   const monthLabel = new Date(year, month0, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
-  return { weeks: buildCalendar({ year, month0, today, events, holidays: holidayMap }), monthLabel };
+  return {
+    weeks: buildCalendar({ year, month0, today, events, holidays: holidayMap }),
+    monthLabel,
+    prevMonth,
+    nextMonth,
+    thisMonth,
+    fyLabel: fy.label,
+  };
 }

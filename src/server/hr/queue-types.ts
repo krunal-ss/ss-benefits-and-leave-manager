@@ -1,0 +1,27 @@
+// Client-safe shapes + constants for the HR expense queue (no server-only deps,
+// so the queue UI can import them). The DB queries live in ./expenses.ts.
+
+export type RuleCheck = {
+  label: string;
+  ok: boolean;
+  detail: string;
+};
+
+export type QueuedClaim = {
+  id: string; // claim uuid — the value the decision action acts on
+  ref: string; // short human-readable reference, e.g. "BC-9F3A2C"
+  name: string;
+  dept: string;
+  initials: string;
+  category: string;
+  claimed: number; // rupees
+  extracted: number; // rupees (OCR/extracted amount used during verification)
+  vendor: string;
+  date: string;
+  confidence: string; // e.g. "High (96%)"
+  flags: string[];
+  checks: RuleCheck[];
+};
+
+// Flags that represent a hard failure (red) vs a soft warning (amber).
+export const HARD_FLAGS = new Set(["Over balance", "Duplicate suspected", "Amount mismatch"]);
