@@ -82,6 +82,7 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     label: "HR Head",
     items: [
       { href: "/expenses", label: "Expense queue", key: "expenses" },
+      { href: "/expenses/history", label: "Decided claims", key: "expenses-history" },
       { href: "/calendar", label: "Org calendar", key: "calendar-hr" },
     ],
   },

@@ -47,9 +47,9 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 
 ## Architecture (big picture)
 - **Screens are role-scoped routes** under `src/app/(app)/`, wrapped by the shell in `(app)/layout.tsx` (employee: dashboard/submit/leave · TL: approvals/calendar · HR: expenses/calendar). `/` redirects to `/dashboard`.
-- **Roles come from the authenticated user** (`users.role`). The sidebar identity + nav and module access derive from it; `canAccessPath` / `homeRouteFor` / `NAV_SECTIONS` in `src/server/users.ts` are the single access policy, enforced server-side by `requireAccess(path)` (`src/server/auth/current-user.ts`). Provider tree (`src/components/providers/`): Theme → Toast → Queues.
-- **`QueuesProvider`** holds the mutable HR-claim list so the HR queue + its badge stay in sync as items are decided. (Leave/WFH approvals are real DB data now — see `src/server/manager/`.)
-- **Data is currently mocked** in `src/server/*.ts`. DB/Supabase/Resend clients are lazy singletons (`getDb()`, `createSupabaseServerClient()`, `sendEmail()`) reading zod-validated env via `getEnv()` — so `pnpm build` never needs env; a feature only fails when its key is missing at runtime.
+- **Roles come from the authenticated user** (`users.role`). The sidebar identity + nav and module access derive from it; `canAccessPath` / `homeRouteFor` / `NAV_SECTIONS` in `src/server/users.ts` are the single access policy, enforced server-side by `requireAccess(path)` (`src/server/auth/current-user.ts`). Provider tree (`src/components/providers/`): Supabase session → Theme → Toast.
+- **HR expense queue is real DB data** — `src/server/hr/expenses.ts` reads `pending_hr` claims; `src/server/actions/decide-expense.ts` approves/rejects (audit + email). Leave/WFH approvals are real DB data too — see `src/server/manager/`.
+- **Some employee dashboard figures are still mocked** in `src/server/benefits.ts`. DB/Supabase/Resend clients are lazy singletons (`getDb()`, `createSupabaseServerClient()`, `sendEmail()`) reading zod-validated env via `getEnv()` — so `pnpm build` never needs env; a feature only fails when its key is missing at runtime.
 - **Design tokens** live in `src/app/globals.css` (shadcn/zinc CSS variables mapped into Tailwind v4 via `@theme inline`). Style with utilities (`bg-card`, `text-muted-foreground`), never hex — see the `design-system` skill.
 - **Expense auto-verification** is the pure, explainable rule engine in `src/server/verification.ts` (+ optional Claude vision OCR parse).
 

@@ -2,16 +2,13 @@
 
 import { ThemeProvider } from "./theme-provider";
 import { ToastProvider } from "./toast-provider";
-import { QueuesProvider } from "./queues-provider";
 import { SupabaseSessionProvider } from "./supabase-session";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <SupabaseSessionProvider>
       <ThemeProvider>
-        <ToastProvider>
-          <QueuesProvider>{children}</QueuesProvider>
-        </ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
       </ThemeProvider>
     </SupabaseSessionProvider>
   );
@@ -19,4 +16,3 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
 export { useTheme } from "./theme-provider";
 export { useToast } from "./toast-provider";
-export { useQueues } from "./queues-provider";
