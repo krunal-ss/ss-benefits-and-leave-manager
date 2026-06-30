@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
@@ -29,6 +30,7 @@ const ICONS: Record<string, LucideIcon> = {
   "calendar-hr": CalendarDays,
   expenses: FileCheck2,
   "expenses-history": History,
+  reports: BarChart3,
 };
 
 function initialsOf(name: string): string {
