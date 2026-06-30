@@ -75,6 +75,12 @@ export type VerificationResult = {
   passed: boolean;
   checks: { label: string; ok: boolean; detail: string }[];
   ocrConfidence?: number;
+  // OCR-extracted receipt fields (KAN-42) — surfaced to HR for a fast decision.
+  extracted?: {
+    amountPaise: number | null;
+    date: string | null;
+    vendor: string | null;
+  };
 };
 
 export const benefitClaims = pgTable("benefit_claims", {
