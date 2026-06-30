@@ -7,6 +7,7 @@ import {
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
+  Download,
   FileCheck2,
   History,
   LayoutDashboard,
@@ -31,6 +32,7 @@ const ICONS: Record<string, LucideIcon> = {
   expenses: FileCheck2,
   "expenses-history": History,
   reports: BarChart3,
+  "expenses-export": Download,
 };
 
 function initialsOf(name: string): string {
