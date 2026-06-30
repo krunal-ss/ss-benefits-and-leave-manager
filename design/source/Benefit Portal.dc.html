@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="colors_and_type.css" />
+<style>
+  body { margin: 0; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; border: 3px solid var(--background); }
+  input, select, textarea, button { font-family: var(--font-sans); }
+  select { -webkit-appearance: none; appearance: none; }
+  .sc-navbtn:hover { background: var(--accent) !important; }
+  .sc-row:hover { background: color-mix(in oklab, var(--muted) 55%, transparent); }
+  @keyframes scIn { from { opacity: 0.4; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  [data-dc-tpl] { } /* noop */
+</style>
+</helmet>
+<div className="{{ rootClass }}" style="min-height: 100vh; background: var(--background); color: var(--foreground); font-family: var(--font-sans); font-size: 14px;">
+
+  <!-- ===================== AUTH ===================== -->
+  <sc-if value="{{ showAuth }}" hint-placeholder-val="{{ false }}">
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--background); position: relative;">
+      <button onClick="{{ toggleTheme }}" aria-label="Toggle theme" style="position: absolute; top: 20px; right: 20px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">
+        <sc-if value="{{ themeIsDark }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></sc-if>
+        <sc-if value="{{ themeIsLight }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></sc-if>
+      </button>
+      <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 22px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 11px;">
+          <div style="width: 42px; height: 42px; border-radius: 11px; background: var(--primary); display: flex; align-items: center; justify-content: center;"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="var(--primary-foreground)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></div>
+          <div style="text-align: center;"><div style="font-size: 16px; font-weight: 600; letter-spacing: -0.01em;">SmartSense</div><div style="font-size: 12.5px; color: var(--muted-foreground);">Benefits &amp; Leave portal</div></div>
+        </div>
+
+        <!-- LOGIN -->
+        <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+          <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-sm); padding: 26px 26px 24px; display: flex; flex-direction: column; gap: 18px;">
+            <div style="display: flex; flex-direction: column; gap: 5px;"><div style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">Login to your account</div><div style="font-size: 13px; color: var(--muted-foreground);">Enter your email below to sign in.</div></div>
+            <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Email</label><input type="email" placeholder="aarav@smartsense.com" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+            <div><div style="display: flex; align-items: center; margin-bottom: 8px;"><label style="font-size: 13px; font-weight: 500;">Password</label><button onClick="{{ goForgot }}" style="margin-left: auto; font-size: 12.5px; color: var(--muted-foreground); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;">Forgot your password?</button></div><input type="password" placeholder="••••••••" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+            <button onClick="{{ doLogin }}" style="width: 100%; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Login</button>
+            <div style="display: flex; align-items: center; gap: 12px;"><span style="flex: 1; height: 1px; background: var(--border);"></span><span style="font-size: 11.5px; color: var(--muted-foreground);">Or continue with</span><span style="flex: 1; height: 1px; background: var(--border);"></span></div>
+            <button onClick="{{ doLogin }}" style="width: 100%; height: 40px; font-size: 13.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: flex; align-items: center; justify-content: center; gap: 9px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 4 5 4 5 4c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 11c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>Continue with GitHub</button>
+          </div>
+          <div style="text-align: center; font-size: 13px; color: var(--muted-foreground);">Don't have an account? <button onClick="{{ goSignup }}" style="font-weight: 500; color: var(--foreground); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;">Sign up</button></div>
+        </sc-if>
+
+        <!-- SIGNUP -->
+        <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-sm); padding: 26px 26px 24px; display: flex; flex-direction: column; gap: 18px;">
+            <div style="display: flex; flex-direction: column; gap: 5px;"><div style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">Create an account</div><div style="font-size: 13px; color: var(--muted-foreground);">Sign up with your work email to get started.</div></div>
+            <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Full name</label><input placeholder="Aarav Sharma" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+            <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Work email</label><input type="email" placeholder="aarav@smartsense.com" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+            <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Password</label><input type="password" placeholder="At least 8 characters" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 6px;">Use 8+ characters with a mix of letters and numbers.</div></div>
+            <button onClick="{{ doSignup }}" style="width: 100%; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Create account</button>
+            <div style="font-size: 11.5px; color: var(--muted-foreground); text-align: center; line-height: 1.5;">By creating an account you agree to the Terms and acknowledge the Privacy Policy. We'll send a verification link to your email.</div>
+          </div>
+          <div style="text-align: center; font-size: 13px; color: var(--muted-foreground);">Already have an account? <button onClick="{{ goLogin }}" style="font-weight: 500; color: var(--foreground); background: none; border: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px;">Login</button></div>
+        </sc-if>
+
+        <!-- FORGOT -->
+        <sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-sm); padding: 26px 26px 24px; display: flex; flex-direction: column; gap: 18px;">
+            <sc-if value="{{ resetNotSent }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 5px;"><div style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">Forgot your password?</div><div style="font-size: 13px; color: var(--muted-foreground);">Enter your account email and we'll send a reset link.</div></div>
+              <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Email</label><input type="email" placeholder="aarav@smartsense.com" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+              <button onClick="{{ sendReset }}" style="width: 100%; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Send reset link</button>
+            </sc-if>
+            <sc-if value="{{ resetSent }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 13px; text-align: center; padding: 6px 0;">
+                <div style="width: 44px; height: 44px; border-radius: 9999px; background: color-mix(in oklab, var(--emerald-500) 14%, transparent); color: var(--emerald-500); display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
+                <div><div style="font-size: 16px; font-weight: 600;">Check your email</div><div style="font-size: 13px; color: var(--muted-foreground); margin-top: 4px;">We sent a reset link to your inbox. The link expires in 30 minutes.</div></div>
+                <button onClick="{{ goReset }}" style="width: 100%; height: 38px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); margin-top: 4px;">I have the link → reset password</button>
+              </div>
+            </sc-if>
+          </div>
+          <div style="text-align: center; font-size: 13px; color: var(--muted-foreground);"><button onClick="{{ goLogin }}" style="font-weight: 500; color: var(--foreground); background: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Back to login</button></div>
+        </sc-if>
+
+        <!-- RESET -->
+        <sc-if value="{{ isReset }}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-sm); padding: 26px 26px 24px; display: flex; flex-direction: column; gap: 18px;">
+            <sc-if value="{{ pwNotUpdated }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 5px;"><div style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">Set a new password</div><div style="font-size: 13px; color: var(--muted-foreground);">Choose a strong password you haven't used before.</div></div>
+              <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">New password</label><input type="password" placeholder="At least 8 characters" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+              <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Confirm new password</label><input type="password" placeholder="Re-enter password" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+              <button onClick="{{ updatePassword }}" style="width: 100%; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Update password</button>
+            </sc-if>
+            <sc-if value="{{ pwUpdated }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 13px; text-align: center; padding: 6px 0;">
+                <div style="width: 44px; height: 44px; border-radius: 9999px; background: color-mix(in oklab, var(--emerald-500) 14%, transparent); color: var(--emerald-500); display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div><div style="font-size: 16px; font-weight: 600;">Password updated</div><div style="font-size: 13px; color: var(--muted-foreground); margin-top: 4px;">Your password has been changed. You can now sign in.</div></div>
+                <button onClick="{{ goLogin }}" style="width: 100%; height: 40px; font-size: 13px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs); margin-top: 4px;">Continue to login</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== APP ===================== -->
+  <sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
+  <div style="display: flex; min-height: 100vh;">
+  <aside style="width: 252px; flex-shrink: 0; border-right: 1px solid var(--border); background: {{ sidebarBg }}; min-height: 100vh; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 14px 12px;">
+    <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px 16px;">
+      <div style="width: 30px; height: 30px; border-radius: 8px; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--primary-foreground)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+      </div>
+      <div style="display: flex; flex-direction: column; line-height: 1.25;">
+        <span style="font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em;">SmartSense</span>
+        <span style="font-size: 11px; color: var(--muted-foreground);">Benefits &amp; Leave</span>
+      </div>
+    </div>
+
+    <div style="font-size: 11px; font-weight: 500; color: var(--muted-foreground); padding: 6px 8px 6px; letter-spacing: 0.02em;">{{ navSectionLabel }}</div>
+
+    <sc-if value="{{ isEmployee }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <button className="sc-navbtn" onClick="{{ goDashboard }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.dashboard }}; color: {{ navFg.dashboard }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+        <button className="sc-navbtn" onClick="{{ goSubmit }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.submit }}; color: {{ navFg.submit }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Submit expense</button>
+        <button className="sc-navbtn" onClick="{{ goLeave }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.leave }}; color: {{ navFg.leave }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Apply leave / WFH</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isManager }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <button className="sc-navbtn" onClick="{{ goApprovals }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.approvals }}; color: {{ navFg.approvals }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Approvals<span style="margin-left: auto; font-size: 11px; font-weight: 600; background: var(--primary); color: var(--primary-foreground); border-radius: 9999px; padding: 1px 7px;">{{ approvalCount }}</span></button>
+        <button className="sc-navbtn" onClick="{{ goCalendar }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.calendar }}; color: {{ navFg.calendar }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>Team calendar</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isHr }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <button className="sc-navbtn" onClick="{{ goHrQueue }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.hrqueue }}; color: {{ navFg.hrqueue }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>Expense queue<span style="margin-left: auto; font-size: 11px; font-weight: 600; background: var(--primary); color: var(--primary-foreground); border-radius: 9999px; padding: 1px 7px;">{{ hrCount }}</span></button>
+        <button className="sc-navbtn" onClick="{{ goCalendar }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.calendar }}; color: {{ navFg.calendar }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Org calendar</button>
+      </div>
+    </sc-if>
+
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px 8px 4px; border-top: 1px solid var(--border);">
+      <div style="width: 32px; height: 32px; border-radius: 9999px; background: var(--primary); color: var(--primary-foreground); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0;">{{ roleInitials }}</div>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3;">
+        <span style="font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ roleName }}</span>
+        <span style="font-size: 11px; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ roleTitle }}</span>
+      </div>
+      <button onClick="{{ signOut }}" aria-label="Sign out" title="Sign out" style="width: 30px; height: 30px; border: 0; border-radius: 7px; background: transparent; color: var(--muted-foreground); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+    </div>
+  </aside>
+
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+
+    <header style="height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--background) 92%, transparent); backdrop-filter: blur(6px); position: sticky; top: 0; z-index: 30;">
+      <nav style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted-foreground);">
+        <span>SmartSense</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <span style="color: var(--foreground); font-weight: 500;">{{ crumb }}</span>
+      </nav>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 11px; color: var(--muted-foreground); margin-right: 2px;">Viewing as</span>
+        <div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 8px; gap: 3px;">
+          <button onClick="{{ setRoleEmployee }}" style="height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ roleSeg.employee }}; color: {{ roleSegFg.employee }}; box-shadow: {{ roleSegSh.employee }};">Employee</button>
+          <button onClick="{{ setRoleManager }}" style="height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ roleSeg.manager }}; color: {{ roleSegFg.manager }}; box-shadow: {{ roleSegSh.manager }};">Team Lead</button>
+          <button onClick="{{ setRoleHr }}" style="height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ roleSeg.hr }}; color: {{ roleSegFg.hr }}; box-shadow: {{ roleSegSh.hr }};">HR Head</button>
+        </div>
+        <button onClick="{{ toggleTheme }}" aria-label="Toggle theme" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">
+          <sc-if value="{{ themeIsDark }}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></sc-if>
+          <sc-if value="{{ themeIsLight }}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></sc-if>
+        </button>
+        <div style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 8px; background: var(--background); cursor: pointer; box-shadow: var(--shadow-xs);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+      </div>
+    </header>
+
+    <main style="flex: 1; padding: 26px 30px 70px; display: flex; flex-direction: column; gap: 22px; max-width: 1280px; width: 100%;">
+
+      <!-- ===================== DASHBOARD ===================== -->
+      <sc-if value="{{ showDashboard }}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 22px;">
+          <div style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Welcome back, {{ firstName }}</h1>
+              <p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Here's your benefit wallet and time-off at a glance.</p>
+            </div>
+            <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--border); border-radius: 9999px; font-size: 12.5px; color: var(--muted-foreground); background: var(--background);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>FY 2026–27 · Apr–Mar</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+            <!-- Sports -->
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 9px; background: color-mix(in oklab, var(--emerald-500) 16%, transparent); color: var(--emerald-500); display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></div>
+                <div><div style="font-size: 14px; font-weight: 600;">Sports</div><div style="font-size: 12px; color: var(--muted-foreground);">Annual cap {{ sports.capF }}</div></div>
+                <span style="margin-left: auto; font-size: 12px; color: var(--muted-foreground);">Available</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">{{ sports.availF }}</span><span style="font-size: 13px; color: var(--muted-foreground);">of {{ sports.capF }}</span></div>
+              <div style="height: 8px; border-radius: 9999px; background: var(--muted); overflow: hidden; display: flex;"><div style="width: {{ sports.approvedPct }}%; background: var(--emerald-500);"></div><div style="width: {{ sports.pendingPct }}%; background: var(--amber-500);"></div></div>
+              <div style="display: flex; gap: 18px; font-size: 12px; color: var(--muted-foreground);"><span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--emerald-500);"></span>Used {{ sports.approvedF }}</span><span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--amber-500);"></span>Reserved {{ sports.pendingF }}</span></div>
+            </div>
+            <!-- Learning -->
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 34px; height: 34px; border-radius: 9px; background: color-mix(in oklab, var(--blue-600) 16%, transparent); color: var(--blue-600); display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></div>
+                <div><div style="font-size: 14px; font-weight: 600;">Learning</div><div style="font-size: 12px; color: var(--muted-foreground);">Annual cap {{ learning.capF }}</div></div>
+                <span style="margin-left: auto; font-size: 12px; color: var(--muted-foreground);">Available</span>
+              </div>
+              <div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">{{ learning.availF }}</span><span style="font-size: 13px; color: var(--muted-foreground);">of {{ learning.capF }}</span></div>
+              <div style="height: 8px; border-radius: 9999px; background: var(--muted); overflow: hidden; display: flex;"><div style="width: {{ learning.approvedPct }}%; background: var(--blue-600);"></div><div style="width: {{ learning.pendingPct }}%; background: var(--amber-500);"></div></div>
+              <div style="display: flex; gap: 18px; font-size: 12px; color: var(--muted-foreground);"><span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--blue-600);"></span>Used {{ learning.approvedF }}</span><span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--amber-500);"></span>Reserved {{ learning.pendingF }}</span></div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+            <sc-for list="{{ leaveCards }}" as="lc" hint-placeholder-count="4">
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;">
+                <div style="font-size: 12.5px; color: var(--muted-foreground);">{{ lc.label }}</div>
+                <div style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums;">{{ lc.value }}<span style="font-size: 13px; font-weight: 400; color: var(--muted-foreground);"> {{ lc.unit }}</span></div>
+                <div style="font-size: 12px; color: var(--muted-foreground);">{{ lc.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; align-items: start;">
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+              <div style="display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border);"><div><div style="font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">Recent claims</div><div style="font-size: 12.5px; color: var(--muted-foreground);">Your latest benefit submissions</div></div><button onClick="{{ goSubmit }}" style="margin-left: auto; height: 30px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">New claim</button></div>
+              <sc-for list="{{ recentClaims }}" as="rc" hint-placeholder-count="4">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 13px 20px; border-bottom: 1px solid var(--border);">
+                  <div style="width: 30px; height: 30px; border-radius: 8px; background: var(--muted); display: flex; align-items: center; justify-content: center; color: var(--muted-foreground); flex-shrink: 0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                  <div style="min-width: 0;"><div style="font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ rc.vendor }}</div><div style="font-size: 12px; color: var(--muted-foreground);">{{ rc.cat }} · {{ rc.date }}</div></div>
+                  <div style="margin-left: auto; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;"><span style="font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums;">{{ rc.amountF }}</span><span style="display: inline-flex; align-items: center; height: 20px; padding: 0 8px; font-size: 11.5px; font-weight: 500; border-radius: 6px; background: {{ rc.bg }}; color: {{ rc.fg }};">{{ rc.status }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+              <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);"><div style="font-size: 15px; font-weight: 600; letter-spacing: -0.01em;">Upcoming time off</div><div style="font-size: 12.5px; color: var(--muted-foreground);">Approved &amp; pending</div></div>
+              <sc-for list="{{ upcoming }}" as="up" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 13px 20px; border-bottom: 1px solid var(--border);">
+                  <span style="width: 9px; height: 9px; border-radius: 9999px; background: {{ up.dot }}; flex-shrink: 0;"></span>
+                  <div style="min-width: 0;"><div style="font-size: 13.5px; font-weight: 500;">{{ up.title }}</div><div style="font-size: 12px; color: var(--muted-foreground);">{{ up.dates }}</div></div>
+                  <span style="margin-left: auto; font-size: 11.5px; font-weight: 500; color: var(--muted-foreground);">{{ up.status }}</span>
+                </div>
+              </sc-for>
+              <div style="padding: 14px 20px;"><button onClick="{{ goLeave }}" style="width: 100%; height: 34px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: flex; align-items: center; justify-content: center; gap: 7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Apply for leave / WFH</button></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== SUBMIT EXPENSE ===================== -->
+      <sc-if value="{{ showSubmit }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+            <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Submit an expense claim</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Upload a receipt and we'll try to auto-approve it against your benefit allowance.</p></div>
+            <div style="margin-left: auto; display: inline-flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+              <span style="font-size: 11px; color: var(--muted-foreground);">Layout</span>
+              <div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 8px; gap: 3px;">
+                <button onClick="{{ setVariantSingle }}" style="height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ variantSeg.single }}; color: {{ variantSegFg.single }}; box-shadow: {{ variantSegSh.single }};">Single column</button>
+                <button onClick="{{ setVariantSplit }}" style="height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ variantSeg.split }}; color: {{ variantSegFg.split }}; box-shadow: {{ variantSegSh.split }};">Split + live check</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: {{ claimGrid }}; gap: 20px; align-items: start; max-width: {{ claimMaxW }};">
+            <!-- Form card -->
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 22px 24px; display: flex; flex-direction: column; gap: 18px;">
+              <div>
+                <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Category</label>
+                <div style="display: flex; gap: 8px;">
+                  <button onClick="{{ setCatSports }}" style="flex: 1; height: 56px; border: 1px solid {{ catBorder.sports }}; border-radius: 10px; background: {{ catBg.sports }}; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 0 14px; text-align: left;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--emerald-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg><span><span style="display: block; font-size: 13px; font-weight: 600; color: var(--foreground);">Sports</span><span style="display: block; font-size: 11.5px; color: var(--muted-foreground);">{{ sports.availF }} left</span></span></button>
+                  <button onClick="{{ setCatLearning }}" style="flex: 1; height: 56px; border: 1px solid {{ catBorder.learning }}; border-radius: 10px; background: {{ catBg.learning }}; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 0 14px; text-align: left;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--blue-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg><span><span style="display: block; font-size: 13px; font-weight: 600; color: var(--foreground);">Learning</span><span style="display: block; font-size: 11.5px; color: var(--muted-foreground);">{{ learning.availF }} left</span></span></button>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div>
+                  <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Amount (₹)</label>
+                  <input value="{{ claim.amount }}" onChange="{{ onAmount }}" inputMode="numeric" placeholder="0" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" />
+                  <div style="font-size: 11.5px; color: {{ amountHintColor }}; margin-top: 6px;">{{ amountHint }}</div>
+                </div>
+                <div>
+                  <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Date of expense</label>
+                  <input value="{{ claim.date }}" onChange="{{ onDate }}" type="date" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" />
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Vendor / description</label>
+                <input value="{{ claim.vendor }}" onChange="{{ onVendor }}" placeholder="e.g. Cult.fit annual membership" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" />
+              </div>
+
+              <div>
+                <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Supporting document</label>
+                <sc-if value="{{ hasFile }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--muted);">
+                    <div style="width: 34px; height: 34px; border-radius: 8px; background: var(--background); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--red-600);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                    <div style="min-width: 0;"><div style="font-size: 13px; font-weight: 500;">{{ claim.fileName }}</div><div style="font-size: 11.5px; color: var(--muted-foreground);">{{ claim.fileSize }} · uploaded</div></div>
+                    <button onClick="{{ clearFile }}" style="margin-left: auto; width: 28px; height: 28px; border: 0; border-radius: 7px; background: transparent; color: var(--muted-foreground); cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ noFile }}" hint-placeholder-val="{{ true }}">
+                  <button onClick="{{ pickFile }}" style="width: 100%; padding: 22px; border: 1.5px dashed var(--border); border-radius: 10px; background: var(--background); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 7px; color: var(--muted-foreground);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span style="font-size: 13px; font-weight: 500; color: var(--foreground);">Click to upload receipt</span><span style="font-size: 11.5px;">PDF, JPG or PNG · up to 10 MB</span></button>
+                </sc-if>
+              </div>
+
+              <div style="display: flex; gap: 10px; padding-top: 4px;">
+                <button onClick="{{ runVerify }}" style="flex: 1; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: flex; align-items: center; justify-content: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 14.5 21 3"/><path d="M21 3v6h-6"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/></svg>Run verification &amp; submit</button>
+                <button onClick="{{ resetClaim }}" style="height: 40px; padding: 0 16px; font-size: 13.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Clear</button>
+              </div>
+            </div>
+
+            <!-- Right: live check (split) OR verification result (single, below) -->
+            <sc-if value="{{ showLivePanel }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 16px; position: sticky; top: 78px;">
+                <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+                  <div style="font-size: 14px; font-weight: 600;">Balance impact · {{ claim.catLabel }}</div>
+                  <div style="display: flex; flex-direction: column; gap: 9px; font-size: 13px;">
+                    <div style="display: flex; justify-content: space-between;"><span style="color: var(--muted-foreground);">Available now</span><span style="font-weight: 500; font-variant-numeric: tabular-nums;">{{ liveAvailF }}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="color: var(--muted-foreground);">This claim</span><span style="font-weight: 500; font-variant-numeric: tabular-nums; color: {{ liveClaimColor }};">− {{ liveClaimF }}</span></div>
+                    <div style="height: 1px; background: var(--border);"></div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 600;"><span>Remaining after</span><span style="font-variant-numeric: tabular-nums; color: {{ liveAfterColor }};">{{ liveAfterF }}</span></div>
+                  </div>
+                  <div style="height: 8px; border-radius: 9999px; background: var(--muted); overflow: hidden;"><div style="height: 100%; width: {{ liveAfterPct }}%; background: {{ liveAfterColor }};"></div></div>
+                </div>
+                <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--muted); padding: 16px 18px; font-size: 12.5px; color: var(--muted-foreground); line-height: 1.55;"><strong style="color: var(--foreground); font-weight: 600;">How auto-approval works.</strong> We OCR the receipt, match the amount, confirm it's within FY 2026–27, check your balance, and sanity-check the vendor against the category. All green → approved instantly. Any flag → routed to HR.</div>
+              </div>
+            </sc-if>
+          </div>
+
+          <!-- Verification result -->
+          <sc-if value="{{ showVerify }}" hint-placeholder-val="{{ false }}">
+            <div style="max-width: {{ claimMaxW }}; border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-sm); overflow: hidden;">
+              <div style="padding: 16px 22px; border-bottom: 1px solid var(--border); background: {{ verifyBannerBg }}; display: flex; align-items: center; gap: 12px;">
+                <div style="width: 34px; height: 34px; border-radius: 9999px; background: {{ verifyIconBg }}; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">{{ verifyIcon }}</svg></div>
+                <div><div style="font-size: 15px; font-weight: 600; color: {{ verifyTitleColor }};">{{ verifyTitle }}</div><div style="font-size: 13px; color: var(--muted-foreground);">{{ verifySub }}</div></div>
+                <span style="margin-left: auto; display: inline-flex; align-items: center; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 600; border-radius: 7px; background: {{ verifyIconBg }}; color: #fff;">{{ verifyStatus }}</span>
+              </div>
+              <div style="padding: 8px 0;">
+                <sc-for list="{{ verifyChecks }}" as="ck" hint-placeholder-count="6">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 10px 22px;">
+                    <span style="width: 20px; height: 20px; border-radius: 9999px; background: {{ ck.color }}; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0;">{{ ck.mark }}</span>
+                    <div style="min-width: 0;"><div style="font-size: 13.5px; font-weight: 500;">{{ ck.label }}</div><div style="font-size: 12px; color: var(--muted-foreground);">{{ ck.detail }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 12.5px; color: var(--muted-foreground);">{{ verifyFooter }}</span>
+                <button onClick="{{ resetClaim }}" style="margin-left: auto; height: 32px; padding: 0 14px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">New claim</button>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ===================== HR EXPENSE QUEUE ===================== -->
+      <sc-if value="{{ showHrQueue }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Expense approval queue</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Claims that failed automated verification, with extracted fields and flags.</p></div>
+
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+            <sc-for list="{{ hrStats }}" as="hs" hint-placeholder-count="4">
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;">
+                <div style="font-size: 12.5px; color: var(--muted-foreground);">{{ hs.label }}</div>
+                <div style="font-size: 24px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: {{ hs.color }};">{{ hs.value }}</div>
+                <div style="font-size: 12px; color: var(--muted-foreground);">{{ hs.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+            <div style="display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border);"><div style="font-size: 15px; font-weight: 600;">Pending HR review</div><span style="margin-left: 10px; display: inline-flex; align-items: center; height: 20px; padding: 0 8px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: var(--muted); color: var(--muted-foreground);">{{ hrCount }} claims</span></div>
+            <sc-if value="{{ hrEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 56px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted-foreground);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg><div style="font-size: 14px; font-weight: 500; color: var(--foreground);">Queue cleared</div><div style="font-size: 13px;">All pending claims have been decided.</div></div>
+            </sc-if>
+            <sc-if value="{{ hrNotEmpty }}" hint-placeholder-val="{{ true }}">
+              <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <thead><tr style="color: var(--muted-foreground); font-size: 12.5px;">
+                  <th style="text-align: left; font-weight: 500; padding: 11px 20px; border-bottom: 1px solid var(--border);">Employee</th>
+                  <th style="text-align: left; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">Category</th>
+                  <th style="text-align: right; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">Claimed</th>
+                  <th style="text-align: right; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">OCR amount</th>
+                  <th style="text-align: left; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">Flags</th>
+                  <th style="border-bottom: 1px solid var(--border);"></th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ hrQueue }}" as="q" hint-placeholder-count="5">
+                    <tr className="sc-row" style="border-bottom: 1px solid var(--border);">
+                      <td style="padding: 12px 20px;"><div style="display: flex; align-items: center; gap: 10px;"><div style="width: 30px; height: 30px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; flex-shrink: 0;">{{ q.initials }}</div><div><div style="font-weight: 500;">{{ q.name }}</div><div style="font-size: 11.5px; color: var(--muted-foreground);">{{ q.dept }}</div></div></div></td>
+                      <td style="padding: 12px;">{{ q.cat }}</td>
+                      <td style="padding: 12px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums;">{{ q.claimedF }}</td>
+                      <td style="padding: 12px; text-align: right; font-variant-numeric: tabular-nums; color: {{ q.ocrColor }};">{{ q.extractedF }}</td>
+                      <td style="padding: 12px;"><div style="display: flex; flex-wrap: wrap; gap: 5px;"><sc-for list="{{ q.flags }}" as="fl" hint-placeholder-count="2"><span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; font-size: 11px; font-weight: 500; border-radius: 6px; background: {{ fl.bg }}; color: {{ fl.fg }};">{{ fl.text }}</span></sc-for></div></td>
+                      <td style="padding: 12px 20px; text-align: right;"><button onClick="{{ q.onReview }}" style="height: 30px; padding: 0 12px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Review</button></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </sc-if>
+          </div>
+        </div>
+
+        <!-- Review drawer -->
+        <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ closeDetail }}" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 60;"></div>
+          <div style="position: fixed; top: 0; right: 0; bottom: 0; width: 440px; max-width: 92vw; background: var(--card); border-left: 1px solid var(--border); box-shadow: var(--shadow-2xl); z-index: 70; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--border);"><div><div style="font-size: 16px; font-weight: 600;">{{ detail.name }}</div><div style="font-size: 12.5px; color: var(--muted-foreground);">{{ detail.dept }} · claim {{ detail.id }}</div></div><button onClick="{{ closeDetail }}" style="margin-left: auto; width: 30px; height: 30px; border: 0; border-radius: 7px; background: var(--muted); color: var(--muted-foreground); cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+            <div style="flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 18px;">
+              <div style="border: 1px solid var(--border); border-radius: 11px; background: var(--muted); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; color: var(--muted-foreground);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span style="font-size: 12.5px;">{{ detail.fileName }}</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;"><div style="font-size: 11.5px; color: var(--muted-foreground); margin-bottom: 3px;">Claimed amount</div><div style="font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums;">{{ detail.claimedF }}</div></div>
+                <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;"><div style="font-size: 11.5px; color: var(--muted-foreground); margin-bottom: 3px;">OCR extracted</div><div style="font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; color: {{ detail.ocrColor }};">{{ detail.extractedF }}</div></div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: var(--muted-foreground);">Category</span><span style="font-weight: 500;">{{ detail.cat }}</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: var(--muted-foreground);">Vendor (OCR)</span><span style="font-weight: 500;">{{ detail.vendor }}</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: var(--muted-foreground);">Date</span><span style="font-weight: 500;">{{ detail.date }}</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: var(--muted-foreground);">OCR confidence</span><span style="font-weight: 500; color: {{ detail.confColor }};">{{ detail.confidence }}</span></div>
+              </div>
+              <div>
+                <div style="font-size: 12.5px; font-weight: 600; margin-bottom: 9px;">Rule outcomes</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <sc-for list="{{ detail.checks }}" as="dc" hint-placeholder-count="4">
+                    <div style="display: flex; align-items: center; gap: 10px;"><span style="width: 18px; height: 18px; border-radius: 9999px; background: {{ dc.color }}; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;">{{ dc.mark }}</span><span style="font-size: 12.5px;">{{ dc.label }}</span><span style="margin-left: auto; font-size: 11.5px; color: var(--muted-foreground);">{{ dc.detail }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+              <div>
+                <label style="font-size: 12.5px; font-weight: 500; display: block; margin-bottom: 7px;">Decision note (required to reject)</label>
+                <textarea value="{{ rejectReason }}" onChange="{{ onRejectReason }}" placeholder="Add a reason the employee will see…" style="width: 100%; min-height: 64px; padding: 9px 12px; font-size: 13px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 9px; box-shadow: var(--shadow-xs); outline: none; resize: vertical; font-family: var(--font-sans);"></textarea>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border);">
+              <button onClick="{{ rejectClaim }}" style="flex: 1; height: 40px; font-size: 13.5px; font-weight: 500; border: 1px solid color-mix(in oklab, var(--destructive) 45%, transparent); border-radius: 9px; background: var(--background); color: var(--destructive); cursor: pointer; box-shadow: var(--shadow-xs);">Reject</button>
+              <button onClick="{{ approveClaim }}" style="flex: 1; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Approve {{ detail.claimedF }}</button>
+            </div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <!-- ===================== MANAGER APPROVALS ===================== -->
+      <sc-if value="{{ showApprovals }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Leave &amp; WFH approvals</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Requests from your direct reports awaiting your decision.</p></div>
+
+          <div style="display: grid; grid-template-columns: 1.7fr 1fr; gap: 18px; align-items: start;">
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <sc-if value="{{ approvalsEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 56px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted-foreground);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg><div style="font-size: 14px; font-weight: 500; color: var(--foreground);">All caught up</div><div style="font-size: 13px;">No pending approvals right now.</div></div>
+              </sc-if>
+              <sc-for list="{{ approvalQueue }}" as="a" hint-placeholder-count="3">
+                <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 38px; height: 38px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0;">{{ a.initials }}</div>
+                    <div style="min-width: 0;"><div style="font-size: 14px; font-weight: 600;">{{ a.name }}</div><div style="font-size: 12.5px; color: var(--muted-foreground);">{{ a.role }}</div></div>
+                    <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; border-radius: 7px; background: {{ a.typeBg }}; color: {{ a.typeFg }};"><span style="width: 7px; height: 7px; border-radius: 9999px; background: {{ a.typeFg }};"></span>{{ a.type }}</span>
+                  </div>
+                  <div style="display: flex; gap: 22px; flex-wrap: wrap;">
+                    <div><div style="font-size: 11.5px; color: var(--muted-foreground);">Dates</div><div style="font-size: 13.5px; font-weight: 500;">{{ a.dates }}</div></div>
+                    <div><div style="font-size: 11.5px; color: var(--muted-foreground);">Working days</div><div style="font-size: 13.5px; font-weight: 500;">{{ a.days }}</div></div>
+                    <div style="flex: 1; min-width: 140px;"><div style="font-size: 11.5px; color: var(--muted-foreground);">Reason</div><div style="font-size: 13.5px;">{{ a.reason }}</div></div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: {{ a.l1Color }};"><span style="width: 18px; height: 18px; border-radius: 9999px; background: {{ a.l1Bg }}; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">{{ a.l1Mark }}</span>L1 · Team Lead</span>
+                    <span style="flex: 1; height: 1px; background: var(--border);"></span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: {{ a.l2Color }};"><span style="width: 18px; height: 18px; border-radius: 9999px; background: {{ a.l2Bg }}; color: {{ a.l2Fg }}; border: 1px solid {{ a.l2Border }}; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">{{ a.l2Mark }}</span>L2 · Project Manager</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 12px; color: var(--muted-foreground);">{{ a.actionLabel }}</span>
+                    <button onClick="{{ a.onReject }}" style="margin-left: auto; height: 34px; padding: 0 14px; font-size: 13px; font-weight: 500; border: 1px solid color-mix(in oklab, var(--destructive) 45%, transparent); border-radius: 8px; background: var(--background); color: var(--destructive); cursor: pointer; box-shadow: var(--shadow-xs);">Reject</button>
+                    <button onClick="{{ a.onApprove }}" style="height: 34px; padding: 0 16px; font-size: 13px; font-weight: 500; border: 0; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">{{ a.approveLabel }}</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden; position: sticky; top: 78px;">
+              <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);"><div style="font-size: 15px; font-weight: 600;">Out today</div><div style="font-size: 12.5px; color: var(--muted-foreground);">{{ todayLabel }}</div></div>
+              <sc-for list="{{ outToday }}" as="o" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 11px; padding: 12px 20px; border-bottom: 1px solid var(--border);"><div style="width: 30px; height: 30px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600;">{{ o.initials }}</div><div><div style="font-size: 13px; font-weight: 500;">{{ o.name }}</div><div style="font-size: 11.5px; color: var(--muted-foreground);">{{ o.role }}</div></div><span style="margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; color: {{ o.fg }};"><span style="width: 7px; height: 7px; border-radius: 9999px; background: {{ o.fg }};"></span>{{ o.type }}</span></div>
+              </sc-for>
+              <div style="padding: 14px 20px;"><button onClick="{{ goCalendar }}" style="width: 100%; height: 34px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Open team calendar</button></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== APPLY LEAVE ===================== -->
+      <sc-if value="{{ showApplyLeave }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Apply for leave / WFH</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">We'll count working days, check your balance, and route it through your reporting line.</p></div>
+
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; max-width: 980px;">
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 22px 24px; display: flex; flex-direction: column; gap: 18px;">
+              <div>
+                <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Request type</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                  <sc-for list="{{ leaveTypes }}" as="lt" hint-placeholder-count="5">
+                    <button onClick="{{ lt.onPick }}" style="height: 34px; padding: 0 13px; font-size: 12.5px; font-weight: 500; border: 1px solid {{ lt.border }}; border-radius: 8px; background: {{ lt.bg }}; color: {{ lt.fg }}; cursor: pointer;">{{ lt.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">From</label><input value="{{ leave.from }}" onChange="{{ onFrom }}" type="date" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+                <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">To</label><input value="{{ leave.to }}" onChange="{{ onTo }}" type="date" style="width: 100%; height: 38px; padding: 0 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+              </div>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;"><span onClick="{{ toggleHalf }}" style="width: 36px; height: 20px; border-radius: 9999px; background: {{ halfTrackBg }}; position: relative; flex-shrink: 0; transition: background-color 150ms;"><span style="position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 9999px; background: #fff; box-shadow: var(--shadow-xs); transform: {{ halfKnob }}; transition: transform 150ms;"></span></span><span style="font-size: 13px;">Half-day (applies to a single date)</span></label>
+              <div><label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 8px;">Reason</label><textarea value="{{ leave.reason }}" onChange="{{ onReason }}" placeholder="Add context for your approvers…" style="width: 100%; min-height: 72px; padding: 9px 12px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 9px; box-shadow: var(--shadow-xs); outline: none; resize: vertical; font-family: var(--font-sans);"></textarea></div>
+              <sc-if value="{{ leaveSubmitted }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: center; gap: 11px; padding: 13px 16px; border: 1px solid color-mix(in oklab, var(--emerald-500) 35%, transparent); border-radius: 10px; background: color-mix(in oklab, var(--emerald-500) 10%, transparent);"><span style="width: 22px; height: 22px; border-radius: 9999px; background: var(--emerald-500); color: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div style="font-size: 13px;"><div style="font-weight: 600;">{{ submitTitle }}</div><div style="color: var(--muted-foreground);">{{ submitSub }}</div></div></div>
+              </sc-if>
+              <div style="display: flex; gap: 10px; padding-top: 2px;"><button onClick="{{ submitLeave }}" style="flex: 1; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">{{ submitBtnLabel }}</button><button onClick="{{ resetLeave }}" style="height: 40px; padding: 0 16px; font-size: 13.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Reset</button></div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; position: sticky; top: 78px;">
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;">
+                <div style="font-size: 14px; font-weight: 600;">Request summary</div>
+                <div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 32px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">{{ workingDays }}</span><span style="font-size: 13px; color: var(--muted-foreground);">working day(s)</span></div>
+                <div style="font-size: 12.5px; color: var(--muted-foreground); line-height: 1.5;">{{ skippedNote }}</div>
+                <div style="height: 1px; background: var(--border);"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span style="color: var(--muted-foreground);">{{ balLabel }}</span><span style="font-weight: 500;">{{ balText }}</span></div>
+                <div style="display: flex; align-items: center; gap: 9px; padding: 11px 13px; border-radius: 9px; background: {{ balBoxBg }}; font-size: 12.5px; color: {{ balBoxColor }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;">{{ balIcon }}</svg><span>{{ balMessage }}</span></div>
+              </div>
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 18px 20px;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 14px;">Approval route</div>
+                <div style="display: flex; flex-direction: column; gap: 0;">
+                  <div style="display: flex; align-items: center; gap: 11px;"><div style="width: 26px; height: 26px; border-radius: 9999px; background: var(--primary); color: var(--primary-foreground); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600;">1</div><div><div style="font-size: 13px; font-weight: 500;">Priya Nair</div><div style="font-size: 11.5px; color: var(--muted-foreground);">Team Lead · L1</div></div></div>
+                  <div style="width: 2px; height: 16px; background: var(--border); margin-left: 12px;"></div>
+                  <div style="display: flex; align-items: center; gap: 11px;"><div style="width: 26px; height: 26px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600;">2</div><div><div style="font-size: 13px; font-weight: 500;">Vikram Rao</div><div style="font-size: 11.5px; color: var(--muted-foreground);">Project Manager · L2</div></div></div>
+                </div>
+                <div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 14px; line-height: 1.5;">Sequential policy · email goes to each approver on submit and at every decision.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== CALENDAR ===================== -->
+      <sc-if value="{{ showCalendar }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Team calendar</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Who's on leave or working from home across the team.</p></div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground);"><span style="width: 9px; height: 9px; border-radius: 3px; background: var(--blue-600);"></span>Leave</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground);"><span style="width: 9px; height: 9px; border-radius: 3px; background: var(--violet-600);"></span>WFH</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground);"><span style="width: 9px; height: 9px; border-radius: 3px; background: var(--amber-500);"></span>Holiday</span>
+              <span style="font-size: 14px; font-weight: 600; margin-left: 6px;">{{ calMonthLabel }}</span>
+            </div>
+          </div>
+
+          <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border);">
+              <sc-for list="{{ weekdayNames }}" as="wd" hint-placeholder-count="7"><div style="padding: 10px 12px; font-size: 11.5px; font-weight: 500; color: var(--muted-foreground); text-align: left;">{{ wd }}</div></sc-for>
+            </div>
+            <sc-for list="{{ calWeeks }}" as="wk" hint-placeholder-count="5">
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--border);">
+                <sc-for list="{{ wk.days }}" as="d" hint-placeholder-count="7">
+                  <div style="min-height: 96px; padding: 8px 9px; border-right: 1px solid var(--border); background: {{ d.bg }}; display: flex; flex-direction: column; gap: 5px;">
+                    <div style="display: flex; align-items: center; gap: 5px;"><span style="font-size: 12px; font-weight: 500; color: {{ d.numColor }};">{{ d.day }}</span><sc-if value="{{ d.isHoliday }}" hint-placeholder-val="{{ false }}"><span style="font-size: 9.5px; font-weight: 600; color: var(--amber-500); text-transform: uppercase; letter-spacing: 0.03em;">{{ d.holidayName }}</span></sc-if></div>
+                    <sc-for list="{{ d.events }}" as="ev" hint-placeholder-count="0"><div style="display: flex; align-items: center; gap: 5px; padding: 2px 6px; border-radius: 5px; background: {{ ev.bg }};"><span style="width: 6px; height: 6px; border-radius: 9999px; background: {{ ev.fg }}; flex-shrink: 0;"></span><span style="font-size: 10.5px; font-weight: 500; color: {{ ev.fg }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ev.label }}</span></div></sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+  </div>
+  </sc-if>
+
+  <!-- Toast -->
+  <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 90; display: flex; align-items: center; gap: 11px; padding: 12px 18px; background: var(--popover); color: var(--popover-foreground); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg);">
+      <span style="width: 20px; height: 20px; border-radius: 9999px; background: {{ toastIconBg }}; color: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">{{ toastIcon }}</svg></span>
+      <span style="font-size: 13px; font-weight: 500;">{{ toastMsg }}</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 860}, &quot;defaultRole&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;Employee&quot;, &quot;Team Lead&quot;, &quot;HR Head&quot;], &quot;default&quot;: &quot;Employee&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Prototype&quot;}, &quot;theme&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;Light&quot;, &quot;Dark&quot;], &quot;default&quot;: &quot;Light&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Prototype&quot;}, &quot;claimLayout&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;Single column&quot;, &quot;Split + live check&quot;], &quot;default&quot;: &quot;Single column&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Prototype&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const roleMap = { Employee: 'employee', 'Team Lead': 'manager', 'HR Head': 'hr' };
+    const role = roleMap[props.defaultRole] || 'employee';
+    this.state = {
+      role,
+      route: this.homeFor(role),
+      theme: (props.theme === 'Dark') ? 'dark' : 'light',
+      claimVariant: (props.claimLayout === 'Split + live check') ? 'split' : 'single',
+      authed: true,
+      authView: 'login',
+      resetSent: false,
+      pwUpdated: false,
+      claim: { category: 'sports', amount: '', date: '2026-06-20', vendor: '', fileName: '', fileSize: '' },
+      verifyResult: null,
+      leave: { type: 'CL', from: '2026-07-06', to: '2026-07-08', halfDay: false, reason: '' },
+      leaveSubmitted: false,
+      hrQueue: this.seedHrQueue(),
+      approvalQueue: this.seedApprovals(),
+      selectedClaimId: null,
+      rejectReason: '',
+      toast: null,
+    };
+    this._toastTimer = null;
+  }
+
+  homeFor(role) { return role === 'manager' ? 'approvals' : role === 'hr' ? 'hrqueue' : 'dashboard'; }
+
+  fmt(n) { return '\u20b9' + Math.round(n).toLocaleString('en-IN'); }
+
+  // ---- seed data ----
+  seedHrQueue() {
+    return [
+      { id: 'BC-2041', name: 'Sneha Patil', dept: 'Engineering', initials: 'SP', cat: 'Learning', claimed: 18000, extracted: 16500, vendor: 'Udemy Business', date: '14 Jun 2026', confidence: 'Low (61%)',
+        flags: [{ text: 'Amount mismatch' }, { text: 'Low OCR' }], checks: [['File readable', true, 'PDF, 1.2 MB'], ['Not a duplicate', true, 'No prior match'], ['Amount matches receipt', false, '₹16,500 vs ₹18,000'], ['Within FY 2026–27', true, '14 Jun 2026'], ['Balance sufficient', true, '₹27,000 left'], ['Vendor / category sanity', true, 'Online course']] },
+      { id: 'BC-2038', name: 'Arjun Desai', dept: 'Sales', initials: 'AD', cat: 'Sports', claimed: 16000, extracted: 16000, vendor: 'Decathlon', date: '11 Jun 2026', confidence: 'High (94%)',
+        flags: [{ text: 'Over balance' }], checks: [['File readable', true, 'JPG, 0.8 MB'], ['Not a duplicate', true, 'No prior match'], ['Amount matches receipt', true, '₹16,000'], ['Within FY 2026–27', true, '11 Jun 2026'], ['Balance sufficient', false, 'Only ₹9,000 left of ₹15,000'], ['Vendor / category sanity', true, 'Sports equipment']] },
+      { id: 'BC-2035', name: 'Kavya Iyer', dept: 'Design', initials: 'KI', cat: 'Learning', claimed: 12500, extracted: 12500, vendor: 'O\u2019Reilly Media', date: '09 Jun 2026', confidence: 'Medium (78%)',
+        flags: [{ text: 'Vendor unclear' }], checks: [['File readable', true, 'PDF, 0.5 MB'], ['Not a duplicate', true, 'No prior match'], ['Amount matches receipt', true, '₹12,500'], ['Within FY 2026–27', true, '09 Jun 2026'], ['Balance sufficient', true, '₹40,000 left'], ['Vendor / category sanity', false, 'Could not classify vendor']] },
+      { id: 'BC-2030', name: 'Rahul Verma', dept: 'Engineering', initials: 'RV', cat: 'Sports', claimed: 8500, extracted: 8500, vendor: 'Cult.fit', date: '02 Jun 2026', confidence: 'Low (58%)',
+        flags: [{ text: 'Low OCR' }], checks: [['File readable', true, 'PNG, 2.1 MB'], ['Not a duplicate', true, 'No prior match'], ['Amount matches receipt', true, '₹8,500 (low confidence)'], ['Within FY 2026–27', true, '02 Jun 2026'], ['Balance sufficient', true, '₹15,000 left'], ['Vendor / category sanity', true, 'Gym membership']] },
+      { id: 'BC-2028', name: 'Meera Joshi', dept: 'HR', initials: 'MJ', cat: 'Learning', claimed: 30000, extracted: 30000, vendor: 'Coursera Plus', date: '28 May 2026', confidence: 'High (91%)',
+        flags: [{ text: 'Duplicate suspected' }], checks: [['File readable', true, 'PDF, 0.9 MB'], ['Not a duplicate', false, 'Matches BC-1990 hash'], ['Amount matches receipt', true, '₹30,000'], ['Within FY 2026–27', true, '28 May 2026'], ['Balance sufficient', true, '₹45,000 left'], ['Vendor / category sanity', true, 'Online course']] },
+    ];
+  }
+
+  seedApprovals() {
+    return [
+      { id: 'LR-558', name: 'Ananya Krishnan', initials: 'AK', role: 'Backend Engineer', type: 'Casual Leave', type2: 'leave', dates: '6 \u2013 8 Jul 2026', days: '3 days', level: 1, reason: 'Family function out of town.' },
+      { id: 'LR-554', name: 'Karthik Reddy', initials: 'KR', role: 'QA Engineer', type: 'WFH', type2: 'wfh', dates: '2 \u2013 3 Jul 2026', days: '2 days', level: 1, reason: 'Electrician visit, working remotely.' },
+      { id: 'LR-549', name: 'Divya Menon', initials: 'DM', role: 'Frontend Engineer', type: 'Sick Leave', type2: 'leave', dates: '29 Jun 2026', days: '1 day', level: 2, reason: 'Fever, doctor advised rest. (TL approved)' },
+      { id: 'LR-547', name: 'Rohit Shetty', initials: 'RS', role: 'DevOps Engineer', type: 'Earned Leave', type2: 'leave', dates: '13 \u2013 17 Jul 2026', days: '5 days', level: 1, reason: 'Annual vacation with family.' },
+    ];
+  }
+
+  // ---- holidays / weekend helpers ----
+  holidays() { return { '2026-07-17': 'Holiday' }; }
+  parseD(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  workingDaysBetween(fromS, toS, halfDay) {
+    if (!fromS || !toS) return 0;
+    let from = this.parseD(fromS), to = this.parseD(toS);
+    if (to < from) return 0;
+    if (halfDay) return 0.5;
+    const hol = this.holidays();
+    let count = 0; let skipped = 0;
+    const cur = new Date(from);
+    while (cur <= to) {
+      const dow = cur.getDay();
+      const iso = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0') + '-' + String(cur.getDate()).padStart(2, '0');
+      if (dow === 0 || dow === 6 || hol[iso]) skipped++; else count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    this._lastSkipped = skipped;
+    return count;
+  }
+
+  // ---- navigation ----
+  go(route) { this.setState({ route }); }
+  setRole(role) { this.setState({ role, route: this.homeFor(role), selectedClaimId: null, leaveSubmitted: false }); }
+  toggleTheme() { this.setState(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })); }
+
+  flash(msg, kind) {
+    if (this._toastTimer) clearTimeout(this._toastTimer);
+    this.setState({ toast: { msg, kind } });
+    this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2800);
+  }
+
+  // ---- claim handlers ----
+  setField(obj) { this.setState(s => ({ claim: { ...s.claim, ...obj }, verifyResult: null })); }
+  catData(cat) {
+    const sports = { cap: 15000, approved: 6000, pending: 0 };
+    const learning = { cap: 45000, approved: 22000, pending: 5000 };
+    return cat === 'sports' ? sports : learning;
+  }
+  catAvail(cat) { const c = this.catData(cat); return c.cap - c.approved - c.pending; }
+
+  runVerify() {
+    const c = this.state.claim;
+    const amt = parseFloat(String(c.amount).replace(/[^0-9.]/g, '')) || 0;
+    const avail = this.catAvail(c.category);
+    const inFY = c.date >= '2026-04-01' && c.date <= '2027-03-31';
+    const checks = [
+      { label: 'Readable PDF / image, under 10 MB', ok: !!c.fileName, detail: c.fileName ? (c.fileSize + ' accepted') : 'No document uploaded' },
+      { label: 'Not a duplicate (hash check)', ok: !!c.fileName, detail: c.fileName ? 'No matching prior upload' : 'Awaiting file' },
+      { label: 'Amount matches receipt (OCR)', ok: amt > 0 && !!c.fileName, detail: amt > 0 ? ('Claimed ' + this.fmt(amt)) : 'Enter an amount' },
+      { label: 'Within FY 2026\u201327 (Apr\u2013Mar)', ok: inFY, detail: inFY ? c.date : 'Date outside current FY' },
+      { label: 'Category balance sufficient', ok: amt > 0 && amt <= avail, detail: amt > avail ? ('Only ' + this.fmt(avail) + ' available') : (this.fmt(avail) + ' available') },
+      { label: 'Vendor / category sanity', ok: (c.vendor || '').trim().length >= 3, detail: (c.vendor || '').trim().length >= 3 ? 'Looks consistent' : 'Add a vendor / description' },
+      { label: 'OCR confidence', ok: !!c.fileName, detail: c.fileName ? 'High (96%)' : 'No document to read' },
+    ];
+    const pass = checks.every(x => x.ok);
+    this.setState({ verifyResult: { pass, checks } });
+    this.flash(pass ? 'Claim auto-approved \u2014 balance updated' : 'Routed to HR Head for manual review', pass ? 'ok' : 'warn');
+  }
+  resetClaim() { this.setState({ claim: { category: 'sports', amount: '', date: '2026-06-20', vendor: '', fileName: '', fileSize: '' }, verifyResult: null }); }
+
+  // ---- HR queue ----
+  closeDetail() { this.setState({ selectedClaimId: null, rejectReason: '' }); }
+  decideClaim(approve) {
+    const id = this.state.selectedClaimId;
+    this.setState(s => ({ hrQueue: s.hrQueue.filter(q => q.id !== id), selectedClaimId: null, rejectReason: '' }));
+    this.flash(approve ? 'Claim approved \u2014 employee notified' : 'Claim rejected \u2014 balance released', approve ? 'ok' : 'warn');
+  }
+
+  // ---- approvals ----
+  decideApproval(id, approve) {
+    const item = this.state.approvalQueue.find(a => a.id === id);
+    if (approve && item && item.level === 1) {
+      this.setState(s => ({ approvalQueue: s.approvalQueue.map(a => a.id === id ? { ...a, level: 2 } : a) }));
+      this.flash('Approved at L1 \u2014 forwarded to Project Manager', 'ok');
+    } else {
+      this.setState(s => ({ approvalQueue: s.approvalQueue.filter(a => a.id !== id) }));
+      this.flash(approve ? 'Fully approved \u2014 calendar updated, applicant notified' : 'Request rejected \u2014 applicant notified', approve ? 'ok' : 'warn');
+    }
+  }
+
+  // ---- leave ----
+  setLeave(obj) { this.setState(s => ({ leave: { ...s.leave, ...obj }, leaveSubmitted: false })); }
+  leaveBalance(type) { return { CL: 8.5, SL: 6, EL: 12, LOP: 0, WFH: 5 }[type]; }
+  submitLeave() {
+    const wd = this.workingDaysBetween(this.state.leave.from, this.state.leave.to, this.state.leave.halfDay);
+    if (wd <= 0) { this.flash('Pick a valid date range first', 'warn'); return; }
+    this.setState({ leaveSubmitted: true });
+    this.flash('Request submitted \u2014 sent to Priya Nair (L1)', 'ok');
+  }
+  resetLeave() { this.setState({ leave: { type: 'CL', from: '2026-07-06', to: '2026-07-08', halfDay: false, reason: '' }, leaveSubmitted: false }); }
+
+  // ---- calendar build ----
+  buildCalendar() {
+    const events = {
+      '2026-07-02': [['KR', 'wfh', 'Karthik · WFH']],
+      '2026-07-03': [['KR', 'wfh', 'Karthik · WFH']],
+      '2026-07-06': [['AK', 'leave', 'Ananya · CL'], ['SP', 'wfh', 'Sneha · WFH']],
+      '2026-07-07': [['AK', 'leave', 'Ananya · CL']],
+      '2026-07-08': [['AK', 'leave', 'Ananya · CL']],
+      '2026-07-13': [['RS', 'leave', 'Rohit · EL']],
+      '2026-07-14': [['RS', 'leave', 'Rohit · EL'], ['DM', 'wfh', 'Divya · WFH']],
+      '2026-07-15': [['RS', 'leave', 'Rohit · EL']],
+      '2026-07-16': [['RS', 'leave', 'Rohit · EL']],
+      '2026-07-17': [['RS', 'leave', 'Rohit · EL']],
+      '2026-07-22': [['KI', 'wfh', 'Kavya · WFH']],
+      '2026-07-29': [['AD', 'leave', 'Arjun · SL']],
+    };
+    const hol = this.holidays();
+    const year = 2026, month = 6; // July (0-based)
+    const first = new Date(year, month, 1);
+    const startDow = first.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevDays = new Date(year, month, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < startDow; i++) cells.push({ day: prevDays - startDow + 1 + i, inMonth: false });
+    for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, inMonth: true });
+    while (cells.length % 7 !== 0) cells.push({ day: cells.length - (startDow + daysInMonth) + 1, inMonth: false });
+    const today = '2026-07-06';
+    const colorFor = t => t === 'leave' ? ['color-mix(in oklab, var(--blue-600) 13%, transparent)', 'var(--blue-600)'] : t === 'wfh' ? ['color-mix(in oklab, var(--violet-600) 14%, transparent)', 'var(--violet-600)'] : ['', ''];
+    const weeks = [];
+    for (let w = 0; w < cells.length / 7; w++) {
+      const days = cells.slice(w * 7, w * 7 + 7).map(c => {
+        const iso = year + '-07-' + String(c.day).padStart(2, '0');
+        const dow = c.inMonth ? new Date(year, month, c.day).getDay() : -1;
+        const isWeekend = c.inMonth && (dow === 0 || dow === 6);
+        const isHoliday = c.inMonth && !!hol[iso];
+        const evs = (c.inMonth && events[iso]) ? events[iso].map(e => { const [bg, fg] = colorFor(e[1]); return { bg, fg, label: e[2] }; }) : [];
+        let bg = 'var(--card)';
+        if (!c.inMonth) bg = 'var(--muted)';
+        else if (isHoliday) bg = 'color-mix(in oklab, var(--amber-500) 9%, transparent)';
+        else if (isWeekend) bg = 'color-mix(in oklab, var(--muted) 55%, transparent)';
+        return { day: c.day, inMonth: c.inMonth, isWeekend, isHoliday, holidayName: isHoliday ? hol[iso] : '', events: evs, bg, numColor: c.inMonth ? (iso === today ? 'var(--blue-600)' : 'var(--foreground)') : 'var(--muted-foreground)' };
+      });
+      weeks.push({ days });
+    }
+    return weeks;
+  }
+
+  renderVals() {
+    const s = this.state;
+    const fmt = n => this.fmt(n);
+    const dark = s.theme === 'dark';
+    const seg = (active) => active ? 'var(--background)' : 'transparent';
+    const segFg = (active) => active ? 'var(--foreground)' : 'var(--muted-foreground)';
+    const segSh = (active) => active ? 'var(--shadow-xs)' : 'none';
+
+    // role identity
+    const roles = {
+      employee: { name: 'Aarav Sharma', title: 'Software Engineer', initials: 'AS', first: 'Aarav' },
+      manager: { name: 'Priya Nair', title: 'Team Lead · Engineering', initials: 'PN', first: 'Priya' },
+      hr: { name: 'Rohan Mehta', title: 'HR Head', initials: 'RM', first: 'Rohan' },
+    };
+    const r = roles[s.role];
+
+    // nav highlight
+    const navKey = s.route;
+    const navBg = k => navKey === k ? 'var(--accent)' : 'transparent';
+    const navColor = k => navKey === k ? 'var(--foreground)' : 'var(--muted-foreground)';
+    const nav = { dashboard: navBg('dashboard'), submit: navBg('submit'), leave: navBg('leave'), approvals: navBg('approvals'), calendar: navBg('calendar'), hrqueue: navBg('hrqueue') };
+    const navFg = { dashboard: navColor('dashboard'), submit: navColor('submit'), leave: navColor('leave'), approvals: navColor('approvals'), calendar: navColor('calendar'), hrqueue: navColor('hrqueue') };
+
+    const crumbMap = { dashboard: 'Dashboard', submit: 'Submit expense', leave: 'Apply leave / WFH', approvals: 'Approvals', calendar: 'Team calendar', hrqueue: 'Expense queue' };
+
+    // dashboard benefit data
+    const sp = this.catData('sports'); const ln = this.catData('learning');
+    const mk = c => ({ capF: fmt(c.cap), approvedF: fmt(c.approved), pendingF: fmt(c.pending), availF: fmt(c.cap - c.approved - c.pending), approvedPct: Math.round(c.approved / c.cap * 100), pendingPct: Math.round(c.pending / c.cap * 100) });
+    const sports = mk(sp); const learning = mk(ln);
+
+    const leaveCards = [
+      { label: 'Casual Leave', value: '8.5', unit: 'days', sub: 'of 12 · accrues monthly' },
+      { label: 'Sick Leave', value: '6', unit: 'days', sub: 'of 8 remaining' },
+      { label: 'Earned Leave', value: '12', unit: 'days', sub: 'carries forward' },
+      { label: 'WFH this month', value: '5', unit: 'left', sub: '3 of 8 used' },
+    ];
+    const badge = (st) => st === 'Auto-approved' ? ['color-mix(in oklab, var(--emerald-500) 15%, transparent)', 'var(--emerald-500)'] : st === 'Pending HR' ? ['color-mix(in oklab, var(--amber-500) 17%, transparent)', '#b45309'] : st === 'Reimbursed' ? ['var(--muted)', 'var(--muted-foreground)'] : ['color-mix(in oklab, var(--red-500) 14%, transparent)', 'var(--destructive)'];
+    const recentRaw = [
+      ['Cult.fit membership', 'Sports', '12 Jun', 6000, 'Auto-approved'],
+      ['Coursera Plus annual', 'Learning', '04 Jun', 22000, 'Auto-approved'],
+      ['Decathlon · running shoes', 'Sports', '28 May', 4200, 'Pending HR'],
+      ['Tech conference ticket', 'Learning', '15 May', 5000, 'Reimbursed'],
+    ];
+    const recentClaims = recentRaw.map(([vendor, cat, date, amt, st]) => { const [bg, fg] = badge(st); return { vendor, cat, date, amountF: fmt(amt), status: st, bg, fg }; });
+    const upcoming = [
+      { title: 'Casual Leave', dates: '6 \u2013 8 Jul 2026 · 3 days', status: 'Pending L1', dot: 'var(--amber-500)' },
+      { title: 'Work from home', dates: '2 \u2013 3 Jul 2026', status: 'Approved', dot: 'var(--emerald-500)' },
+      { title: 'Earned Leave', dates: '22 Aug 2026 · 1 day', status: 'Approved', dot: 'var(--emerald-500)' },
+    ];
+
+    // submit claim
+    const variant = s.claimVariant;
+    const c = s.claim;
+    const catLabel = c.category === 'sports' ? 'Sports' : 'Learning';
+    const avail = this.catAvail(c.category);
+    const amt = parseFloat(String(c.amount).replace(/[^0-9.]/g, '')) || 0;
+    const after = avail - amt;
+    const catCap = this.catData(c.category).cap;
+    const amountHint = amt > avail ? ('Exceeds available ' + fmt(avail) + ' \u2014 will route to HR') : amt > 0 ? (fmt(after) + ' will remain') : (fmt(avail) + ' available in ' + catLabel);
+    const catBtn = (cat, accent) => ({ bg: c.category === cat ? ('color-mix(in oklab, ' + accent + ' 10%, var(--background))') : 'var(--background)', border: c.category === cat ? accent : 'var(--border)' });
+    const sportsBtn = catBtn('sports', 'var(--emerald-500)');
+    const learnBtn = catBtn('learning', 'var(--blue-600)');
+
+    const vr = s.verifyResult;
+    let verify = {};
+    if (vr) {
+      verify = {
+        verifyChecks: vr.checks.map(x => ({ label: x.label, detail: x.detail, ok: x.ok, color: x.ok ? 'var(--emerald-500)' : (x.label.indexOf('balance') > -1 || x.label.indexOf('FY') > -1 ? 'var(--destructive)' : 'var(--amber-500)'), mark: x.ok ? '\u2713' : '!' })),
+        verifyTitle: vr.pass ? 'Auto-approved' : 'Routed to HR Head',
+        verifySub: vr.pass ? 'All checks passed \u2014 amount reserved against your ' + catLabel + ' balance.' : 'One or more checks need a human decision. Extracted fields shared with HR.',
+        verifyStatus: vr.pass ? 'Auto-Approved' : 'Pending HR Approval',
+        verifyBannerBg: vr.pass ? 'color-mix(in oklab, var(--emerald-500) 10%, transparent)' : 'color-mix(in oklab, var(--amber-500) 11%, transparent)',
+        verifyIconBg: vr.pass ? 'var(--emerald-500)' : 'var(--amber-500)',
+        verifyTitleColor: vr.pass ? 'var(--emerald-500)' : '#b45309',
+        verifyIcon: vr.pass ? React.createElement('polyline', { points: '20 6 9 17 4 12' }) : React.createElement(React.Fragment, null, React.createElement('path', { d: 'M12 9v4' }), React.createElement('path', { d: 'M12 17h.01' }), React.createElement('path', { d: 'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z' })),
+        verifyFooter: vr.pass ? 'Decision logged for audit \u00b7 ' + new Date().toLocaleDateString('en-IN') : 'Sent to Rohan Mehta (HR Head) \u00b7 you\u2019ll be notified by email.',
+      };
+    }
+
+    // HR queue
+    const ocrColor = (q) => q.claimed !== q.extracted ? 'var(--destructive)' : 'var(--muted-foreground)';
+    const flagStyle = (t) => {
+      const warn = ['color-mix(in oklab, var(--amber-500) 16%, transparent)', '#b45309'];
+      const bad = ['color-mix(in oklab, var(--red-500) 13%, transparent)', 'var(--destructive)'];
+      return (t === 'Over balance' || t === 'Duplicate suspected' || t === 'Amount mismatch') ? bad : warn;
+    };
+    const hrQueue = s.hrQueue.map(q => ({
+      id: q.id, name: q.name, dept: q.dept, initials: q.initials, cat: q.cat,
+      claimedF: fmt(q.claimed), extractedF: fmt(q.extracted), ocrColor: ocrColor(q),
+      flags: q.flags.map(f => { const [bg, fg] = flagStyle(f.text); return { text: f.text, bg, fg }; }),
+      onReview: () => this.setState({ selectedClaimId: q.id, rejectReason: '' }),
+    }));
+    const hrStats = [
+      { label: 'Pending review', value: String(s.hrQueue.length), sub: 'Awaiting your decision', color: 'var(--foreground)' },
+      { label: 'Auto-approved today', value: '23', sub: '88% straight-through', color: 'var(--emerald-500)' },
+      { label: 'Rejected this week', value: '4', sub: 'With reasons logged', color: 'var(--foreground)' },
+      { label: 'Reserved balance', value: fmt(284500), sub: 'Across all employees', color: 'var(--foreground)' },
+    ];
+    const sel = s.hrQueue.find(q => q.id === s.selectedClaimId);
+    let detail = {};
+    if (sel) {
+      const conf = sel.confidence.indexOf('Low') > -1 ? 'var(--destructive)' : sel.confidence.indexOf('Medium') > -1 ? '#b45309' : 'var(--emerald-500)';
+      detail = {
+        id: sel.id, name: sel.name, dept: sel.dept, cat: sel.cat, vendor: sel.vendor, date: sel.date,
+        claimedF: fmt(sel.claimed), extractedF: fmt(sel.extracted), ocrColor: ocrColor(sel),
+        confidence: sel.confidence, confColor: conf, fileName: 'receipt-' + sel.id + '.pdf',
+        checks: sel.checks.map(([label, ok, det]) => ({ label, mark: ok ? '\u2713' : '!', color: ok ? 'var(--emerald-500)' : 'var(--amber-500)', detail: det })),
+      };
+    }
+
+    // approvals
+    const typeColor = (t2) => t2 === 'wfh' ? ['color-mix(in oklab, var(--violet-600) 13%, transparent)', 'var(--violet-600)'] : ['color-mix(in oklab, var(--blue-600) 12%, transparent)', 'var(--blue-600)'];
+    const approvalQueue = s.approvalQueue.map(a => {
+      const [tb, tf] = typeColor(a.type2);
+      const l1done = a.level >= 2;
+      const isHr = false;
+      return {
+        id: a.id, name: a.name, initials: a.initials, role: a.role, type: a.type, dates: a.dates, days: a.days, reason: a.reason,
+        typeBg: tb, typeFg: tf,
+        l1Bg: 'var(--emerald-500)', l1Mark: l1done ? '\u2713' : '\u2022', l1Color: l1done ? 'var(--emerald-500)' : 'var(--foreground)',
+        l2Bg: l1done ? 'var(--amber-500)' : 'var(--muted)', l2Fg: l1done ? '#fff' : 'var(--muted-foreground)', l2Border: l1done ? 'var(--amber-500)' : 'var(--border)', l2Mark: l1done ? '\u2022' : '2', l2Color: l1done ? '#b45309' : 'var(--muted-foreground)',
+        actionLabel: l1done ? 'Awaiting your L2 decision (Project Manager)' : 'Your L1 decision (Team Lead)',
+        approveLabel: l1done ? 'Approve (final)' : 'Approve \u2192 L2',
+        onApprove: () => this.decideApproval(a.id, true),
+        onReject: () => this.decideApproval(a.id, false),
+      };
+    });
+    const outToday = [
+      { name: 'Ananya Krishnan', role: 'Backend Engineer', initials: 'AK', type: 'Casual Leave', fg: 'var(--blue-600)' },
+      { name: 'Sneha Patil', role: 'Engineering', initials: 'SP', type: 'WFH', fg: 'var(--violet-600)' },
+      { name: 'Manish Gupta', role: 'Frontend Engineer', initials: 'MG', type: 'WFH', fg: 'var(--violet-600)' },
+    ];
+
+    // leave form
+    const L = s.leave;
+    const wd = this.workingDaysBetween(L.from, L.to, L.halfDay);
+    const skipped = this._lastSkipped || 0;
+    const leaveTypeList = [['CL', 'Casual'], ['SL', 'Sick'], ['EL', 'Earned'], ['LOP', 'Loss of Pay'], ['WFH', 'WFH']];
+    const leaveTypes = leaveTypeList.map(([k, label]) => ({
+      label, key: k,
+      bg: L.type === k ? 'var(--primary)' : 'var(--background)',
+      fg: L.type === k ? 'var(--primary-foreground)' : 'var(--foreground)',
+      border: L.type === k ? 'var(--primary)' : 'var(--border)',
+      onPick: () => this.setLeave({ type: k }),
+    }));
+    const isWFH = L.type === 'WFH';
+    const isLOP = L.type === 'LOP';
+    const bal = this.leaveBalance(L.type);
+    const balExceeds = !isWFH && !isLOP && wd > bal;
+    let balMessage, balBoxBg, balBoxColor, balIcon;
+    if (isWFH) { balMessage = 'WFH does not deduct any leave balance.'; balBoxBg = 'color-mix(in oklab, var(--violet-600) 10%, transparent)'; balBoxColor = 'var(--violet-600)'; balIcon = React.createElement(React.Fragment, null, React.createElement('path', { d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' }), React.createElement('polyline', { points: '9 22 9 12 15 12 15 22' })); }
+    else if (isLOP) { balMessage = 'Loss of Pay \u2014 these days are unpaid, no balance used.'; balBoxBg = 'color-mix(in oklab, var(--amber-500) 12%, transparent)'; balBoxColor = '#b45309'; balIcon = React.createElement(React.Fragment, null, React.createElement('path', { d: 'M12 9v4' }), React.createElement('path', { d: 'M12 17h.01' }), React.createElement('circle', { cx: 12, cy: 12, r: 10 })); }
+    else if (balExceeds) { balMessage = 'Exceeds available balance \u2014 extra days will be marked LOP.'; balBoxBg = 'color-mix(in oklab, var(--red-500) 11%, transparent)'; balBoxColor = 'var(--destructive)'; balIcon = React.createElement(React.Fragment, null, React.createElement('path', { d: 'M12 9v4' }), React.createElement('path', { d: 'M12 17h.01' }), React.createElement('path', { d: 'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z' })); }
+    else { balMessage = 'Within balance \u2014 ' + (bal - wd) + ' day(s) will remain.'; balBoxBg = 'color-mix(in oklab, var(--emerald-500) 11%, transparent)'; balBoxColor = 'var(--emerald-500)'; balIcon = React.createElement('polyline', { points: '20 6 9 17 4 12' }); }
+    const skippedNote = L.halfDay ? 'Half-day request \u00b7 counts as 0.5 working day.' : skipped > 0 ? (skipped + ' weekend/holiday day(s) excluded from the count.') : 'No weekends or holidays in this range.';
+
+    // calendar
+    const calWeeks = this.buildCalendar();
+
+    const toast = s.toast;
+
+    return {
+      rootClass: dark ? 'dark' : '',
+      sidebarBg: dark ? 'var(--zinc-900)' : 'var(--zinc-50)',
+
+      showApp: s.authed, showAuth: !s.authed,
+      isLogin: s.authView === 'login', isSignup: s.authView === 'signup', isForgot: s.authView === 'forgot', isReset: s.authView === 'reset',
+      resetSent: s.resetSent, resetNotSent: !s.resetSent, pwUpdated: s.pwUpdated, pwNotUpdated: !s.pwUpdated,
+      goLogin: () => this.setState({ authView: 'login', resetSent: false, pwUpdated: false }),
+      goSignup: () => this.setState({ authView: 'signup' }),
+      goForgot: () => this.setState({ authView: 'forgot', resetSent: false }),
+      goReset: () => this.setState({ authView: 'reset', pwUpdated: false }),
+      doLogin: () => { this.setState({ authed: true }); this.flash('Signed in to SmartSense', 'ok'); },
+      doSignup: () => { this.setState({ authed: true }); this.flash('Account created \u2014 welcome to SmartSense', 'ok'); },
+      sendReset: () => this.setState({ resetSent: true }),
+      updatePassword: () => this.setState({ pwUpdated: true }),
+      signOut: () => this.setState({ authed: false, authView: 'login', resetSent: false, pwUpdated: false }),
+      isEmployee: s.role === 'employee', isManager: s.role === 'manager', isHr: s.role === 'hr',
+      roleName: r.name, roleTitle: r.title, roleInitials: r.initials, firstName: roles.employee.first,
+      navSectionLabel: s.role === 'employee' ? 'My workspace' : s.role === 'manager' ? 'Manager' : 'HR Head',
+      nav, navFg,
+      goDashboard: () => this.go('dashboard'), goSubmit: () => this.go('submit'), goLeave: () => this.go('leave'),
+      goApprovals: () => this.go('approvals'), goCalendar: () => this.go('calendar'), goHrQueue: () => this.go('hrqueue'),
+      setRoleEmployee: () => this.setRole('employee'), setRoleManager: () => this.setRole('manager'), setRoleHr: () => this.setRole('hr'),
+      roleSeg: { employee: seg(s.role === 'employee'), manager: seg(s.role === 'manager'), hr: seg(s.role === 'hr') },
+      roleSegFg: { employee: segFg(s.role === 'employee'), manager: segFg(s.role === 'manager'), hr: segFg(s.role === 'hr') },
+      roleSegSh: { employee: segSh(s.role === 'employee'), manager: segSh(s.role === 'manager'), hr: segSh(s.role === 'hr') },
+      toggleTheme: () => this.toggleTheme(), themeIsDark: dark, themeIsLight: !dark,
+      crumb: crumbMap[s.route],
+      approvalCount: s.approvalQueue.length, hrCount: s.hrQueue.length,
+
+      showDashboard: s.route === 'dashboard', showSubmit: s.route === 'submit', showHrQueue: s.route === 'hrqueue',
+      showApprovals: s.route === 'approvals', showApplyLeave: s.route === 'leave', showCalendar: s.route === 'calendar',
+
+      sports, learning, leaveCards, recentClaims, upcoming,
+
+      claimVariant: variant, claimGrid: variant === 'split' ? '1.5fr 1fr' : '1fr', claimMaxW: variant === 'split' ? '1000px' : '680px', showLivePanel: variant === 'split',
+      setVariantSingle: () => this.setState({ claimVariant: 'single' }), setVariantSplit: () => this.setState({ claimVariant: 'split' }),
+      variantSeg: { single: seg(variant === 'single'), split: seg(variant === 'split') },
+      variantSegFg: { single: segFg(variant === 'single'), split: segFg(variant === 'split') },
+      variantSegSh: { single: segSh(variant === 'single'), split: segSh(variant === 'split') },
+      claim: { amount: c.amount, date: c.date, vendor: c.vendor, fileName: c.fileName, fileSize: c.fileSize, catLabel },
+      onAmount: e => this.setField({ amount: e.target.value }),
+      onDate: e => this.setField({ date: e.target.value }),
+      onVendor: e => this.setField({ vendor: e.target.value }),
+      setCatSports: () => this.setField({ category: 'sports' }), setCatLearning: () => this.setField({ category: 'learning' }),
+      catBg: { sports: sportsBtn.bg, learning: learnBtn.bg }, catBorder: { sports: sportsBtn.border, learning: learnBtn.border },
+      amountHint, amountHintColor: amt > avail ? 'var(--destructive)' : 'var(--muted-foreground)',
+      hasFile: !!c.fileName, noFile: !c.fileName,
+      pickFile: () => this.setField({ fileName: 'receipt-jun-2026.pdf', fileSize: '0.7 MB' }),
+      clearFile: () => this.setField({ fileName: '', fileSize: '' }),
+      runVerify: () => this.runVerify(), resetClaim: () => this.resetClaim(),
+      showVerify: !!vr, ...verify,
+      liveAvailF: fmt(avail), liveClaimF: fmt(amt), liveAfterF: fmt(Math.max(after, 0)),
+      liveClaimColor: 'var(--foreground)', liveAfterColor: after < 0 ? 'var(--destructive)' : 'var(--emerald-500)',
+      liveAfterPct: Math.max(0, Math.min(100, Math.round(Math.max(after, 0) / catCap * 100))),
+
+      hrStats, hrQueue, hrEmpty: s.hrQueue.length === 0, hrNotEmpty: s.hrQueue.length > 0,
+      showDetail: !!sel, detail, closeDetail: () => this.closeDetail(),
+      rejectReason: s.rejectReason, onRejectReason: e => this.setState({ rejectReason: e.target.value }),
+      approveClaim: () => this.decideClaim(true), rejectClaim: () => this.decideClaim(false),
+
+      approvalQueue, approvalsEmpty: s.approvalQueue.length === 0, outToday, todayLabel: 'Monday, 6 Jul 2026',
+
+      leaveTypes, leave: { from: L.from, to: L.to, reason: L.reason },
+      onFrom: e => this.setLeave({ from: e.target.value }), onTo: e => this.setLeave({ to: e.target.value }), onReason: e => this.setLeave({ reason: e.target.value }),
+      toggleHalf: () => this.setLeave({ halfDay: !L.halfDay }), halfTrackBg: L.halfDay ? 'var(--primary)' : 'var(--input)', halfKnob: L.halfDay ? 'translateX(16px)' : 'translateX(0)',
+      workingDays: wd, skippedNote,
+      balLabel: isWFH ? 'WFH balance' : 'Available balance',
+      balText: isWFH ? '5 days left this month' : isLOP ? 'N/A (unpaid)' : (bal + ' days'),
+      balBoxBg, balBoxColor, balMessage, balIcon,
+      submitLeave: () => this.submitLeave(), resetLeave: () => this.resetLeave(),
+      leaveSubmitted: s.leaveSubmitted, submitTitle: 'Request submitted', submitSub: 'Emailed to Priya Nair (L1). You can withdraw it before the start date.',
+      submitBtnLabel: 'Submit request',
+
+      calMonthLabel: 'July 2026', weekdayNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], calWeeks,
+
+      showToast: !!toast, toastMsg: toast ? toast.msg : '', toastIconBg: toast && toast.kind === 'ok' ? 'var(--emerald-500)' : 'var(--amber-500)',
+      toastIcon: toast && toast.kind === 'ok' ? React.createElement('polyline', { points: '20 6 9 17 4 12' }) : React.createElement(React.Fragment, null, React.createElement('path', { d: 'M12 9v4' }), React.createElement('path', { d: 'M12 17h.01' }), React.createElement('circle', { cx: 12, cy: 12, r: 10 })),
+    };
+  }
+}
+</script>
+</body>
+</html>

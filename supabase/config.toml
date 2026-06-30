@@ -1,0 +1,12 @@
+# Supabase local config. The hosted project mirrors these auth settings in its
+# dashboard (Authentication → Sessions/Tokens). Kept minimal — only the session
+# settings this app depends on are pinned here.
+
+[auth]
+# Access token (JWT) lifetime = 5 minutes. Once it expires, the refresh token is
+# exchanged for a fresh access token automatically (see src/server/supabase/middleware.ts).
+jwt_expiry = 300
+# Rotate the refresh token on every use; a brief reuse window absorbs races
+# between concurrent requests refreshing at the same moment.
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10

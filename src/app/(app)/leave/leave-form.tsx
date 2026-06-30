@@ -1,0 +1,310 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { Check, CircleAlert, House, TriangleAlert } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label, Textarea } from "@/components/ui/input";
+import { useToast } from "@/components/providers";
+import { applyLeaveAction } from "@/server/actions/leave";
+import { LEAVE_TYPES, type LeaveTypeKey } from "@/server/leave";
+import type { ApproverOption } from "@/server/manager/directory";
+import { workingDaysBetween } from "@/lib/working-days";
+import { cn } from "@/lib/cn";
+
+const EMPTY = {
+  type: "CL" as LeaveTypeKey,
+  from: "2026-07-06",
+  to: "2026-07-08",
+  halfDay: false,
+  reason: "",
+  teamLeadId: "",
+  projectManagerId: "",
+};
+
+const selectCls =
+  "h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+export function LeaveForm({
+  balances,
+  teamLeads,
+  projectManagers,
+  defaultTeamLeadId,
+  defaultProjectManagerId,
+}: {
+  balances: Record<LeaveTypeKey, number>;
+  teamLeads: ApproverOption[];
+  projectManagers: ApproverOption[];
+  defaultTeamLeadId?: string | null;
+  defaultProjectManagerId?: string | null;
+}) {
+  const { flash } = useToast();
+  const [leave, setLeave] = useState(() => ({
+    ...EMPTY,
+    teamLeadId: defaultTeamLeadId ?? "",
+    projectManagerId: defaultProjectManagerId ?? "",
+  }));
+  const [submitted, setSubmitted] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  const set = (patch: Partial<typeof leave>) => {
+    setLeave((l) => ({ ...l, ...patch }));
+    setSubmitted(false);
+  };
+
+  const teamLeadName = teamLeads.find((t) => t.id === leave.teamLeadId)?.name;
+  const projectManagerName = projectManagers.find((p) => p.id === leave.projectManagerId)?.name;
+
+  const { days: wd, skipped } = workingDaysBetween(leave.from, leave.to, leave.halfDay);
+  const isWFH = leave.type === "WFH";
+  const isLOP = leave.type === "LOP";
+  const bal = balances[leave.type];
+  const exceeds = !isWFH && !isLOP && wd > bal;
+
+  const balBox = isWFH
+    ? { msg: "WFH does not deduct any leave balance.", cls: "bg-violet-600/10 text-violet-600", Icon: House }
+    : isLOP
+      ? { msg: "Loss of Pay — these days are unpaid, no balance used.", cls: "bg-amber-500/[0.12] text-amber-700", Icon: CircleAlert }
+      : exceeds
+        ? { msg: "Exceeds available balance — extra days will be marked LOP.", cls: "bg-red-500/[0.11] text-destructive", Icon: TriangleAlert }
+        : { msg: `Within balance — ${Math.max(0, bal - wd)} day(s) will remain.`, cls: "bg-emerald-500/[0.11] text-emerald-500", Icon: Check };
+
+  const skippedNote = leave.halfDay
+    ? "Half-day request · counts as 0.5 working day."
+    : skipped > 0
+      ? `${skipped} weekend/holiday day(s) excluded from the count.`
+      : "No weekends or holidays in this range.";
+
+  const balLabel = isWFH ? "WFH balance" : "Available balance";
+  const balText = isWFH ? `${bal} days left this month` : isLOP ? "N/A (unpaid)" : `${bal} days`;
+
+  function submit() {
+    if (!leave.teamLeadId || !leave.projectManagerId) {
+      flash("Select your Team Lead and Project Manager first.", "warn");
+      return;
+    }
+    startTransition(async () => {
+      const res = await applyLeaveAction({
+        requestType: leave.type,
+        from: leave.from,
+        to: leave.to,
+        halfDay: leave.halfDay,
+        reason: leave.reason,
+        teamLeadId: leave.teamLeadId,
+        projectManagerId: leave.projectManagerId,
+      });
+      if (!res.ok) {
+        flash(res.error ?? "Could not submit the request", "warn");
+        return;
+      }
+      setSubmitted(true);
+      flash(`Request submitted — sent to ${teamLeadName ?? "your Team Lead"} (L1)`, "ok");
+    });
+  }
+
+  const BalIcon = balBox.Icon;
+
+  return (
+    <div className="flex flex-col gap-[18px]">
+      <div>
+        <h1 className="text-[23px] font-semibold tracking-[-0.02em]">Apply for leave / WFH</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          We&apos;ll count working days, check your balance, and route it through your reporting line.
+        </p>
+      </div>
+
+      <div className="grid max-w-[980px] grid-cols-[1.5fr_1fr] items-start gap-5">
+        <Card className="flex flex-col gap-[18px] px-6 py-[22px]">
+          <div>
+            <Label>Request type</Label>
+            <div className="flex flex-wrap gap-2">
+              {LEAVE_TYPES.map((lt) => {
+                const active = leave.type === lt.key;
+                return (
+                  <button
+                    key={lt.key}
+                    onClick={() => set({ type: lt.key })}
+                    className={cn(
+                      "h-[34px] cursor-pointer rounded-lg border px-[13px] text-[12.5px] font-medium",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-foreground hover:bg-accent",
+                    )}
+                  >
+                    {lt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div>
+              <Label>From</Label>
+              <input
+                type="date"
+                value={leave.from}
+                onChange={(e) => set({ from: e.target.value })}
+                className="h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+            <div>
+              <Label>To</Label>
+              <input
+                type="date"
+                value={leave.to}
+                onChange={(e) => set({ to: e.target.value })}
+                className="h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+          </div>
+
+          <label className="flex cursor-pointer items-center gap-2.5">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={leave.halfDay}
+              onClick={() => set({ halfDay: !leave.halfDay })}
+              className={cn(
+                "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+                leave.halfDay ? "bg-primary" : "bg-input",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-xs transition-transform",
+                  leave.halfDay && "translate-x-4",
+                )}
+              />
+            </button>
+            <span className="text-[13px]">Half-day (applies to a single date)</span>
+          </label>
+
+          <div className="grid grid-cols-2 gap-3.5">
+            <div>
+              <Label>Team Lead (L1)</Label>
+              <select
+                value={leave.teamLeadId}
+                onChange={(e) => set({ teamLeadId: e.target.value })}
+                className={selectCls}
+              >
+                <option value="">Select a Team Lead…</option>
+                {teamLeads.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Project Manager (L2)</Label>
+              <select
+                value={leave.projectManagerId}
+                onChange={(e) => set({ projectManagerId: e.target.value })}
+                className={selectCls}
+              >
+                <option value="">Select a Project Manager…</option>
+                {projectManagers.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <Label>Reason</Label>
+            <Textarea
+              value={leave.reason}
+              onChange={(e) => set({ reason: e.target.value })}
+              placeholder="Add context for your approvers…"
+            />
+          </div>
+
+          {submitted && (
+            <div className="flex items-center gap-[11px] rounded-[10px] border border-emerald-500/35 bg-emerald-500/10 px-4 py-[13px]">
+              <span className="flex size-[22px] shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <Check className="size-[13px]" strokeWidth={3} />
+              </span>
+              <div className="text-[13px]">
+                <div className="font-semibold">Request submitted</div>
+                <div className="text-muted-foreground">
+                  Emailed to {teamLeadName ?? "your Team Lead"} (L1). You can withdraw it before the start date.
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2.5 pt-0.5">
+            <Button onClick={submit} disabled={pending} className="flex-1">
+              {pending ? "Submitting…" : "Submit request"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setLeave(EMPTY);
+                setSubmitted(false);
+              }}
+            >
+              Reset
+            </Button>
+          </div>
+        </Card>
+
+        <div className="sticky top-[78px] flex flex-col gap-4">
+          <Card className="flex flex-col gap-3.5 px-5 py-[18px]">
+            <div className="text-sm font-semibold">Request summary</div>
+            <div className="flex items-baseline gap-2">
+              <span className="tabular text-[32px] font-semibold tracking-[-0.02em]">{wd}</span>
+              <span className="text-[13px] text-muted-foreground">working day(s)</span>
+            </div>
+            <div className="text-[12.5px] leading-normal text-muted-foreground">{skippedNote}</div>
+            <div className="h-px bg-border" />
+            <div className="flex justify-between text-[13px]">
+              <span className="text-muted-foreground">{balLabel}</span>
+              <span className="font-medium">{balText}</span>
+            </div>
+            <div className={cn("flex items-center gap-2.5 rounded-[9px] px-[13px] py-[11px] text-[12.5px]", balBox.cls)}>
+              <BalIcon className="size-[15px] shrink-0" strokeWidth={2} />
+              <span>{balBox.msg}</span>
+            </div>
+          </Card>
+
+          <Card className="px-5 py-[18px]">
+            <div className="mb-3.5 text-sm font-semibold">Approval route</div>
+            <div className="flex flex-col">
+              {[
+                { level: 1, name: teamLeadName, title: "Team Lead · L1" },
+                { level: 2, name: projectManagerName, title: "Project Manager · L2" },
+              ].map((step, i, arr) => (
+                <div key={step.level}>
+                  <div className="flex items-center gap-[11px]">
+                    <div
+                      className={cn(
+                        "flex size-[26px] items-center justify-center rounded-full text-[11px] font-semibold",
+                        i === 0 ? "bg-primary text-primary-foreground" : "border bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {step.level}
+                    </div>
+                    <div>
+                      <div className={cn("text-[13px] font-medium", !step.name && "text-muted-foreground")}>
+                        {step.name ?? "Not selected yet"}
+                      </div>
+                      <div className="text-[11.5px] text-muted-foreground">{step.title}</div>
+                    </div>
+                  </div>
+                  {i < arr.length - 1 && <div className="ml-3 h-4 w-0.5 bg-border" />}
+                </div>
+              ))}
+            </div>
+            <div className="mt-3.5 text-[11.5px] leading-normal text-muted-foreground">
+              Sequential policy · email goes to each approver on submit and at every decision.
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
