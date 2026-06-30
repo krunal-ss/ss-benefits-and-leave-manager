@@ -103,7 +103,13 @@ export const leaveTypes = pgTable("leave_types", {
   id: uuid().primaryKey().defaultRandom(),
   code: text().notNull().unique(), // CL, SL, EL, LOP
   name: text().notNull(),
-  accrualRule: text(), // free-form policy descriptor for v1
+  accrualRule: text(), // free-form human-readable policy descriptor
+  // ---- KAN-43: structured accrual config (read by src/server/leave/accrual.ts) ----
+  // Days credited each accrual period (monthly). 0 = no periodic accrual.
+  accrualPerMonthDays: numeric({ precision: 5, scale: 2 }).notNull().default("0"),
+  // Days granted up-front at the start of the FY (before any accrual).
+  openingBalanceDays: numeric({ precision: 5, scale: 1 }).notNull().default("0"),
+  // ---- end KAN-43 additions ----
   maxBalanceDays: numeric({ precision: 5, scale: 1 }),
   carryForward: boolean().notNull().default(false),
   deductsBalance: boolean().notNull().default(true),
@@ -189,3 +195,5 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type BenefitClaim = typeof benefitClaims.$inferSelect;
 export type LeaveRequest = typeof leaveRequests.$inferSelect;
+export type LeaveType = typeof leaveTypes.$inferSelect;
+export type LeaveBalance = typeof leaveBalances.$inferSelect;
