@@ -4,9 +4,11 @@ import { getDb } from "@/db";
 import { leaveBalances, leaveRequests, leaveTypes } from "@/db/schema";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { listApproverOptions } from "@/server/manager/directory";
+import { listMyRequests, isActiveStatus } from "@/server/employee/requests";
 import { currentFy, todayISO } from "@/lib/fy";
 import type { LeaveTypeKey } from "@/server/leave";
 import { LeaveForm } from "./leave-form";
+import { MyRequests } from "./my-requests";
 
 export const metadata = { title: "Apply leave / WFH · SmartSense" };
 
@@ -40,13 +42,22 @@ export default async function LeavePage() {
 
   const { teamLeads, projectManagers } = await listApproverOptions();
 
+  const myRequests = await listMyRequests(user.id);
+  const existingRanges = myRequests
+    .filter((r) => isActiveStatus(r.status))
+    .map((r) => ({ from: r.from, to: r.to }));
+
   return (
-    <LeaveForm
-      balances={balances}
-      teamLeads={teamLeads}
-      projectManagers={projectManagers}
-      defaultTeamLeadId={user.teamLeadId}
-      defaultProjectManagerId={user.projectManagerId}
-    />
+    <div className="flex flex-col gap-9">
+      <LeaveForm
+        balances={balances}
+        teamLeads={teamLeads}
+        projectManagers={projectManagers}
+        defaultTeamLeadId={user.teamLeadId}
+        defaultProjectManagerId={user.projectManagerId}
+        existingRanges={existingRanges}
+      />
+      <MyRequests requests={myRequests} />
+    </div>
   );
 }

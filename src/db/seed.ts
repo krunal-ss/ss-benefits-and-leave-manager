@@ -15,14 +15,49 @@ async function main() {
   const client = postgres(url, { prepare: false });
   const db = drizzle(client, { schema });
 
-  // Leave types (CL/SL/EL/LOP).
+  // Leave types (CL/SL/EL/LOP). KAN-43: structured accrual config —
+  // accrualPerMonthDays + openingBalanceDays drive src/server/leave/accrual.ts;
+  // accrualRule stays as the human-readable descriptor.
   await db
     .insert(schema.leaveTypes)
     .values([
-      { code: "CL", name: "Casual Leave", maxBalanceDays: "12", deductsBalance: true },
-      { code: "SL", name: "Sick Leave", maxBalanceDays: "8", deductsBalance: true },
-      { code: "EL", name: "Earned Leave", maxBalanceDays: "18", carryForward: true, deductsBalance: true },
-      { code: "LOP", name: "Loss of Pay", maxBalanceDays: "0", deductsBalance: false },
+      {
+        code: "CL",
+        name: "Casual Leave",
+        accrualRule: "1 day/month, max 12, no carry-forward",
+        accrualPerMonthDays: "1",
+        openingBalanceDays: "0",
+        maxBalanceDays: "12",
+        deductsBalance: true,
+      },
+      {
+        code: "SL",
+        name: "Sick Leave",
+        accrualRule: "8 days granted up-front, max 8, no carry-forward",
+        accrualPerMonthDays: "0",
+        openingBalanceDays: "8",
+        maxBalanceDays: "8",
+        deductsBalance: true,
+      },
+      {
+        code: "EL",
+        name: "Earned Leave",
+        accrualRule: "1.5 days/month, max 18, carries forward",
+        accrualPerMonthDays: "1.5",
+        openingBalanceDays: "0",
+        maxBalanceDays: "18",
+        carryForward: true,
+        deductsBalance: true,
+      },
+      {
+        code: "LOP",
+        name: "Loss of Pay",
+        accrualRule: "Unpaid — no balance",
+        accrualPerMonthDays: "0",
+        openingBalanceDays: "0",
+        maxBalanceDays: "0",
+        deductsBalance: false,
+      },
     ])
     .onConflictDoNothing({ target: schema.leaveTypes.code });
 

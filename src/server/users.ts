@@ -43,6 +43,11 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   { prefix: "/approvals", roles: ["team_lead", "project_manager"] },
   { prefix: "/calendar", roles: ["team_lead", "project_manager", "hr_head", "admin"] },
   { prefix: "/expenses", roles: ["hr_head", "admin"] },
+  { prefix: "/reports", roles: ["hr_head", "admin"] }, // KAN-44: HR reporting dashboard
+  // --- KAN-45 (reimbursement export) START ---
+  // The /expenses prefix above already grants this sub-route; listed explicitly for clarity.
+  { prefix: "/expenses/export", roles: ["hr_head", "admin"] },
+  // --- KAN-45 END ---
 ];
 
 /** May `role` access `path`? Unknown paths (e.g. "/") are allowed. */
@@ -83,6 +88,10 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/expenses", label: "Expense queue", key: "expenses" },
       { href: "/expenses/history", label: "Decided claims", key: "expenses-history" },
+      { href: "/reports", label: "Reports", key: "reports" }, // KAN-44: HR reporting dashboard
+      // --- KAN-45 (reimbursement export) START ---
+      { href: "/expenses/export", label: "Reimbursement export", key: "expenses-export" },
+      // --- KAN-45 END ---
       { href: "/calendar", label: "Org calendar", key: "calendar-hr" },
     ],
   },

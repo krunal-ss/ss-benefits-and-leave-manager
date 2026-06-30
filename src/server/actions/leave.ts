@@ -1,26 +1,34 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db";
-import { auditLog, emailLog, leaveRequests, leaveTypes, users } from "@/db/schema";
+import { auditLog, emailLog, leaveBalances, leaveRequests, leaveTypes, users } from "@/db/schema";
 import { requireUser } from "@/server/auth/current-user";
 import { assertCan } from "@/server/auth/rbac";
 import { sendEmail } from "@/server/email";
+import { splitAgainstBalance } from "@/server/leave/accrual";
 import { workingDaysBetween } from "@/lib/working-days";
+import { currentFy } from "@/lib/fy";
 
 const schema = z.object({
   requestType: z.enum(["CL", "SL", "EL", "LOP", "WFH"]),
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a start date."),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick an end date."),
   halfDay: z.boolean(),
-  reason: z.string().default(""),
+  reason: z.string().trim().min(3, "Add a reason for your request."),
   teamLeadId: z.string().uuid("Select a Team Lead."),
   projectManagerId: z.string().uuid("Select a Project Manager."),
 });
 
-export type LeaveResult = { ok: boolean; error?: string; workingDays?: number };
+export type LeaveResult = {
+  ok: boolean;
+  error?: string;
+  workingDays?: number;
+  /** Working days that exceeded the available balance and were flagged LOP (PRD §5.5 AC2). */
+  lopDays?: number;
+};
 
 export async function applyLeaveAction(input: z.input<typeof schema>): Promise<LeaveResult> {
   const parsed = schema.safeParse(input);
@@ -34,6 +42,25 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
 
   const kind = parsed.data.requestType === "WFH" ? "wfh" : "leave";
   const db = getDb();
+
+  // Block double-booking: reject if the range overlaps an existing request that
+  // still counts against the calendar (anything but rejected/cancelled).
+  // Two ranges overlap iff existing.from <= new.to AND existing.to >= new.from.
+  const clash = await db
+    .select({ from: leaveRequests.fromDate, to: leaveRequests.toDate })
+    .from(leaveRequests)
+    .where(
+      and(
+        eq(leaveRequests.userId, user.id),
+        notInArray(leaveRequests.status, ["rejected", "cancelled"]),
+        lte(leaveRequests.fromDate, parsed.data.to),
+        gte(leaveRequests.toDate, parsed.data.from),
+      ),
+    )
+    .limit(1);
+  if (clash.length > 0) {
+    return { ok: false, error: "You already have a leave/WFH request on one of these dates." };
+  }
 
   // Validate the chosen approvers actually hold the right roles — a request must
   // never be routed to an arbitrary user (the dropdown is convenience, not trust).
@@ -49,14 +76,37 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
     return { ok: false, error: "Pick a valid Project Manager." };
 
   let leaveTypeId: string | null = null;
+  let deductsBalance = false;
   if (kind === "leave") {
     const [lt] = await db
-      .select({ id: leaveTypes.id })
+      .select({ id: leaveTypes.id, deducts: leaveTypes.deductsBalance })
       .from(leaveTypes)
       .where(eq(leaveTypes.code, parsed.data.requestType))
       .limit(1);
     if (!lt) return { ok: false, error: "Leave type not configured — seed the database." };
     leaveTypeId = lt.id;
+    deductsBalance = lt.deducts;
+  }
+
+  // PRD §5.5 AC2 — validate requested working days against the REAL per-type
+  // balance. Policy: do not hard-block; the over-balance portion is flagged as
+  // LOP (unpaid). WFH and non-deducting types (e.g. LOP) carry no balance.
+  let lopDays = 0;
+  if (kind === "leave" && leaveTypeId && deductsBalance) {
+    const fy = currentFy().label;
+    const [bal] = await db
+      .select({ days: leaveBalances.balanceDays })
+      .from(leaveBalances)
+      .where(
+        and(
+          eq(leaveBalances.userId, user.id),
+          eq(leaveBalances.leaveTypeId, leaveTypeId),
+          eq(leaveBalances.fy, fy),
+        ),
+      )
+      .limit(1);
+    const available = bal ? Number(bal.days) : 0;
+    lopDays = splitAgainstBalance(days, available, true).lopDays;
   }
 
   const [req] = await db
@@ -82,7 +132,7 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
     action: "apply_leave",
     entity: "leave_request",
     entityId: req.id,
-    payload: { kind, days, requestType: parsed.data.requestType, teamLeadId, projectManagerId },
+    payload: { kind, days, lopDays, requestType: parsed.data.requestType, teamLeadId, projectManagerId },
   });
 
   // Best-effort: notify the chosen Team Lead that a request awaits their L1 decision.
@@ -104,5 +154,5 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
   revalidatePath("/dashboard");
   revalidatePath("/leave");
   revalidatePath("/approvals");
-  return { ok: true, workingDays: days };
+  return { ok: true, workingDays: days, lopDays };
 }

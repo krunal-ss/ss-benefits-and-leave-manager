@@ -1,0 +1,2 @@
+ALTER TABLE "leave_types" ADD COLUMN "accrualPerMonthDays" numeric(5, 2) DEFAULT '0' NOT NULL;--> statement-breakpoint
+ALTER TABLE "leave_types" ADD COLUMN "openingBalanceDays" numeric(5, 1) DEFAULT '0' NOT NULL;

@@ -21,6 +21,8 @@ export type ClaimVerificationInput = {
   ocrConfidence: number; // 0..1
   tolerancePaise?: number;
   minConfidence?: number;
+  /** OCR-extracted fields to persist alongside the rule outcomes (KAN-42). */
+  extracted?: { amountPaise: number | null; date: string | null; vendor: string | null };
 };
 
 /** Run the explainable rule checks. Pass = every rule ok → eligible for auto-approve. */
@@ -44,7 +46,12 @@ export function runRuleChecks(input: ClaimVerificationInput): VerificationResult
     { label: "OCR confidence", ok: input.ocrConfidence >= minConfidence, detail: `${Math.round(input.ocrConfidence * 100)}% confidence` },
   ];
 
-  return { passed: checks.every((c) => c.ok), checks, ocrConfidence: input.ocrConfidence };
+  return {
+    passed: checks.every((c) => c.ok),
+    checks,
+    ocrConfidence: input.ocrConfidence,
+    ...(input.extracted ? { extracted: input.extracted } : {}),
+  };
 }
 
 // Vision model for receipt field extraction — Haiku is fast + cheap for OCR.
@@ -57,18 +64,57 @@ export type ExtractedReceipt = {
   confidence: number;
 };
 
+export type ReceiptMediaType = "image/png" | "image/jpeg" | "application/pdf";
+
+const OCR_PROMPT =
+  "Extract the receipt's total amount (in paise, integer — multiply rupees by 100), " +
+  "the date (ISO YYYY-MM-DD), and the vendor name. Respond ONLY with JSON: " +
+  '{"amountPaise":number|null,"date":string|null,"vendor":string|null,"confidence":number}. ' +
+  "confidence is your 0..1 certainty the fields are correct; use a low value if the document is unreadable.";
+
+function parseExtraction(text: string | undefined): ExtractedReceipt {
+  if (!text) return { amountPaise: null, date: null, vendor: null, confidence: 0 };
+  try {
+    // The model may wrap JSON in prose/markdown — pull the first {...} block.
+    const match = text.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(match ? match[0] : text) as Partial<ExtractedReceipt>;
+    return {
+      amountPaise: typeof parsed.amountPaise === "number" ? parsed.amountPaise : null,
+      date: typeof parsed.date === "string" ? parsed.date : null,
+      vendor: typeof parsed.vendor === "string" ? parsed.vendor : null,
+      confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0,
+    };
+  } catch {
+    return { amountPaise: null, date: null, vendor: null, confidence: 0 };
+  }
+}
+
 /**
- * Extract amount/date/vendor from a receipt image via the Claude API.
- * Lazily imports the SDK so the module stays cheap to load on the rule-only path.
+ * Extract amount/date/vendor from a receipt via the Claude API (KAN-42).
+ * PDFs are sent as a `document` block, images as an `image` block — the two
+ * content shapes differ. Lazily imports the SDK so the module stays cheap to load
+ * on the rule-only path.
  */
 export async function parseReceiptWithClaude(
-  imageBase64: string,
-  mediaType: "image/png" | "image/jpeg" | "application/pdf",
+  base64: string,
+  mediaType: ReceiptMediaType,
 ): Promise<ExtractedReceipt> {
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
   const { getEnv } = await import("@/lib/env");
   const apiKey = getEnv().ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured.");
+
+  // PDF → document block; PNG/JPEG → image block (their source shapes differ).
+  const fileBlock =
+    mediaType === "application/pdf"
+      ? {
+          type: "document" as const,
+          source: { type: "base64" as const, media_type: "application/pdf" as const, data: base64 },
+        }
+      : {
+          type: "image" as const,
+          source: { type: "base64" as const, media_type: mediaType, data: base64 },
+        };
 
   const client = new Anthropic({ apiKey });
   const message = await client.messages.create({
@@ -77,28 +123,11 @@ export async function parseReceiptWithClaude(
     messages: [
       {
         role: "user",
-        content: [
-          {
-            type: "image",
-            source: { type: "base64", media_type: mediaType as "image/png", data: imageBase64 },
-          },
-          {
-            type: "text",
-            text:
-              "Extract the receipt's total amount (in paise, integer), the date (ISO YYYY-MM-DD), " +
-              "and the vendor name. Respond ONLY with JSON: " +
-              '{"amountPaise":number|null,"date":string|null,"vendor":string|null,"confidence":number}.',
-          },
-        ],
+        content: [fileBlock, { type: "text", text: OCR_PROMPT }],
       },
     ],
   });
 
   const text = message.content.find((b) => b.type === "text");
-  if (!text || text.type !== "text") return { amountPaise: null, date: null, vendor: null, confidence: 0 };
-  try {
-    return JSON.parse(text.text) as ExtractedReceipt;
-  } catch {
-    return { amountPaise: null, date: null, vendor: null, confidence: 0 };
-  }
+  return parseExtraction(text && text.type === "text" ? text.text : undefined);
 }

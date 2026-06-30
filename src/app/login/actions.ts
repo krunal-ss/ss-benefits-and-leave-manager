@@ -15,11 +15,19 @@ const creds = z.object({
 
 /** Only allow same-origin in-app paths as a post-login destination. */
 function safeRedirect(to: FormDataEntryValue | null): string | null {
-  return typeof to === "string" && to.startsWith("/") && !to.startsWith("//") ? to : null;
+  return typeof to === "string" && to.startsWith("/") && !to.startsWith("//")
+    ? to
+    : null;
 }
 
-export async function loginAction(_prev: AuthState, formData: FormData): Promise<AuthState> {
-  const parsed = creds.safeParse({ email: formData.get("email"), password: formData.get("password") });
+export async function loginAction(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const parsed = creds.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const supabase = await createSupabaseServerClient();
@@ -27,10 +35,16 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
   if (error) return { error: error.message };
 
   const user = await getCurrentUser(); // ensure the DB user row exists
-  redirect(safeRedirect(formData.get("redirectTo")) ?? (user ? homeRouteFor(user.role) : "/dashboard"));
+  redirect(
+    safeRedirect(formData.get("redirectTo")) ??
+      (user ? homeRouteFor(user.role) : "/dashboard"),
+  );
 }
 
-export async function signupAction(_prev: AuthState, formData: FormData): Promise<AuthState> {
+export async function signupAction(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
   const schema = creds.extend({
     name: z.string().min(1, "Enter your name."),
     role: z.enum(SIGNUP_ROLES as [string, ...string[]]).default("employee"),
@@ -47,7 +61,9 @@ export async function signupAction(_prev: AuthState, formData: FormData): Promis
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { data: { full_name: parsed.data.name, app_role: parsed.data.role } },
+    options: {
+      data: { full_name: parsed.data.name, app_role: parsed.data.role },
+    },
   });
   if (error) return { error: error.message };
 
@@ -57,14 +73,21 @@ export async function signupAction(_prev: AuthState, formData: FormData): Promis
       email: parsed.data.email,
       password: parsed.data.password,
     });
-    if (signInError) return { ok: true, message: "Account created — check your email to confirm, then log in." };
+    if (signInError)
+      return {
+        ok: true,
+        message: "Account created — check your email to confirm, then log in.",
+      };
   }
 
   const user = await getCurrentUser();
   redirect(user ? homeRouteFor(user.role) : "/dashboard");
 }
 
-export async function requestResetAction(_prev: AuthState, formData: FormData): Promise<AuthState> {
+export async function requestResetAction(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
   const email = z.string().email().safeParse(formData.get("email"));
   if (!email.success) return { error: "Enter a valid email." };
 
@@ -74,10 +97,14 @@ export async function requestResetAction(_prev: AuthState, formData: FormData): 
   return { ok: true };
 }
 
-export async function updatePasswordAction(_prev: AuthState, formData: FormData): Promise<AuthState> {
+export async function updatePasswordAction(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
   const password = z.string().min(8).safeParse(formData.get("password"));
   const confirm = formData.get("confirm");
-  if (!password.success) return { error: "Password must be at least 8 characters." };
+  if (!password.success)
+    return { error: "Password must be at least 8 characters." };
   if (password.data !== confirm) return { error: "Passwords do not match." };
 
   const supabase = await createSupabaseServerClient();

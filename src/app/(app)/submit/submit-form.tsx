@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { Check, Dumbbell, FileText, GraduationCap, TriangleAlert, Upload, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,16 @@ type Variant = "single" | "split";
 type CategoryKey = "sports" | "learning";
 type Result = { status: "auto_approved" | "pending_hr"; checks: CheckOutcome[] };
 
-const EMPTY = { amount: "", date: "2026-06-20", vendor: "", fileName: "", fileSize: "" };
+const EMPTY = { amount: "", date: "2026-06-20", vendor: "" };
+
+const ACCEPT = "application/pdf,image/jpeg,image/png";
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB — mirrors the server-side cap
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function SubmitForm({
   sportsAvail,
@@ -31,9 +40,12 @@ export function SubmitForm({
   const { flash } = useToast();
   const [category, setCategory] = useState<CategoryKey>("sports");
   const [claim, setClaim] = useState(EMPTY);
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [variant, setVariant] = useState<Variant>("single");
   const [result, setResult] = useState<Result | null>(null);
   const [pending, startTransition] = useTransition();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const avail = category === "sports" ? sportsAvail : learningAvail;
   const cap = category === "sports" ? sportsCap : learningCap;
@@ -53,6 +65,41 @@ export function SubmitForm({
     setResult(null);
   };
 
+  const clearPreview = () => {
+    setPreviewUrl((url) => {
+      if (url) URL.revokeObjectURL(url);
+      return null;
+    });
+  };
+
+  const pickFile = (f: File | null) => {
+    clearPreview();
+    setResult(null);
+    if (!f) {
+      setFile(null);
+      return;
+    }
+    if (!["application/pdf", "image/jpeg", "image/png"].includes(f.type)) {
+      flash("Unsupported file — upload a PDF, JPG, or PNG.", "warn");
+      setFile(null);
+      return;
+    }
+    if (f.size > MAX_BYTES) {
+      flash("File too large — receipts must be under 10 MB.", "warn");
+      setFile(null);
+      return;
+    }
+    setFile(f);
+    if (f.type.startsWith("image/")) setPreviewUrl(URL.createObjectURL(f));
+  };
+
+  const removeFile = () => {
+    clearPreview();
+    setFile(null);
+    setResult(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const amountHint =
     amt > avail
       ? `Exceeds available ${formatINR(avail)} — will route to HR`
@@ -62,13 +109,13 @@ export function SubmitForm({
 
   function submit() {
     startTransition(async () => {
-      const res = await submitExpenseAction({
-        category,
-        amountRupees: amt,
-        date: claim.date,
-        vendor: claim.vendor,
-        hasDocument: !!claim.fileName,
-      });
+      const fd = new FormData();
+      fd.set("category", category);
+      fd.set("amountRupees", String(amt));
+      fd.set("date", claim.date);
+      fd.set("vendor", claim.vendor);
+      if (file) fd.set("receipt", file);
+      const res = await submitExpenseAction(fd);
       if (!res.ok || !res.status || !res.checks) {
         flash(res.error ?? "Could not submit the claim", "warn");
         return;
@@ -85,6 +132,7 @@ export function SubmitForm({
 
   function reset() {
     setClaim(EMPTY);
+    removeFile();
     setResult(null);
   }
 
@@ -170,17 +218,33 @@ export function SubmitForm({
 
           <div>
             <Label>Supporting document</Label>
-            {claim.fileName ? (
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPT}
+              className="hidden"
+              onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+            />
+            {file ? (
               <div className="flex items-center gap-3 rounded-[10px] border bg-muted px-3.5 py-3">
-                <span className="flex size-[34px] items-center justify-center rounded-lg border bg-background text-red-600">
-                  <FileText className="size-[17px]" strokeWidth={2} />
-                </span>
+                {previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={previewUrl}
+                    alt="Receipt preview"
+                    className="size-[34px] shrink-0 rounded-lg border object-cover"
+                  />
+                ) : (
+                  <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg border bg-background text-red-600">
+                    <FileText className="size-[17px]" strokeWidth={2} />
+                  </span>
+                )}
                 <div className="min-w-0">
-                  <div className="text-[13px] font-medium">{claim.fileName}</div>
-                  <div className="text-[11.5px] text-muted-foreground">{claim.fileSize} · uploaded</div>
+                  <div className="truncate text-[13px] font-medium">{file.name}</div>
+                  <div className="text-[11.5px] text-muted-foreground">{fmtBytes(file.size)} · ready to verify</div>
                 </div>
                 <button
-                  onClick={() => setField({ fileName: "", fileSize: "" })}
+                  onClick={removeFile}
                   aria-label="Remove file"
                   className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-[7px] text-muted-foreground hover:bg-background"
                 >
@@ -189,7 +253,8 @@ export function SubmitForm({
               </div>
             ) : (
               <button
-                onClick={() => setField({ fileName: "receipt-jun-2026.pdf", fileSize: "0.7 MB" })}
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
                 className="flex w-full cursor-pointer flex-col items-center gap-[7px] rounded-[10px] border-[1.5px] border-dashed bg-background p-[22px] text-muted-foreground hover:bg-accent"
               >
                 <Upload className="size-5" strokeWidth={2} />

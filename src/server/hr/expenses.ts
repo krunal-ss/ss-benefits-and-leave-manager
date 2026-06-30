@@ -83,6 +83,11 @@ export async function getHrExpenseQueue(): Promise<QueuedClaim[]> {
     const result = r.verificationResult ?? null;
     const checks = (result?.checks ?? []).map((c) => ({ label: c.label, ok: c.ok, detail: c.detail }));
     const claimed = r.amountPaise / 100;
+    // KAN-42: show what OCR actually read. Fall back to the claimed value when a
+    // claim predates real OCR (no extracted block) so older rows still render.
+    const ex = result?.extracted;
+    const extracted = ex && ex.amountPaise !== null ? ex.amountPaise / 100 : claimed;
+    const extractedVendor = ex?.vendor?.trim() || r.vendor || "—";
     return {
       id: r.id,
       ref: `BC-${r.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
@@ -91,9 +96,9 @@ export async function getHrExpenseQueue(): Promise<QueuedClaim[]> {
       initials: initialsOf(r.name),
       category: r.category,
       claimed,
-      extracted: claimed, // the verification used the claimed amount as the extracted value
-      vendor: r.vendor ?? "—",
-      date: fmtDate(r.expenseDate),
+      extracted,
+      vendor: extractedVendor,
+      date: ex?.date?.trim() ? fmtDate(ex.date) : fmtDate(r.expenseDate),
       confidence: confidenceLabel(result?.ocrConfidence),
       flags: flagsFor(result),
       checks,

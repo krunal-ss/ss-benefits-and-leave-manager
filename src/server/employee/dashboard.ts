@@ -3,6 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { benefitCategories, benefitClaims, leaveBalances, leaveRequests, leaveTypes } from "@/db/schema";
 import { getCategoryBalances } from "./balances";
+import { expectedAccrued, policyFromRow } from "@/server/leave/accrual";
 import { currentFy, todayISO } from "@/lib/fy";
 import type { Category, ClaimStatus, RecentClaim } from "@/server/benefits";
 import type { LeaveCard, UpcomingItem } from "@/server/leave";
@@ -59,8 +60,19 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   }));
 
   // Leave balance cards (CL/SL/EL) + a computed WFH-this-month card.
+  // We show accrued / used / available per type: `available` is the stored
+  // balance; `accrued` is what the accrual engine says should have accrued by
+  // now (opening + monthly accrual, capped); `used` is the difference.
   const balRows = await db
-    .select({ days: leaveBalances.balanceDays, code: leaveTypes.code, max: leaveTypes.maxBalanceDays })
+    .select({
+      days: leaveBalances.balanceDays,
+      code: leaveTypes.code,
+      max: leaveTypes.maxBalanceDays,
+      accrualPerMonthDays: leaveTypes.accrualPerMonthDays,
+      openingBalanceDays: leaveTypes.openingBalanceDays,
+      carryForward: leaveTypes.carryForward,
+      deductsBalance: leaveTypes.deductsBalance,
+    })
     .from(leaveBalances)
     .innerJoin(leaveTypes, eq(leaveBalances.leaveTypeId, leaveTypes.id))
     .where(and(eq(leaveBalances.userId, userId), eq(leaveBalances.fy, fy)));
@@ -68,8 +80,26 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
   const leaveCards: LeaveCard[] = ["CL", "SL", "EL"].flatMap((code) => {
     const row = balRows.find((r) => r.code === code);
     if (!row) return [];
-    const max = row.max ? `of ${Number(row.max)} ` : "";
-    return [{ label: LEAVE_CARD_LABEL[code] ?? code, value: String(Number(row.days)), unit: "days", sub: `${max}remaining` }];
+    const available = Number(row.days);
+    const accrued = expectedAccrued(
+      policyFromRow({
+        openingBalanceDays: row.openingBalanceDays,
+        accrualPerMonthDays: row.accrualPerMonthDays,
+        maxBalanceDays: row.max,
+        carryForward: row.carryForward,
+        deductsBalance: row.deductsBalance,
+      }),
+      today,
+    );
+    const used = Math.max(0, Math.round((accrued - available) * 100) / 100);
+    return [
+      {
+        label: LEAVE_CARD_LABEL[code] ?? code,
+        value: String(available),
+        unit: "days",
+        sub: `${used} used · ${accrued} accrued`,
+      },
+    ];
   });
 
   const wfhRows = await db
