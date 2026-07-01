@@ -1,8 +1,10 @@
 import "server-only";
-import { and, eq, gte, lte, or } from "drizzle-orm";
+import { and, count, eq, gte, lte, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { leaveRequests, leaveTypes, users, type User } from "@/db/schema";
+import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { todayISO } from "@/lib/fy";
+import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
 
 // Leave/WFH approval queue (manager view) + "out today" panel — real DB data,
 // scoped to the signed-in manager's direct reports (reporting lines are DATA).
@@ -68,19 +70,31 @@ function typeLabel(kind: RequestKind, code: string | null): string {
  * The pending level + request-scope column for an approver role (null = not an approver).
  * Routing is per-request: a request carries the approvers its applicant chose, so we
  * match on leaveRequests.teamLeadId / projectManagerId rather than the user's reporting line.
+ *
+ * KAN-46 — in `parallel` mode both approvers see the request while it is pending_l1,
+ * so the PM's queue matches pending_l1 (not pending_l2) too.
  */
-function approverScope(role: User["role"]) {
+function approverScope(role: User["role"], parallel = false) {
   if (role === "team_lead")
     return { level: 1 as const, column: leaveRequests.teamLeadId, status: "pending_l1" as const };
   if (role === "project_manager")
-    return { level: 2 as const, column: leaveRequests.projectManagerId, status: "pending_l2" as const };
+    return {
+      level: 2 as const,
+      column: leaveRequests.projectManagerId,
+      status: parallel ? ("pending_l1" as const) : ("pending_l2" as const),
+    };
   return null;
 }
 
-/** Requests from this manager's reports awaiting their decision (L1 for TL, L2 for PM). */
-export async function getApprovalQueue(user: User): Promise<ApprovalRequest[]> {
-  const scope = approverScope(user.role);
-  if (!scope) return [];
+/** A page of requests from this manager's reports awaiting their decision (L1 for TL, L2 for PM). KAN-46 + KAN-70. */
+export async function getApprovalQueue(
+  user: User,
+  params: PageParams = {},
+): Promise<Paginated<ApprovalRequest>> {
+  const policy = await loadApprovalPolicy(); // KAN-46 — routing mode affects PM queue scope
+  const scope = approverScope(user.role, policy.routingMode === "parallel");
+  const np = normalizePage(params);
+  if (!scope) return buildPage<ApprovalRequest>([], np);
 
   const db = getDb();
   const rows = await db
@@ -99,9 +113,11 @@ export async function getApprovalQueue(user: User): Promise<ApprovalRequest[]> {
     .innerJoin(users, eq(leaveRequests.userId, users.id))
     .leftJoin(leaveTypes, eq(leaveRequests.leaveTypeId, leaveTypes.id))
     .where(and(eq(scope.column, user.id), eq(leaveRequests.status, scope.status)))
-    .orderBy(leaveRequests.fromDate);
+    .orderBy(leaveRequests.fromDate)
+    .limit(np.limit + 1) // fetch one extra to detect hasMore
+    .offset(np.offset);
 
-  return rows.map((r) => ({
+  const mapped = rows.map((r) => ({
     id: r.id,
     name: r.name,
     initials: initialsOf(r.name),
@@ -113,11 +129,21 @@ export async function getApprovalQueue(user: User): Promise<ApprovalRequest[]> {
     level: scope.level,
     reason: r.reason ?? "—",
   }));
+
+  return buildPage(mapped, np);
 }
 
 /** How many requests are awaiting this manager's decision (drives the sidebar badge). */
 export async function getPendingApprovalCount(user: User): Promise<number> {
-  return (await getApprovalQueue(user)).length;
+  const scope = approverScope(user.role);
+  if (!scope) return 0;
+  const db = getDb();
+  // COUNT query, not the paginated list — the badge must reflect the true total.
+  const [row] = await db
+    .select({ n: count() })
+    .from(leaveRequests)
+    .where(and(eq(scope.column, user.id), eq(leaveRequests.status, scope.status)));
+  return row?.n ?? 0;
 }
 
 /** Reports of this manager who are on an approved leave/WFH that covers today. */

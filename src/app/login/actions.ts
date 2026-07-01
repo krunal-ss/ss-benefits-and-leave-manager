@@ -1,10 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { SIGNUP_ROLES, homeRouteFor } from "@/server/users";
+import { checkAuthRateLimit, clearAuthRateLimit } from "@/server/security/rate-limit";
 
 export type AuthState = { error?: string; ok?: boolean; message?: string };
 
@@ -12,6 +14,32 @@ const creds = z.object({
   email: z.string().email("Enter a valid email."),
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
+
+/**
+ * Best-effort client IP for rate-limit keying. Behind Vercel/most proxies the
+ * real client is the first hop in x-forwarded-for; fall back to a constant so an
+ * unknown IP still shares one bucket rather than escaping the limiter entirely.
+ */
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  const fwd = h.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0]!.trim();
+  return h.get("x-real-ip")?.trim() || "unknown";
+}
+
+/** KAN-69: throttle an auth attempt by both IP and email; returns an error state when blocked. */
+async function rateLimit(action: string, email: string): Promise<AuthState | null> {
+  const ip = await clientIp();
+  for (const id of [`ip:${ip}`, `email:${email}`]) {
+    const res = checkAuthRateLimit(action, id);
+    if (!res.allowed) {
+      return {
+        error: `Too many attempts. Try again in about ${res.retryAfterSec}s.`,
+      };
+    }
+  }
+  return null;
+}
 
 /** Only allow same-origin in-app paths as a post-login destination. */
 function safeRedirect(to: FormDataEntryValue | null): string | null {
@@ -30,9 +58,15 @@ export async function loginAction(
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
+  const limited = await rateLimit("login", parsed.data.email);
+  if (limited) return limited;
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: error.message };
+
+  // Legit sign-in: stop counting failed attempts against this email.
+  clearAuthRateLimit("login", `email:${parsed.data.email}`);
 
   const user = await getCurrentUser(); // ensure the DB user row exists
   redirect(
@@ -56,6 +90,9 @@ export async function signupAction(
     role: formData.get("role") ?? undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
+
+  const limited = await rateLimit("signup", parsed.data.email);
+  if (limited) return limited;
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signUp({
@@ -90,6 +127,10 @@ export async function requestResetAction(
 ): Promise<AuthState> {
   const email = z.string().email().safeParse(formData.get("email"));
   if (!email.success) return { error: "Enter a valid email." };
+
+  // KAN-69: throttle reset-email requests so the endpoint can't be used to spam.
+  const limited = await rateLimit("reset", email.data);
+  if (limited) return limited;
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email.data);
