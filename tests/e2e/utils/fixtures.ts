@@ -108,11 +108,34 @@ export async function wireReportingLine(employeeEmail: string): Promise<void> {
  * Arrangement only, via the service-role admin client. (Literal bucket name kept
  * in sync with RECEIPTS_BUCKET in src/server/supabase/storage.ts, which can't be
  * imported here — it's a `server-only` module.)
+ *
+ * Returns `true` once the bucket exists, or `false` if the Storage endpoint is
+ * unreachable after retries (Supabase Storage DNS is occasionally flaky here —
+ * same reason global-setup retries). The caller skips the upload specs on
+ * `false` rather than hard-failing on transient infra; a genuine (non-network)
+ * error still throws.
  */
-export async function ensureReceiptsBucket(): Promise<void> {
+export async function ensureReceiptsBucket(): Promise<boolean> {
   const admin = supabaseAdmin();
-  const { error } = await admin.storage.createBucket("receipts", { public: false });
-  if (error && !/exist/i.test(error.message)) throw error;
+  const isNetworkError = (msg: string) =>
+    /fetch failed|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|network/i.test(msg);
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const { error } = await admin.storage.createBucket("receipts", { public: false });
+      if (error && !/exist/i.test(error.message)) throw error;
+      return true; // created now, or already present
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!isNetworkError(msg)) throw err; // a real config/permission error — surface it
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+    }
+  }
+  console.warn(
+    `ensureReceiptsBucket: Supabase Storage unreachable after retries — ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
+  );
+  return false;
 }
 
 export async function getUserIdByEmail(email: string): Promise<string> {
