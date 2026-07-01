@@ -5,13 +5,21 @@ import { getDecidedClaims } from "@/server/hr/expenses";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Pager } from "@/components/ui/pager";
 import { formatINR } from "@/lib/format";
+import { pageParam } from "@/lib/page-param";
 
 export const metadata = { title: "Decided claims · SmartSense" };
 
-export default async function DecidedClaimsPage() {
+export default async function DecidedClaimsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   await requireAccess("/expenses/history");
-  const claims = await getDecidedClaims();
+  const page = pageParam((await searchParams).page);
+  const decided = await getDecidedClaims({ page });
+  const claims = decided.items;
 
   return (
     <div className="flex flex-col gap-5">
@@ -86,6 +94,8 @@ export default async function DecidedClaimsPage() {
           </div>
         )}
       </Card>
+
+      <Pager basePath="/expenses/history" page={decided.page} hasMore={decided.hasMore} />
     </div>
   );
 }

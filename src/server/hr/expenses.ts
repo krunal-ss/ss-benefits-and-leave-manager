@@ -4,6 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "@/db";
 import { benefitCategories, benefitClaims, users, type VerificationResult } from "@/db/schema";
 import { currentFy } from "@/lib/fy";
+import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
 import type { ClaimStatus } from "@/server/benefits";
 import type { QueuedClaim } from "./queue-types";
 
@@ -59,9 +60,10 @@ function flagsFor(result: VerificationResult | null): string[] {
   return flags;
 }
 
-/** Claims awaiting HR Head review (failed auto-verification), newest first. */
-export async function getHrExpenseQueue(): Promise<QueuedClaim[]> {
+/** A page of claims awaiting HR Head review (failed auto-verification), newest first (KAN-70). */
+export async function getHrExpenseQueue(params: PageParams = {}): Promise<Paginated<QueuedClaim>> {
   const db = getDb();
+  const np = normalizePage(params);
   const rows = await db
     .select({
       id: benefitClaims.id,
@@ -77,9 +79,11 @@ export async function getHrExpenseQueue(): Promise<QueuedClaim[]> {
     .innerJoin(users, eq(benefitClaims.userId, users.id))
     .innerJoin(benefitCategories, eq(benefitClaims.categoryId, benefitCategories.id))
     .where(eq(benefitClaims.status, "pending_hr"))
-    .orderBy(desc(benefitClaims.createdAt));
+    .orderBy(desc(benefitClaims.createdAt))
+    .limit(np.limit + 1) // fetch one extra to detect hasMore
+    .offset(np.offset);
 
-  return rows.map((r) => {
+  const mapped = rows.map((r) => {
     const result = r.verificationResult ?? null;
     const checks = (result?.checks ?? []).map((c) => ({ label: c.label, ok: c.ok, detail: c.detail }));
     const claimed = r.amountPaise / 100;
@@ -104,6 +108,8 @@ export async function getHrExpenseQueue(): Promise<QueuedClaim[]> {
       checks,
     };
   });
+
+  return buildPage(mapped, np);
 }
 
 export type HrExpenseStats = {
@@ -166,9 +172,10 @@ const STATUS_LABEL: Record<string, ClaimStatus> = {
   pending_hr: "Pending HR",
 };
 
-/** Already-decided claims (approved / auto-approved / rejected / reimbursed), newest first. */
-export async function getDecidedClaims(): Promise<DecidedClaim[]> {
+/** A page of already-decided claims (approved / auto-approved / rejected / reimbursed), newest first (KAN-70). */
+export async function getDecidedClaims(params: PageParams = {}): Promise<Paginated<DecidedClaim>> {
   const db = getDb();
+  const np = normalizePage(params);
   const approver = alias(users, "approver");
   const rows = await db
     .select({
@@ -188,9 +195,11 @@ export async function getDecidedClaims(): Promise<DecidedClaim[]> {
     .innerJoin(benefitCategories, eq(benefitClaims.categoryId, benefitCategories.id))
     .leftJoin(approver, eq(benefitClaims.approverId, approver.id))
     .where(inArray(benefitClaims.status, ["auto_approved", "approved", "rejected", "reimbursed"]))
-    .orderBy(desc(benefitClaims.createdAt));
+    .orderBy(desc(benefitClaims.createdAt))
+    .limit(np.limit + 1) // fetch one extra to detect hasMore
+    .offset(np.offset);
 
-  return rows.map((r) => ({
+  const mapped = rows.map((r) => ({
     id: r.id,
     ref: `BC-${r.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
     name: r.name,
@@ -205,4 +214,6 @@ export async function getDecidedClaims(): Promise<DecidedClaim[]> {
     reason: r.decisionReason?.trim() || "—",
     vendor: r.vendor ?? "—",
   }));
+
+  return buildPage(mapped, np);
 }

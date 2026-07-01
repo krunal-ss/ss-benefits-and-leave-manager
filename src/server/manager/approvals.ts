@@ -1,9 +1,10 @@
 import "server-only";
-import { and, eq, gte, lte, or } from "drizzle-orm";
+import { and, count, eq, gte, lte, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { leaveRequests, leaveTypes, users, type User } from "@/db/schema";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { todayISO } from "@/lib/fy";
+import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
 
 // Leave/WFH approval queue (manager view) + "out today" panel — real DB data,
 // scoped to the signed-in manager's direct reports (reporting lines are DATA).
@@ -85,11 +86,15 @@ function approverScope(role: User["role"], parallel = false) {
   return null;
 }
 
-/** Requests from this manager's reports awaiting their decision (L1 for TL, L2 for PM). */
-export async function getApprovalQueue(user: User): Promise<ApprovalRequest[]> {
+/** A page of requests from this manager's reports awaiting their decision (L1 for TL, L2 for PM). KAN-46 + KAN-70. */
+export async function getApprovalQueue(
+  user: User,
+  params: PageParams = {},
+): Promise<Paginated<ApprovalRequest>> {
   const policy = await loadApprovalPolicy(); // KAN-46 — routing mode affects PM queue scope
   const scope = approverScope(user.role, policy.routingMode === "parallel");
-  if (!scope) return [];
+  const np = normalizePage(params);
+  if (!scope) return buildPage<ApprovalRequest>([], np);
 
   const db = getDb();
   const rows = await db
@@ -108,9 +113,11 @@ export async function getApprovalQueue(user: User): Promise<ApprovalRequest[]> {
     .innerJoin(users, eq(leaveRequests.userId, users.id))
     .leftJoin(leaveTypes, eq(leaveRequests.leaveTypeId, leaveTypes.id))
     .where(and(eq(scope.column, user.id), eq(leaveRequests.status, scope.status)))
-    .orderBy(leaveRequests.fromDate);
+    .orderBy(leaveRequests.fromDate)
+    .limit(np.limit + 1) // fetch one extra to detect hasMore
+    .offset(np.offset);
 
-  return rows.map((r) => ({
+  const mapped = rows.map((r) => ({
     id: r.id,
     name: r.name,
     initials: initialsOf(r.name),
@@ -122,11 +129,21 @@ export async function getApprovalQueue(user: User): Promise<ApprovalRequest[]> {
     level: scope.level,
     reason: r.reason ?? "—",
   }));
+
+  return buildPage(mapped, np);
 }
 
 /** How many requests are awaiting this manager's decision (drives the sidebar badge). */
 export async function getPendingApprovalCount(user: User): Promise<number> {
-  return (await getApprovalQueue(user)).length;
+  const scope = approverScope(user.role);
+  if (!scope) return 0;
+  const db = getDb();
+  // COUNT query, not the paginated list — the badge must reflect the true total.
+  const [row] = await db
+    .select({ n: count() })
+    .from(leaveRequests)
+    .where(and(eq(scope.column, user.id), eq(leaveRequests.status, scope.status)));
+  return row?.n ?? 0;
 }
 
 /** Reports of this manager who are on an approved leave/WFH that covers today. */
