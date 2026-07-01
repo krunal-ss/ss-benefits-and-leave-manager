@@ -48,6 +48,9 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   // The /expenses prefix above already grants this sub-route; listed explicitly for clarity.
   { prefix: "/expenses/export", roles: ["hr_head", "admin"] },
   // --- KAN-45 END ---
+  // --- KAN-49 (admin console) START ---
+  { prefix: "/admin", roles: ["hr_head", "admin"] },
+  // --- KAN-49 END ---
 ];
 
 /** May `role` access `path`? Unknown paths (e.g. "/") are allowed. */
@@ -95,4 +98,10 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       { href: "/calendar", label: "Org calendar", key: "calendar-hr" },
     ],
   },
+  // --- KAN-49 (admin console) START ---
+  {
+    label: "Administration",
+    items: [{ href: "/admin", label: "Admin console", key: "admin" }],
+  },
+  // --- KAN-49 END ---
 ];

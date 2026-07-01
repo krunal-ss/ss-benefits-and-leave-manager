@@ -21,6 +21,10 @@ export const can = {
   approveLeaveL1: (role: AppRole) => role === "team_lead",
   approveLeaveL2: (role: AppRole) => role === "project_manager",
   runReimbursementExport: (role: AppRole) => role === "hr_head",
+  // KAN-49: admin console. Policy config (benefit categories, leave types,
+  // holidays) is HR-Head/Admin; changing users' roles + reporting lines is a
+  // higher-trust action gated to Admin only.
+  manageUsers: (role: AppRole) => role === "admin",
 } as const;
 
 export type Capability = keyof typeof can;
