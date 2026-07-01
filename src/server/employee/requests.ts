@@ -1,8 +1,9 @@
 import "server-only";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "@/db";
 import { leaveRequests, leaveTypes, users } from "@/db/schema";
+import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
 
 const STATUS_LABEL: Record<string, string> = {
   applied: "Applied",
@@ -35,9 +36,13 @@ export function isActiveStatus(status: string): boolean {
   return status !== "rejected" && status !== "cancelled";
 }
 
-/** Every leave/WFH request the employee has applied for, newest first. */
-export async function listMyRequests(userId: string): Promise<MyRequest[]> {
+/** A page of the employee's leave/WFH requests, newest first (KAN-70). */
+export async function listMyRequests(
+  userId: string,
+  params: PageParams = {},
+): Promise<Paginated<MyRequest>> {
   const db = getDb();
+  const np = normalizePage(params);
   const tl = alias(users, "team_lead");
   const pm = alias(users, "project_manager");
 
@@ -62,9 +67,11 @@ export async function listMyRequests(userId: string): Promise<MyRequest[]> {
     .leftJoin(tl, eq(leaveRequests.teamLeadId, tl.id))
     .leftJoin(pm, eq(leaveRequests.projectManagerId, pm.id))
     .where(eq(leaveRequests.userId, userId))
-    .orderBy(desc(leaveRequests.createdAt));
+    .orderBy(desc(leaveRequests.createdAt))
+    .limit(np.limit + 1) // fetch one extra to detect hasMore
+    .offset(np.offset);
 
-  return rows.map((r) => ({
+  const mapped = rows.map((r) => ({
     id: r.id,
     kind: r.kind,
     typeCode: r.kind === "wfh" ? "WFH" : (r.typeCode ?? "—"),
@@ -80,4 +87,27 @@ export async function listMyRequests(userId: string): Promise<MyRequest[]> {
     projectManagerName: r.projectManagerName,
     createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
   }));
+
+  return buildPage(mapped, np);
+}
+
+/**
+ * All active (not rejected/cancelled) date ranges for the employee — used for the
+ * calendar overlap check on the apply form. Kept separate from the paginated list
+ * so the overlap guard always sees every active request, not just the first page.
+ */
+export async function listActiveRequestRanges(
+  userId: string,
+): Promise<{ from: string; to: string }[]> {
+  const db = getDb();
+  return db
+    .select({ from: leaveRequests.fromDate, to: leaveRequests.toDate })
+    .from(leaveRequests)
+    .where(
+      and(
+        eq(leaveRequests.userId, userId),
+        ne(leaveRequests.status, "rejected"),
+        ne(leaveRequests.status, "cancelled"),
+      ),
+    );
 }

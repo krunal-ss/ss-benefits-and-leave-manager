@@ -4,8 +4,10 @@ import { getDb } from "@/db";
 import { leaveBalances, leaveRequests, leaveTypes } from "@/db/schema";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { listApproverOptions } from "@/server/manager/directory";
-import { listMyRequests, isActiveStatus } from "@/server/employee/requests";
+import { listMyRequests, listActiveRequestRanges } from "@/server/employee/requests";
 import { currentFy, todayISO } from "@/lib/fy";
+import { pageParam } from "@/lib/page-param";
+import { Pager } from "@/components/ui/pager";
 import type { LeaveTypeKey } from "@/server/leave";
 import { LeaveForm } from "./leave-form";
 import { MyRequests } from "./my-requests";
@@ -14,7 +16,11 @@ export const metadata = { title: "Apply leave / WFH · SmartSense" };
 
 const WFH_MONTHLY_QUOTA = 8;
 
-export default async function LeavePage() {
+export default async function LeavePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
@@ -42,10 +48,12 @@ export default async function LeavePage() {
 
   const { teamLeads, projectManagers } = await listApproverOptions();
 
-  const myRequests = await listMyRequests(user.id);
-  const existingRanges = myRequests
-    .filter((r) => isActiveStatus(r.status))
-    .map((r) => ({ from: r.from, to: r.to }));
+  const page = pageParam((await searchParams).page);
+  // Overlap check needs ALL active ranges; the list below is paginated for display.
+  const [myRequests, existingRanges] = await Promise.all([
+    listMyRequests(user.id, { page }),
+    listActiveRequestRanges(user.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-9">
@@ -57,7 +65,8 @@ export default async function LeavePage() {
         defaultProjectManagerId={user.projectManagerId}
         existingRanges={existingRanges}
       />
-      <MyRequests requests={myRequests} />
+      <MyRequests requests={myRequests.items} />
+      <Pager basePath="/leave" page={myRequests.page} hasMore={myRequests.hasMore} />
     </div>
   );
 }

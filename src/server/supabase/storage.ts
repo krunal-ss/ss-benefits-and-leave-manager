@@ -1,7 +1,11 @@
 import "server-only";
+import { eq } from "drizzle-orm";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
 import { getEnv } from "@/lib/env";
+import { getDb } from "@/db";
+import { auditLog, benefitClaims, type User } from "@/db/schema";
+import { assertOwnership } from "@/server/auth/rbac";
 
 // Receipt uploads go to a PRIVATE bucket — never public. We serve them back only
 // via short-lived signed URLs (KAN-41 / PRD §4.5). The DB stores the storage PATH
@@ -84,8 +88,19 @@ export async function uploadReceipt(file: File, userId: string): Promise<StoredR
   return { path, hash, contentType: file.type };
 }
 
-/** Short-lived signed URL to view a stored receipt (KAN-41). Never public. */
-export async function getReceiptSignedUrl(path: string, expiresInSec = 60): Promise<string | null> {
+// KAN-69: keep the signed-URL TTL short. A viewer only needs long enough to open
+// the file once; a leaked URL then expires quickly. Do not raise without reason.
+export const RECEIPT_URL_TTL_SEC = 60;
+
+/**
+ * Low-level signed-URL primitive (KAN-41). Never public.
+ * INTERNAL — callers must go through `getReceiptUrlForClaim`, which enforces the
+ * ownership/role check + audit entry (KAN-69). Do not export.
+ */
+async function createReceiptSignedUrl(
+  path: string,
+  expiresInSec: number = RECEIPT_URL_TTL_SEC,
+): Promise<string | null> {
   if (!path) return null;
   const supabase = await storageClient();
   const { data, error } = await supabase.storage
@@ -93,4 +108,62 @@ export async function getReceiptSignedUrl(path: string, expiresInSec = 60): Prom
     .createSignedUrl(path, expiresInSec);
   if (error || !data) return null;
   return data.signedUrl;
+}
+
+export type ReceiptUrlResult =
+  | { ok: true; url: string }
+  | { ok: false; reason: "not_found" | "forbidden" | "no_document" | "unavailable" };
+
+/**
+ * KAN-69 (BE security): issue a short-lived receipt signed URL for a specific
+ * claim, but ONLY after verifying the requester may view it. Employees may view
+ * their own receipts; HR Head / Admin may view any (they decide the claims).
+ * Every issued URL is recorded in the audit log (who viewed whose receipt, when).
+ *
+ * This is the single sanctioned way to obtain a receipt URL — the raw
+ * `createReceiptSignedUrl` primitive is not exported, so ownership can never be
+ * bypassed by a caller reaching straight for a path.
+ */
+export async function getReceiptUrlForClaim(
+  requester: Pick<User, "id" | "role">,
+  claimId: string,
+): Promise<ReceiptUrlResult> {
+  const db = getDb();
+  const [claim] = await db
+    .select({ userId: benefitClaims.userId, documentUrl: benefitClaims.documentUrl })
+    .from(benefitClaims)
+    .where(eq(benefitClaims.id, claimId))
+    .limit(1);
+
+  if (!claim) return { ok: false, reason: "not_found" };
+
+  // Ownership + role gate: own claim, or a privileged reviewer (hr_head/admin).
+  try {
+    assertOwnership({
+      role: requester.role,
+      actorId: requester.id,
+      resourceOwnerId: claim.userId,
+    });
+  } catch {
+    return { ok: false, reason: "forbidden" };
+  }
+
+  if (!claim.documentUrl) return { ok: false, reason: "no_document" };
+
+  const url = await createReceiptSignedUrl(claim.documentUrl);
+  if (!url) return { ok: false, reason: "unavailable" };
+
+  // Audit the disclosure — a signed URL is a grant of access to a private doc.
+  await db
+    .insert(auditLog)
+    .values({
+      actorId: requester.id,
+      action: "view_receipt",
+      entity: "benefit_claim",
+      entityId: claimId,
+      payload: { ownerId: claim.userId, ttlSec: RECEIPT_URL_TTL_SEC },
+    })
+    .catch(() => {}); // never fail the view because the audit insert hiccupped
+
+  return { ok: true, url };
 }

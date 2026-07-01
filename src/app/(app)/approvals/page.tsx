@@ -2,15 +2,23 @@ import { CircleCheckBig } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { requireAccess } from "@/server/auth/current-user";
 import { getApprovalQueue, getOutToday, getTodayLabel } from "@/server/manager/approvals";
+import { pageParam } from "@/lib/page-param";
+import { Pager } from "@/components/ui/pager";
 import { ApprovalCard } from "./approval-card";
 import { OutTodayPanel } from "./out-today-panel";
 
 export const metadata = { title: "Approvals · SmartSense" };
 
-export default async function ApprovalsPage() {
+export default async function ApprovalsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const user = await requireAccess("/approvals");
 
-  const [approvals, outToday] = await Promise.all([getApprovalQueue(user), getOutToday(user)]);
+  const page = pageParam((await searchParams).page);
+  const [queue, outToday] = await Promise.all([getApprovalQueue(user, { page }), getOutToday(user)]);
+  const approvals = queue.items;
 
   return (
     <div className="flex flex-col gap-5">
@@ -30,7 +38,10 @@ export default async function ApprovalsPage() {
               <div className="text-[13px]">No pending approvals right now.</div>
             </Card>
           ) : (
-            approvals.map((a) => <ApprovalCard key={a.id} request={a} />)
+            <>
+              {approvals.map((a) => <ApprovalCard key={a.id} request={a} />)}
+              <Pager basePath="/approvals" page={queue.page} hasMore={queue.hasMore} className="mt-1" />
+            </>
           )}
         </div>
 
