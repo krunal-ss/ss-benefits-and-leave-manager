@@ -14,6 +14,7 @@ import {
   type LucideIcon,
   LogOut,
   Plus,
+  Settings, // KAN-49: admin console icon
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { signOutAction } from "@/app/login/actions";
@@ -33,6 +34,7 @@ const ICONS: Record<string, LucideIcon> = {
   "expenses-history": History,
   reports: BarChart3,
   "expenses-export": Download,
+  admin: Settings, // KAN-49
 };
 
 function initialsOf(name: string): string {
