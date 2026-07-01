@@ -2,6 +2,7 @@ import "server-only";
 import { and, eq, gte, lte, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { leaveRequests, leaveTypes, users, type User } from "@/db/schema";
+import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { todayISO } from "@/lib/fy";
 
 // Leave/WFH approval queue (manager view) + "out today" panel — real DB data,
@@ -68,18 +69,26 @@ function typeLabel(kind: RequestKind, code: string | null): string {
  * The pending level + request-scope column for an approver role (null = not an approver).
  * Routing is per-request: a request carries the approvers its applicant chose, so we
  * match on leaveRequests.teamLeadId / projectManagerId rather than the user's reporting line.
+ *
+ * KAN-46 — in `parallel` mode both approvers see the request while it is pending_l1,
+ * so the PM's queue matches pending_l1 (not pending_l2) too.
  */
-function approverScope(role: User["role"]) {
+function approverScope(role: User["role"], parallel = false) {
   if (role === "team_lead")
     return { level: 1 as const, column: leaveRequests.teamLeadId, status: "pending_l1" as const };
   if (role === "project_manager")
-    return { level: 2 as const, column: leaveRequests.projectManagerId, status: "pending_l2" as const };
+    return {
+      level: 2 as const,
+      column: leaveRequests.projectManagerId,
+      status: parallel ? ("pending_l1" as const) : ("pending_l2" as const),
+    };
   return null;
 }
 
 /** Requests from this manager's reports awaiting their decision (L1 for TL, L2 for PM). */
 export async function getApprovalQueue(user: User): Promise<ApprovalRequest[]> {
-  const scope = approverScope(user.role);
+  const policy = await loadApprovalPolicy(); // KAN-46 — routing mode affects PM queue scope
+  const scope = approverScope(user.role, policy.routingMode === "parallel");
   if (!scope) return [];
 
   const db = getDb();

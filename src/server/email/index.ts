@@ -13,11 +13,19 @@ function getResend(): Resend {
   return cached;
 }
 
-export async function sendEmail(params: { to: string | string[]; subject: string; html: string }) {
+export async function sendEmail(params: {
+  to: string | string[];
+  subject: string;
+  html: string;
+  // KAN-46 — optional CC recipients (configurable notification CC). Empty arrays are omitted.
+  cc?: string | string[];
+}) {
   const env = getEnv();
+  const cc = Array.isArray(params.cc) ? (params.cc.length ? params.cc : undefined) : params.cc || undefined;
   return getResend().emails.send({
     from: env.EMAIL_FROM,
     to: params.to,
+    ...(cc ? { cc } : {}),
     subject: params.subject,
     html: params.html,
   });

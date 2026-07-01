@@ -169,6 +169,28 @@ export const approvals = pgTable("approvals", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
+// ---- KAN-46: approval-policy config (single-row settings table) ----
+// HR/Admin-configurable routing + notification policy consulted by
+// applyLeaveAction / decideLeaveAction (src/server/policy/). One row per install
+// (id defaults to "default"); columns map 1:1 to the pure ApprovalPolicy type.
+export const routingModeEnum = pgEnum("routing_mode", ["sequential", "parallel"]);
+
+export const approvalPolicy = pgTable("approval_policy", {
+  id: text().primaryKey().default("default"),
+  // Sequential = TL (L1) then PM (L2); parallel = both notified at once, either can act.
+  routingMode: routingModeEnum().notNull().default("sequential"),
+  // Auto-approve WFH requests of at most this many working days (0 = never auto-approve).
+  // Never applies to balance-deducting leave — those always route to approvers.
+  wfhAutoApproveMaxDays: numeric({ precision: 5, scale: 1 }).notNull().default("0"),
+  // Extra recipients CC'd on every routing/decision notification email.
+  ccEmails: jsonb().$type<string[]>().notNull().default([]),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid().references(() => users.id),
+});
+
+export type ApprovalPolicyRow = typeof approvalPolicy.$inferSelect;
+// ---- end KAN-46 ----
+
 // ---- shared ----
 export const holidays = pgTable("holidays", {
   id: uuid().primaryKey().defaultRandom(),
