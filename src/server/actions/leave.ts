@@ -9,6 +9,8 @@ import { requireUser } from "@/server/auth/current-user";
 import { assertCan } from "@/server/auth/rbac";
 import { sendEmail } from "@/server/email";
 import { splitAgainstBalance } from "@/server/leave/accrual";
+import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
+import { decideRouting } from "@/server/policy/approval-policy"; // KAN-46
 import { workingDaysBetween } from "@/lib/working-days";
 import { currentFy } from "@/lib/fy";
 
@@ -28,6 +30,8 @@ export type LeaveResult = {
   workingDays?: number;
   /** Working days that exceeded the available balance and were flagged LOP (PRD §5.5 AC2). */
   lopDays?: number;
+  /** KAN-46 — set when the policy auto-approved a short WFH request (no approver step). */
+  autoApproved?: boolean;
 };
 
 export async function applyLeaveAction(input: z.input<typeof schema>): Promise<LeaveResult> {
@@ -109,6 +113,13 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
     lopDays = splitAgainstBalance(days, available, true).lopDays;
   }
 
+  // KAN-46 — consult the configurable approval policy for routing. Auto-approve
+  // is WFH-only and never touches a balance, so it can safely skip approvers;
+  // balance-deducting leave always routes to approvers (see decideRouting).
+  const policy = await loadApprovalPolicy();
+  const routing = decideRouting({ kind, deductsBalance, workingDays: days, policy });
+  const autoApproved = routing.outcome === "auto_approved";
+
   const [req] = await db
     .insert(leaveRequests)
     .values({
@@ -120,7 +131,7 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
       halfDay: parsed.data.halfDay,
       workingDays: String(days),
       reason: parsed.data.reason || null,
-      status: "pending_l1",
+      status: autoApproved ? "approved" : "pending_l1",
       currentLevel: 1,
       teamLeadId,
       projectManagerId,
@@ -129,17 +140,52 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
 
   await db.insert(auditLog).values({
     actorId: user.id,
-    action: "apply_leave",
+    action: autoApproved ? "auto_approve_leave" : "apply_leave",
     entity: "leave_request",
     entityId: req.id,
-    payload: { kind, days, lopDays, requestType: parsed.data.requestType, teamLeadId, projectManagerId },
+    payload: {
+      kind,
+      days,
+      lopDays,
+      requestType: parsed.data.requestType,
+      teamLeadId,
+      projectManagerId,
+      routingMode: policy.routingMode,
+      ...(autoApproved ? { autoApproved: true, reason: routing.reason } : {}),
+    },
   });
 
-  // Best-effort: notify the chosen Team Lead that a request awaits their L1 decision.
+  const cc = policy.ccEmails; // KAN-46 — configurable CC recipients on notifications
+
+  if (autoApproved) {
+    // WFH auto-approved: no balance to deduct — just confirm to the applicant (CC'd).
+    const subject = "Your WFH request was auto-approved";
+    try {
+      await sendEmail({
+        to: user.email,
+        cc,
+        subject,
+        html: `<p>Hi ${user.name},</p><p>Your WFH request (${days} working day(s), ${parsed.data.from} – ${parsed.data.to}) was automatically approved under the current policy.</p>`,
+      });
+      await db.insert(emailLog).values({ toAddress: user.email, subject, template: "leave_auto_approved", status: "sent" });
+    } catch {
+      await db
+        .insert(emailLog)
+        .values({ toAddress: user.email, subject, template: "leave_auto_approved", status: "failed" })
+        .catch(() => {});
+    }
+    revalidatePath("/dashboard");
+    revalidatePath("/leave");
+    revalidatePath("/approvals");
+    return { ok: true, workingDays: days, lopDays, autoApproved: true };
+  }
+
+  // Notify the chosen Team Lead that a request awaits their L1 decision (CC'd).
   const subject = "A leave/WFH request awaits your approval (L1)";
   try {
     await sendEmail({
       to: teamLead.email,
+      cc,
       subject,
       html: `<p>Hi ${teamLead.name},</p><p>${user.name} submitted a ${parsed.data.requestType} request (${days} working day(s), ${parsed.data.from} – ${parsed.data.to}) for your approval.</p>`,
     });
@@ -149,6 +195,26 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
       .insert(emailLog)
       .values({ toAddress: teamLead.email, subject, template: "leave_l1_request", status: "failed" })
       .catch(() => {});
+  }
+
+  // KAN-46 — parallel routing: notify the Project Manager (L2) up-front too, so
+  // both approvers see the request at once (either may act; see decideLeaveAction).
+  if (policy.routingMode === "parallel") {
+    const pmSubject = "A leave/WFH request awaits your approval (L2)";
+    try {
+      await sendEmail({
+        to: projectManager.email,
+        cc,
+        subject: pmSubject,
+        html: `<p>Hi ${projectManager.name},</p><p>${user.name} submitted a ${parsed.data.requestType} request (${days} working day(s), ${parsed.data.from} – ${parsed.data.to}) for your approval.</p>`,
+      });
+      await db.insert(emailLog).values({ toAddress: projectManager.email, subject: pmSubject, template: "leave_l2_request", status: "sent" });
+    } catch {
+      await db
+        .insert(emailLog)
+        .values({ toAddress: projectManager.email, subject: pmSubject, template: "leave_l2_request", status: "failed" })
+        .catch(() => {});
+    }
   }
 
   revalidatePath("/dashboard");

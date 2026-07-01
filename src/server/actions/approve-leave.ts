@@ -8,6 +8,7 @@ import { approvals, auditLog, emailLog, leaveBalances, leaveRequests, leaveTypes
 import { requireUser } from "@/server/auth/current-user";
 import { assertCan, ForbiddenError } from "@/server/auth/rbac";
 import { sendEmail } from "@/server/email";
+import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { currentFy } from "@/lib/fy";
 
 const schema = z.object({
@@ -52,13 +53,26 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
 
   if (!row) return { ok: false, message: "Request not found." };
 
+  // KAN-46 — routing depends on the active policy. In PARALLEL mode both the TL
+  // and the PM see the request while it's pending_l1, and either one's single
+  // approval finalises it. In SEQUENTIAL mode it's the original TL→PM cascade.
+  const policy = await loadApprovalPolicy();
+  const parallel = policy.routingMode === "parallel";
+
   // Which level is this approver acting at — and may they?
   let level: 1 | 2;
   try {
     if (row.status === "pending_l1") {
-      level = 1;
-      assertCan(me.role, "approveLeaveL1");
-      if (row.teamLeadId !== me.id) throw new ForbiddenError("Not your direct report.");
+      if (parallel && me.role === "project_manager") {
+        // Parallel: the PM may act on the still-pending request directly.
+        level = 2;
+        assertCan(me.role, "approveLeaveL2");
+        if (row.projectManagerId !== me.id) throw new ForbiddenError("Not your direct report.");
+      } else {
+        level = 1;
+        assertCan(me.role, "approveLeaveL1");
+        if (row.teamLeadId !== me.id) throw new ForbiddenError("Not your direct report.");
+      }
     } else if (row.status === "pending_l2") {
       level = 2;
       assertCan(me.role, "approveLeaveL2");
@@ -72,15 +86,17 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
   }
 
   const decision = approve ? "approved" : "rejected";
-  const nextStatus = !approve ? "rejected" : level === 1 ? "pending_l2" : "approved";
-  const finalApproval = approve && level === 2;
+  // In parallel mode a single approval finalises; sequential keeps the L1→L2 cascade.
+  const advancesToL2 = approve && level === 1 && !parallel;
+  const nextStatus = !approve ? "rejected" : advancesToL2 ? "pending_l2" : "approved";
+  const finalApproval = approve && !advancesToL2;
 
   await db.transaction(async (tx) => {
     await tx.insert(approvals).values({ requestId, level, approverId: me.id, decision, reason: reason ?? null });
 
     await tx
       .update(leaveRequests)
-      .set({ status: nextStatus, currentLevel: approve && level === 1 ? 2 : level })
+      .set({ status: nextStatus, currentLevel: advancesToL2 ? 2 : level })
       .where(eq(leaveRequests.id, requestId));
 
     await tx.insert(auditLog).values({
@@ -129,15 +145,18 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
     }
   });
 
+  const cc = policy.ccEmails; // KAN-46 — configurable CC recipients on notifications
+
   // Best-effort notification — always record the attempt in the email log.
   const subject = approve
-    ? level === 1
+    ? advancesToL2
       ? "Your leave request advanced to L2"
       : "Your leave request was approved"
     : "Your leave request was rejected";
   try {
     await sendEmail({
       to: row.applicantEmail,
+      cc,
       subject,
       html: `<p>Hi ${row.applicantName},</p><p>${subject}${reason ? ` — ${reason}` : "."}</p>`,
     });
@@ -149,8 +168,9 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
       .catch(() => {});
   }
 
-  // When L1 approves, the request advances to the chosen Project Manager — notify them.
-  if (approve && level === 1 && row.projectManagerId) {
+  // Sequential only: when L1 approves, the request advances to the chosen Project
+  // Manager — notify them (in parallel mode the PM was already notified at apply time).
+  if (advancesToL2 && row.projectManagerId) {
     const [pm] = await db
       .select({ name: users.name, email: users.email })
       .from(users)
@@ -161,6 +181,7 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
       try {
         await sendEmail({
           to: pm.email,
+          cc,
           subject: pmSubject,
           html: `<p>Hi ${pm.name},</p><p>${row.applicantName}'s request was approved at L1 and now awaits your L2 decision.</p>`,
         });
@@ -180,7 +201,7 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
     ok: approve,
     message: !approve
       ? "Request rejected — applicant notified"
-      : level === 1
+      : advancesToL2
         ? "Approved at L1 — forwarded to Project Manager"
         : "Fully approved — calendar updated, applicant notified",
   };

@@ -51,6 +51,9 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   // --- KAN-49 (admin console) START ---
   { prefix: "/admin", roles: ["hr_head", "admin"] },
   // --- KAN-49 END ---
+  // --- KAN-46 (approval policy switch + notification CC) START ---
+  { prefix: "/settings/approvals", roles: ["hr_head", "admin"] },
+  // --- KAN-46 END ---
 ];
 
 /** May `role` access `path`? Unknown paths (e.g. "/") are allowed. */
@@ -96,6 +99,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       { href: "/expenses/export", label: "Reimbursement export", key: "expenses-export" },
       // --- KAN-45 END ---
       { href: "/calendar", label: "Org calendar", key: "calendar-hr" },
+      // --- KAN-46 (approval policy switch + notification CC) START ---
+      { href: "/settings/approvals", label: "Approval policy", key: "settings-approvals" },
+      // --- KAN-46 END ---
     ],
   },
   // --- KAN-49 (admin console) START ---
