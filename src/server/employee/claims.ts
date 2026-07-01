@@ -2,6 +2,7 @@ import "server-only";
 import { desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { benefitCategories, benefitClaims } from "@/db/schema";
+import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
@@ -30,9 +31,13 @@ export type MyClaim = {
   canDelete: boolean;
 };
 
-/** Every benefit/expense claim the employee has filed, newest first. */
-export async function listMyClaims(userId: string): Promise<MyClaim[]> {
+/** A page of the employee's benefit/expense claims, newest first (KAN-70). */
+export async function listMyClaims(
+  userId: string,
+  params: PageParams = {},
+): Promise<Paginated<MyClaim>> {
   const db = getDb();
+  const np = normalizePage(params);
   const rows = await db
     .select({
       id: benefitClaims.id,
@@ -48,9 +53,11 @@ export async function listMyClaims(userId: string): Promise<MyClaim[]> {
     .from(benefitClaims)
     .innerJoin(benefitCategories, eq(benefitClaims.categoryId, benefitCategories.id))
     .where(eq(benefitClaims.userId, userId))
-    .orderBy(desc(benefitClaims.createdAt));
+    .orderBy(desc(benefitClaims.createdAt))
+    .limit(np.limit + 1) // fetch one extra to detect hasMore
+    .offset(np.offset);
 
-  return rows.map((r) => ({
+  const mapped = rows.map((r) => ({
     id: r.id,
     category: r.category,
     amount: r.amountPaise / 100,
@@ -67,4 +74,6 @@ export async function listMyClaims(userId: string): Promise<MyClaim[]> {
     createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
     canDelete: r.status === "pending_hr",
   }));
+
+  return buildPage(mapped, np);
 }
