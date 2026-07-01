@@ -102,6 +102,19 @@ export async function wireReportingLine(employeeEmail: string): Promise<void> {
     .where(eq(schema.users.email, employeeEmail));
 }
 
+/**
+ * KAN-52: the receipt-upload flow writes to the private `receipts` bucket, so it
+ * must exist. Idempotent — creates it if missing, tolerates "already exists".
+ * Arrangement only, via the service-role admin client. (Literal bucket name kept
+ * in sync with RECEIPTS_BUCKET in src/server/supabase/storage.ts, which can't be
+ * imported here — it's a `server-only` module.)
+ */
+export async function ensureReceiptsBucket(): Promise<void> {
+  const admin = supabaseAdmin();
+  const { error } = await admin.storage.createBucket("receipts", { public: false });
+  if (error && !/exist/i.test(error.message)) throw error;
+}
+
 export async function getUserIdByEmail(email: string): Promise<string> {
   const db = testDb();
   const [row] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)).limit(1);
