@@ -1,20 +1,16 @@
 import { test, expect } from "@playwright/test";
 
-test("dashboard renders the benefit wallet", async ({ page }) => {
-  await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: /Welcome back/ })).toBeVisible();
-  await expect(page.getByText("Sports")).toBeVisible();
-  await expect(page.getByText("Learning")).toBeVisible();
-});
-
-test("role switcher routes HR Head to the expense queue", async ({ page }) => {
-  await page.goto("/dashboard");
-  await page.getByRole("tab", { name: "HR Head" }).click();
-  await expect(page).toHaveURL(/\/expenses/);
-  await expect(page.getByRole("heading", { name: "Expense approval queue" })).toBeVisible();
-});
+// Basic app-is-alive checks. Role-specific flows have their own spec files
+// (auth.spec.ts, rbac-nav.spec.ts, etc.) — this file only checks the app boots
+// and the auth gate is in effect, without needing a signed-in session.
 
 test("login page shows the sign-in form", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByText("Login to your account")).toBeVisible();
+});
+
+test("an unauthenticated visitor is redirected to login, not the dashboard", async ({ page }) => {
+  await page.context().clearCookies();
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/login/);
 });
