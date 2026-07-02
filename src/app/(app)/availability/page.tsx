@@ -3,7 +3,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { requireAccess } from "@/server/auth/current-user";
 import { getTeamAvailability, type AvailabilityDay } from "@/server/manager/availability";
+import { getCapacitySummary, type CapacitySummary } from "@/server/manager/capacity-summary";
 import { WEEKDAY_NAMES } from "@/server/calendar";
+import { todayISO } from "@/lib/fy";
 import { cn } from "@/lib/cn";
 
 export const metadata = { title: "Team availability · SmartSense" };
@@ -14,6 +16,25 @@ function hrefFor(m: string | null, teamId: string): string | null {
   params.set("m", m);
   if (teamId) params.set("team", teamId);
   return `/availability?${params.toString()}`;
+}
+
+/** Href for selecting a specific day cell — keeps the current month/team, sets `date`. */
+function hrefForDate(month: string, teamId: string, date: string): string {
+  const params = new URLSearchParams();
+  params.set("m", month);
+  if (teamId) params.set("team", teamId);
+  params.set("date", date);
+  return `/availability?${params.toString()}`;
+}
+
+function formatDayLabel(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+}
+
+/** Half-day leave produces fractional counts (e.g. 0.5) — show one decimal only when needed. */
+function formatCount(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
 function MonthNavButton({ month, teamId, dir }: { month: string | null; teamId: string; dir: "prev" | "next" }) {
@@ -66,17 +87,80 @@ function dayBg(d: AvailabilityDay): string {
   return pctBgClass(d.availablePct);
 }
 
+/** KAN-76: % available / on-leave / WFH card for "today" or the clicked date. */
+function CapacitySummaryCard({ title, summary }: { title: string; summary: CapacitySummary }) {
+  const isWorking = summary.isWorkingDay && summary.availablePct !== null;
+  return (
+    <Card
+      role="group"
+      aria-label={`${title} capacity summary`}
+      className="flex flex-col gap-1.5 rounded-xl px-[18px] py-4"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12.5px] font-medium text-muted-foreground">{title}</span>
+        <span className="text-[11px] text-muted-foreground">{formatDayLabel(summary.date)}</span>
+      </div>
+      {isWorking ? (
+        <>
+          <div className="flex items-baseline gap-2">
+            <span className={cn("tabular text-2xl font-semibold tracking-[-0.01em]", pctTextClass(summary.availablePct!))}>
+              {summary.availablePct}%
+            </span>
+            <span className="text-[12.5px] text-muted-foreground">available</span>
+          </div>
+          <div className="flex gap-3 text-xs text-muted-foreground">
+            <span>{formatCount(summary.onLeaveCount)} on leave</span>
+            <span className="font-medium text-violet-600">{summary.wfhCount} WFH</span>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col gap-0.5 py-0.5">
+          <span className="text-base font-semibold text-muted-foreground">
+            {summary.holidayName || "Non-working day"}
+          </span>
+          <span className="text-xs text-muted-foreground">Excluded from the capacity calc</span>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export default async function AvailabilityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ m?: string; team?: string }>;
+  searchParams: Promise<{ m?: string; team?: string; date?: string }>;
 }) {
   const user = await requireAccess("/availability");
-  const { m, team } = await searchParams;
+  const { m, team, date } = await searchParams;
   const { weeks, month, monthLabel, prevMonth, nextMonth, thisMonth, fyLabel, headcount, teamId, teamName, teams } =
     await getTeamAvailability(user, m, team);
 
   const canSwitchTeams = teams.length > 1;
+  const todayIso = todayISO();
+
+  // KAN-76: capacity summary widget for "today" and whatever date is
+  // currently selected (a clicked day cell, via the `date` param). Both are
+  // shaped from AvailabilityDay rows getTeamAvailability already computed —
+  // no separate capacity calc here.
+  const inMonthDates = new Set(weeks.flatMap((w) => w.days.filter((d) => d.inMonth).map((d) => d.date)));
+  const requestedDate = date && inMonthDates.has(date) ? date : undefined;
+  const firstInMonthDate = weeks.flatMap((w) => w.days).find((d) => d.inMonth)?.date;
+  const selectedDate = requestedDate ?? (inMonthDates.has(todayIso) ? todayIso : firstInMonthDate);
+
+  let todaySummary: CapacitySummary | null = null;
+  if (headcount > 0) {
+    if (inMonthDates.has(todayIso)) {
+      todaySummary = getCapacitySummary(weeks, todayIso);
+    } else if (thisMonth) {
+      // Viewing a month other than the current one — fetch just the current
+      // month's view (same team) so "today" is always available.
+      const todayView = await getTeamAvailability(user, thisMonth, teamId);
+      todaySummary = getCapacitySummary(todayView.weeks, todayIso);
+    }
+  }
+  const isTodaySelected = selectedDate === todayIso;
+  const selectedSummary =
+    headcount > 0 && selectedDate ? (isTodaySelected ? todaySummary : getCapacitySummary(weeks, selectedDate)) : null;
 
   return (
     <div className="flex flex-col gap-[18px]">
@@ -127,6 +211,15 @@ export default async function AvailabilityPage({
         </div>
       )}
 
+      {headcount > 0 && todaySummary && (
+        <div className={cn("grid gap-3.5", !isTodaySelected && selectedSummary ? "grid-cols-2 sm:max-w-xl" : "grid-cols-1 sm:max-w-[280px]")}>
+          <CapacitySummaryCard title="Today" summary={todaySummary} />
+          {!isTodaySelected && selectedSummary && (
+            <CapacitySummaryCard title="Selected day" summary={selectedSummary} />
+          )}
+        </div>
+      )}
+
       {headcount === 0 ? (
         <Card className="flex flex-col items-center gap-1 px-6 py-14 text-center">
           <p className="text-sm font-medium">No direct reports on this team yet.</p>
@@ -151,44 +244,66 @@ export default async function AvailabilityPage({
 
           {weeks.map((wk, wi) => (
             <div key={wi} className="grid grid-cols-7 border-b last:border-b-0">
-              {wk.days.map((d, di) => (
-                <div
-                  key={di}
-                  className={cn("flex min-h-24 flex-col gap-1.5 border-r px-[9px] py-2 last:border-r-0", dayBg(d))}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={cn(
-                        "text-xs font-medium",
-                        !d.inMonth ? "text-muted-foreground" : d.isToday ? "text-blue-600" : "text-foreground",
-                      )}
-                    >
-                      {d.day}
-                    </span>
-                    {d.isHoliday && (
-                      <span className="text-[9.5px] font-semibold tracking-[0.03em] text-amber-500 uppercase">
-                        {d.holidayName}
+              {wk.days.map((d, di) => {
+                const cellClass = cn(
+                  "flex min-h-24 flex-col gap-1.5 border-r px-[9px] py-2 last:border-r-0",
+                  dayBg(d),
+                  d.inMonth && "transition-colors hover:bg-accent/40",
+                  d.date === selectedDate && "ring-2 ring-inset ring-blue-600",
+                );
+                const cellBody = (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={cn(
+                          "text-xs font-medium",
+                          !d.inMonth ? "text-muted-foreground" : d.isToday ? "text-blue-600" : "text-foreground",
+                        )}
+                      >
+                        {d.day}
                       </span>
-                    )}
-                  </div>
-
-                  {d.inMonth && !d.isWeekend && !d.isHoliday && d.availablePct !== null && (
-                    <>
-                      <span className={cn("text-[15px] font-semibold leading-none", pctTextClass(d.availablePct))}>
-                        {d.availablePct}%
-                      </span>
-                      <span className="text-[10.5px] text-muted-foreground">
-                        {d.availableCount}/{d.headcount} available
-                      </span>
-                      {d.onWfh > 0 && (
-                        <span className="text-[10.5px] font-medium text-violet-600">
-                          {d.onWfh} WFH
+                      {d.isHoliday && (
+                        <span className="text-[9.5px] font-semibold tracking-[0.03em] text-amber-500 uppercase">
+                          {d.holidayName}
                         </span>
                       )}
-                    </>
-                  )}
-                </div>
-              ))}
+                    </div>
+
+                    {d.inMonth && !d.isWeekend && !d.isHoliday && d.availablePct !== null && (
+                      <>
+                        <span className={cn("text-[15px] font-semibold leading-none", pctTextClass(d.availablePct))}>
+                          {d.availablePct}%
+                        </span>
+                        <span className="text-[10.5px] text-muted-foreground">
+                          {d.availableCount}/{d.headcount} available
+                        </span>
+                        {d.onWfh > 0 && (
+                          <span className="text-[10.5px] font-medium text-violet-600">
+                            {d.onWfh} WFH
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </>
+                );
+
+                // KAN-76: in-month cells are clickable — select the day to
+                // populate the "Selected day" capacity summary card above.
+                return d.inMonth ? (
+                  <Link
+                    key={di}
+                    href={hrefForDate(month, teamId, d.date)}
+                    aria-current={d.date === selectedDate ? "date" : undefined}
+                    className={cn(cellClass, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+                  >
+                    {cellBody}
+                  </Link>
+                ) : (
+                  <div key={di} className={cellClass}>
+                    {cellBody}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </Card>

@@ -9,6 +9,10 @@
 // across every spec file on this live DB, so their headcount/% aren't
 // deterministic here — this spec creates its own fresh Team Lead(s) with a
 // small, test-controlled headcount instead, so the exact % can be asserted.
+//
+// KAN-76 adds coverage for the capacity summary widget (Today / Selected day
+// cards) that sits above the same heatmap, reusing this spec's fixture
+// rather than a parallel spec file.
 import { test, expect, type Page } from "@playwright/test";
 import { signup, login, uniqueEmail, uniqueName } from "./utils/auth-ui";
 import { FIXED_USERS, TEST_PASSWORD, wireTeamLead, getUserIdByEmail } from "./utils/fixtures";
@@ -17,6 +21,25 @@ import { applyLeave } from "./utils/leave-ui";
 
 const PASSWORD = "Avail-Pass1";
 const PM = FIXED_USERS.projectManager;
+
+/**
+ * First Saturday in `month` (`YYYY-MM`) other than `avoid` — always exists,
+ * used for the non-working-day assertion. `avoid` lets the caller rule out
+ * "today" so the page renders distinct Today/Selected-day cards instead of
+ * collapsing to a single ambiguous "Non-working day" match.
+ */
+function firstSaturdayOf(month: string, avoid?: string): string {
+  const [y, m] = month.split("-").map(Number);
+  for (let day = 1; day <= 31; day++) {
+    const d = new Date(y, m - 1, day);
+    if (d.getMonth() !== m - 1) break; // ran past the end of the month
+    if (d.getDay() === 6) {
+      const iso = `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      if (iso !== avoid) return iso;
+    }
+  }
+  throw new Error(`No Saturday (other than ${avoid}) found in ${month}`);
+}
 
 function approvalCardFor(page: Page, employeeName: string) {
   return page
@@ -89,6 +112,27 @@ test("a day with an approved leave request renders the reduced % available in th
   await expect(pctFigure).toBeVisible();
   await expect(pctFigure).toHaveClass(/text-amber-600/);
   await expect(page.getByText("1/2 available")).toBeVisible();
+
+  // KAN-76: selecting `leaveDay` via ?date= shows the same 50% figure in the
+  // "Selected day" capacity summary card (scoped to the group, since the
+  // heatmap grid cell for that same date also renders "50%").
+  await page.goto(`/availability?m=${month}&date=${leaveDay}`);
+  await expect(page.getByRole("group", { name: "Today capacity summary" })).toBeVisible();
+  const selectedCard = page.getByRole("group", { name: "Selected day capacity summary" });
+  await expect(selectedCard).toBeVisible();
+  const selectedPct = selectedCard.getByText("50%", { exact: true });
+  await expect(selectedPct).toBeVisible();
+  await expect(selectedPct).toHaveClass(/text-amber-600/);
+  await expect(selectedCard.getByText("1 on leave")).toBeVisible();
+
+  // A weekend in the same month is flagged non-working rather than given a
+  // misleading % (BR1: exclude weekends/holidays from the capacity calc).
+  // `avoid` rules out "today" so Today/Selected-day stay distinct cards.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const weekendDay = firstSaturdayOf(month, todayIso);
+  await page.goto(`/availability?m=${month}&date=${weekendDay}`);
+  await expect(page.getByRole("group", { name: "Selected day capacity summary" }).getByText("Non-working day")).toBeVisible();
+
   await page.getByRole("button", { name: "Sign out" }).click();
 
   // TL B has a single, unaffected report — confirms the heatmap is scoped to
