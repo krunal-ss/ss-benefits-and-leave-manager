@@ -29,6 +29,13 @@
       "when": 1782880403485,
       "tag": "0003_workable_colossus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782982002937,
+      "tag": "0004_woozy_dreadnoughts",
+      "breakpoints": true
     }
   ]
 }
