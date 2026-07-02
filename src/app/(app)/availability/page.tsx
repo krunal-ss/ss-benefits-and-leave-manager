@@ -91,7 +91,11 @@ function dayBg(d: AvailabilityDay): string {
 function CapacitySummaryCard({ title, summary }: { title: string; summary: CapacitySummary }) {
   const isWorking = summary.isWorkingDay && summary.availablePct !== null;
   return (
-    <Card className="flex flex-col gap-1.5 rounded-xl px-[18px] py-4">
+    <Card
+      role="group"
+      aria-label={`${title} capacity summary`}
+      className="flex flex-col gap-1.5 rounded-xl px-[18px] py-4"
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-[12.5px] font-medium text-muted-foreground">{title}</span>
         <span className="text-[11px] text-muted-foreground">{formatDayLabel(summary.date)}</span>
