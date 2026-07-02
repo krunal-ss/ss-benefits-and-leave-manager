@@ -2,14 +2,50 @@ import "server-only";
 // Team calendar: leave / WFH / holiday events for the current month, built from
 // real DB data. Scope follows the reporting line — managers see their reports,
 // HR/admin see the whole org. `buildCalendar` stays pure + deterministic.
-import { and, eq, gte, lte, notInArray, or } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, notInArray, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "@/db";
-import { holidays as holidaysTable, leaveRequests, leaveTypes, users, type User } from "@/db/schema";
+import { approvals, holidays as holidaysTable, leaveRequests, leaveTypes, users, type User } from "@/db/schema";
 import { currentFy, todayISO } from "@/lib/fy";
 
 export type EventKind = "leave" | "wfh";
 
 export const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const STATUS_LABEL: Record<string, string> = {
+  applied: "Applied",
+  pending_l1: "Pending L1",
+  pending_l2: "Pending L2",
+  approved: "Approved",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+};
+
+export type EventApproval = {
+  level: 1 | 2;
+  approverName: string;
+  decision: "approved" | "rejected";
+  reason: string | null;
+  createdAt: string; // ISO timestamp
+};
+
+export type CalendarEvent = {
+  id: string; // leave_requests.id — stable key for the detail view
+  kind: EventKind;
+  label: string; // short in-cell label, e.g. "Kabir · WFH"
+  employeeName: string;
+  typeLabel: string; // "Work from home" | "Casual Leave" | ...
+  from: string;
+  to: string;
+  halfDay: boolean;
+  days: number;
+  reason: string | null;
+  status: string; // raw enum value
+  statusLabel: string;
+  teamLeadName: string | null;
+  projectManagerName: string | null;
+  approvals: EventApproval[];
+};
 
 export type DayCell = {
   day: number;
@@ -18,7 +54,7 @@ export type DayCell = {
   isHoliday: boolean;
   isToday: boolean;
   holidayName: string;
-  events: { kind: EventKind; label: string }[];
+  events: CalendarEvent[];
 };
 
 export type CalWeek = { days: DayCell[] };
@@ -27,7 +63,7 @@ type BuildInput = {
   year: number;
   month0: number; // 0-based month
   today: string; // ISO yyyy-mm-dd
-  events: Record<string, { kind: EventKind; label: string }[]>;
+  events: Record<string, CalendarEvent[]>;
   holidays: Record<string, string>;
 };
 
@@ -139,17 +175,30 @@ export async function getTeamCalendar(user: User, monthParam?: string): Promise<
     ? or(eq(users.teamLeadId, user.id), eq(users.projectManagerId, user.id))
     : undefined;
 
+  const tl = alias(users, "team_lead");
+  const pm = alias(users, "project_manager");
+
   const rows = await db
     .select({
+      id: leaveRequests.id,
       name: users.name,
       kind: leaveRequests.kind,
       from: leaveRequests.fromDate,
       to: leaveRequests.toDate,
+      halfDay: leaveRequests.halfDay,
+      days: leaveRequests.workingDays,
+      reason: leaveRequests.reason,
+      status: leaveRequests.status,
       code: leaveTypes.code,
+      typeName: leaveTypes.name,
+      teamLeadName: tl.name,
+      projectManagerName: pm.name,
     })
     .from(leaveRequests)
     .innerJoin(users, eq(leaveRequests.userId, users.id))
     .leftJoin(leaveTypes, eq(leaveRequests.leaveTypeId, leaveTypes.id))
+    .leftJoin(tl, eq(leaveRequests.teamLeadId, tl.id))
+    .leftJoin(pm, eq(leaveRequests.projectManagerId, pm.id))
     .where(
       and(
         lte(leaveRequests.fromDate, monthEnd),
@@ -159,15 +208,59 @@ export async function getTeamCalendar(user: User, monthParam?: string): Promise<
       ),
     );
 
+  const requestIds = rows.map((r) => r.id);
+  const approvalRows = requestIds.length
+    ? await db
+        .select({
+          requestId: approvals.requestId,
+          level: approvals.level,
+          decision: approvals.decision,
+          reason: approvals.reason,
+          createdAt: approvals.createdAt,
+          approverName: users.name,
+        })
+        .from(approvals)
+        .innerJoin(users, eq(approvals.approverId, users.id))
+        .where(inArray(approvals.requestId, requestIds))
+    : [];
+  const approvalsByRequest = new Map<string, EventApproval[]>();
+  for (const a of approvalRows) {
+    const list = approvalsByRequest.get(a.requestId) ?? [];
+    list.push({
+      level: a.level as 1 | 2,
+      approverName: a.approverName,
+      decision: a.decision,
+      reason: a.reason,
+      createdAt: a.createdAt instanceof Date ? a.createdAt.toISOString() : String(a.createdAt),
+    });
+    approvalsByRequest.set(a.requestId, list);
+  }
+
   const events: BuildInput["events"] = {};
   for (const r of rows) {
     const first = r.name.split(" ")[0];
     const code = r.kind === "wfh" ? "WFH" : (r.code ?? "Leave");
-    const label = `${first} · ${code}`;
+    const event: CalendarEvent = {
+      id: r.id,
+      kind: r.kind,
+      label: `${first} · ${code}`,
+      employeeName: r.name,
+      typeLabel: r.kind === "wfh" ? "Work from home" : (r.typeName ?? "Leave"),
+      from: r.from,
+      to: r.to,
+      halfDay: r.halfDay,
+      days: Number(r.days),
+      reason: r.reason,
+      status: r.status,
+      statusLabel: STATUS_LABEL[r.status] ?? r.status,
+      teamLeadName: r.teamLeadName,
+      projectManagerName: r.projectManagerName,
+      approvals: (approvalsByRequest.get(r.id) ?? []).sort((a, b) => a.level - b.level),
+    };
     let d = r.from < monthStart ? monthStart : r.from;
     const end = r.to > monthEnd ? monthEnd : r.to;
     while (d <= end) {
-      (events[d] ??= []).push({ kind: r.kind, label });
+      (events[d] ??= []).push(event);
       d = nextISO(d);
     }
   }

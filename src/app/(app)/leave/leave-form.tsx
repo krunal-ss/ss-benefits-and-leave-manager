@@ -23,7 +23,10 @@ const EMPTY = {
 };
 
 const selectCls =
-  "h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-destructive aria-invalid:focus-visible:ring-destructive/30";
+
+const dateInputCls =
+  "h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-destructive aria-invalid:focus-visible:ring-destructive/30";
 
 export function LeaveForm({
   balances,
@@ -68,6 +71,10 @@ export function LeaveForm({
   // ISO yyyy-mm-dd strings compare lexicographically, so range overlap is a
   // plain string comparison: existing.from <= new.to AND existing.to >= new.from.
   const reasonMissing = leave.reason.trim().length < 3;
+  const fromMissing = leave.from.trim().length === 0;
+  const toMissing = leave.to.trim().length === 0;
+  const teamLeadMissing = !leave.teamLeadId;
+  const projectManagerMissing = !leave.projectManagerId;
   const overlaps =
     wd > 0 && existingRanges.some((r) => r.from <= leave.to && r.to >= leave.from);
 
@@ -164,22 +171,36 @@ export function LeaveForm({
 
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <Label>From</Label>
+              <Label>
+                From <span className="text-destructive">*</span>
+              </Label>
               <input
                 type="date"
                 value={leave.from}
                 onChange={(e) => set({ from: e.target.value })}
-                className="h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-invalid={submitTried && fromMissing}
+                aria-required
+                className={dateInputCls}
               />
+              {submitTried && fromMissing && (
+                <p className="mt-1.5 text-[12px] text-destructive">A from date is required.</p>
+              )}
             </div>
             <div>
-              <Label>To</Label>
+              <Label>
+                To <span className="text-destructive">*</span>
+              </Label>
               <input
                 type="date"
                 value={leave.to}
                 onChange={(e) => set({ to: e.target.value })}
-                className="h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-invalid={submitTried && toMissing}
+                aria-required
+                className={dateInputCls}
               />
+              {submitTried && toMissing && (
+                <p className="mt-1.5 text-[12px] text-destructive">A to date is required.</p>
+              )}
             </div>
           </div>
 
@@ -206,10 +227,14 @@ export function LeaveForm({
 
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <Label>Team Lead (L1)</Label>
+              <Label>
+                Team Lead (L1) <span className="text-destructive">*</span>
+              </Label>
               <select
                 value={leave.teamLeadId}
                 onChange={(e) => set({ teamLeadId: e.target.value })}
+                aria-invalid={submitTried && teamLeadMissing}
+                aria-required
                 className={selectCls}
               >
                 <option value="">Select a Team Lead…</option>
@@ -219,12 +244,19 @@ export function LeaveForm({
                   </option>
                 ))}
               </select>
+              {submitTried && teamLeadMissing && (
+                <p className="mt-1.5 text-[12px] text-destructive">A Team Lead is required.</p>
+              )}
             </div>
             <div>
-              <Label>Project Manager (L2)</Label>
+              <Label>
+                Project Manager (L2) <span className="text-destructive">*</span>
+              </Label>
               <select
                 value={leave.projectManagerId}
                 onChange={(e) => set({ projectManagerId: e.target.value })}
+                aria-invalid={submitTried && projectManagerMissing}
+                aria-required
                 className={selectCls}
               >
                 <option value="">Select a Project Manager…</option>
@@ -234,6 +266,9 @@ export function LeaveForm({
                   </option>
                 ))}
               </select>
+              {submitTried && projectManagerMissing && (
+                <p className="mt-1.5 text-[12px] text-destructive">A Project Manager is required.</p>
+              )}
             </div>
           </div>
 

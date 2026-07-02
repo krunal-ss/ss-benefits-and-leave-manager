@@ -45,7 +45,11 @@ export function SubmitForm({
   const [variant, setVariant] = useState<Variant>("single");
   const [result, setResult] = useState<Result | null>(null);
   const [pending, startTransition] = useTransition();
+  const [submitTried, setSubmitTried] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const descriptionMissing = claim.vendor.trim().length === 0;
+  const fileMissing = !file;
 
   const avail = category === "sports" ? sportsAvail : learningAvail;
   const cap = category === "sports" ? sportsCap : learningCap;
@@ -108,6 +112,8 @@ export function SubmitForm({
         : `${formatINR(avail)} available in ${label}`;
 
   function submit() {
+    setSubmitTried(true);
+    if (descriptionMissing || fileMissing) return;
     startTransition(async () => {
       const fd = new FormData();
       fd.set("category", category);
@@ -134,6 +140,7 @@ export function SubmitForm({
     setClaim(EMPTY);
     removeFile();
     setResult(null);
+    setSubmitTried(false);
   }
 
   const maxW = variant === "split" ? "1000px" : "680px";
@@ -208,16 +215,25 @@ export function SubmitForm({
           </div>
 
           <div>
-            <Label>Vendor / description</Label>
+            <Label>
+              Vendor / description <span className="text-destructive">*</span>
+            </Label>
             <Input
               value={claim.vendor}
               onChange={(e) => setField({ vendor: e.target.value })}
               placeholder="e.g. Cult.fit annual membership"
+              aria-invalid={submitTried && descriptionMissing}
+              aria-required
             />
+            {submitTried && descriptionMissing && (
+              <p className="mt-1.5 text-[12px] text-destructive">A description is required.</p>
+            )}
           </div>
 
           <div>
-            <Label>Supporting document</Label>
+            <Label>
+              Supporting document <span className="text-destructive">*</span>
+            </Label>
             <input
               ref={fileInputRef}
               type="file"
@@ -255,12 +271,22 @@ export function SubmitForm({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex w-full cursor-pointer flex-col items-center gap-[7px] rounded-[10px] border-[1.5px] border-dashed bg-background p-[22px] text-muted-foreground hover:bg-accent"
+                className={cn(
+                  "flex w-full cursor-pointer flex-col items-center gap-[7px] rounded-[10px] border-[1.5px] border-dashed p-[22px] text-muted-foreground",
+                  submitTried && fileMissing
+                    ? "border-destructive bg-destructive/5 hover:bg-destructive/10"
+                    : "bg-background hover:bg-accent",
+                )}
               >
-                <Upload className="size-5" strokeWidth={2} />
-                <span className="text-[13px] font-medium text-foreground">Click to upload receipt</span>
+                <Upload className={cn("size-5", submitTried && fileMissing && "text-destructive")} strokeWidth={2} />
+                <span className={cn("text-[13px] font-medium", submitTried && fileMissing ? "text-destructive" : "text-foreground")}>
+                  Click to upload receipt
+                </span>
                 <span className="text-[11.5px]">PDF, JPG or PNG · up to 10 MB</span>
               </button>
+            )}
+            {submitTried && fileMissing && (
+              <p className="mt-1.5 text-[12px] text-destructive">A supporting document is required.</p>
             )}
           </div>
 
