@@ -11,6 +11,7 @@ import { sendEmail } from "@/server/email";
 import { splitAgainstBalance } from "@/server/leave/accrual";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { decideRouting } from "@/server/policy/approval-policy"; // KAN-46
+import { checkStaffingWarnings, type StaffingWarning } from "@/server/manager/staffing-guard"; // KAN-77
 import { workingDaysBetween } from "@/lib/working-days";
 import { currentFy } from "@/lib/fy";
 
@@ -32,6 +33,8 @@ export type LeaveResult = {
   lopDays?: number;
   /** KAN-46 — set when the policy auto-approved a short WFH request (no approver step). */
   autoApproved?: boolean;
+  /** KAN-77 — advisory only; never blocks submission. Empty/omitted when nothing is flagged. */
+  warnings?: StaffingWarning[];
 };
 
 export async function applyLeaveAction(input: z.input<typeof schema>): Promise<LeaveResult> {
@@ -120,6 +123,22 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
   const routing = decideRouting({ kind, deductsBalance, workingDays: days, policy });
   const autoApproved = routing.outcome === "auto_approved";
 
+  // KAN-77 — advisory-only threshold/critical-role check. Never blocks the
+  // submission (the request is inserted below regardless); the applicant just
+  // sees the warning alongside confirmation. Not yet persisted, so the guard
+  // simulates this request's own impact on top of the current DB state.
+  const warnings = await checkStaffingWarnings({
+    requesterId: user.id,
+    teamLeadId: user.teamLeadId,
+    department: user.department,
+    isCriticalRole: user.isCriticalRole,
+    kind,
+    fromDate: parsed.data.from,
+    toDate: parsed.data.to,
+    halfDay: parsed.data.halfDay,
+    persisted: false,
+  });
+
   const [req] = await db
     .insert(leaveRequests)
     .values({
@@ -177,7 +196,7 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
     revalidatePath("/dashboard");
     revalidatePath("/leave");
     revalidatePath("/approvals");
-    return { ok: true, workingDays: days, lopDays, autoApproved: true };
+    return { ok: true, workingDays: days, lopDays, autoApproved: true, warnings };
   }
 
   // Notify the chosen Team Lead that a request awaits their L1 decision (CC'd).
@@ -220,5 +239,45 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
   revalidatePath("/dashboard");
   revalidatePath("/leave");
   revalidatePath("/approvals");
-  return { ok: true, workingDays: days, lopDays };
+  return { ok: true, workingDays: days, lopDays, warnings };
+}
+
+const previewSchema = z.object({
+  requestType: z.enum(["CL", "SL", "EL", "LOP", "WFH"]),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  halfDay: z.boolean(),
+});
+
+export type PreviewWarningsResult = { warnings: StaffingWarning[] };
+
+/**
+ * KAN-77 — read-only preview of the staffing guard for the leave/WFH apply
+ * form, so the applicant sees the warning WHILE filling the form (not just
+ * after submitting). Never writes anything; `applyLeaveAction` runs the same
+ * check again at actual submit time (defense in depth against a stale preview).
+ */
+export async function previewLeaveWarningsAction(input: z.input<typeof previewSchema>): Promise<PreviewWarningsResult> {
+  const parsed = previewSchema.safeParse(input);
+  if (!parsed.success) return { warnings: [] };
+
+  const user = await requireUser();
+  assertCan(user.role, "applyLeave");
+
+  const { days } = workingDaysBetween(parsed.data.from, parsed.data.to, parsed.data.halfDay);
+  if (days <= 0) return { warnings: [] };
+
+  const kind = parsed.data.requestType === "WFH" ? "wfh" : "leave";
+  const warnings = await checkStaffingWarnings({
+    requesterId: user.id,
+    teamLeadId: user.teamLeadId,
+    department: user.department,
+    isCriticalRole: user.isCriticalRole,
+    kind,
+    fromDate: parsed.data.from,
+    toDate: parsed.data.to,
+    halfDay: parsed.data.halfDay,
+    persisted: false,
+  });
+  return { warnings };
 }

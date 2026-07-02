@@ -9,6 +9,7 @@ import { requireUser } from "@/server/auth/current-user";
 import { assertCan, ForbiddenError } from "@/server/auth/rbac";
 import { sendEmail } from "@/server/email";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
+import { checkStaffingWarnings, type StaffingWarning } from "@/server/manager/staffing-guard"; // KAN-77
 import { currentFy } from "@/lib/fy";
 
 const schema = z.object({
@@ -17,7 +18,12 @@ const schema = z.object({
   reason: z.string().optional(),
 });
 
-export type DecisionResult = { ok: boolean; message: string };
+export type DecisionResult = {
+  ok: boolean;
+  message: string;
+  /** KAN-77 — advisory only; never blocks the decision. Empty/omitted when nothing is flagged. */
+  warnings?: StaffingWarning[];
+};
 
 /**
  * Team Lead (L1) or Project Manager (L2) decides a leave/WFH request.
@@ -41,10 +47,19 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
       status: leaveRequests.status,
       leaveTypeId: leaveRequests.leaveTypeId,
       workingDays: leaveRequests.workingDays,
+      fromDate: leaveRequests.fromDate,
+      toDate: leaveRequests.toDate,
+      halfDay: leaveRequests.halfDay,
       teamLeadId: leaveRequests.teamLeadId,
       projectManagerId: leaveRequests.projectManagerId,
       applicantName: users.name,
       applicantEmail: users.email,
+      // KAN-77 — the applicant's own reporting line/department/critical-role
+      // flag, needed by the staffing guard ("team" = their real reports-to-TL
+      // siblings, independent of which TL this particular request routed to).
+      applicantTeamLeadId: users.teamLeadId,
+      applicantDepartment: users.department,
+      applicantIsCriticalRole: users.isCriticalRole,
     })
     .from(leaveRequests)
     .innerJoin(users, eq(leaveRequests.userId, users.id))
@@ -90,6 +105,25 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
   const advancesToL2 = approve && level === 1 && !parallel;
   const nextStatus = !approve ? "rejected" : advancesToL2 ? "pending_l2" : "approved";
   const finalApproval = approve && !advancesToL2;
+
+  // KAN-77 — advisory-only threshold/critical-role check, surfaced to the
+  // approver alongside the decision outcome. Only relevant when approving
+  // (rejecting keeps the status quo); never blocks the decision either way.
+  // The row already exists in `leaveRequests` with a non-terminal status, so
+  // it's already reflected in the DB availability numbers — no simulation needed.
+  const warnings = approve
+    ? await checkStaffingWarnings({
+        requesterId: row.userId,
+        teamLeadId: row.applicantTeamLeadId,
+        department: row.applicantDepartment,
+        isCriticalRole: row.applicantIsCriticalRole,
+        kind: row.kind,
+        fromDate: row.fromDate,
+        toDate: row.toDate,
+        halfDay: row.halfDay,
+        persisted: true,
+      })
+    : [];
 
   await db.transaction(async (tx) => {
     await tx.insert(approvals).values({ requestId, level, approverId: me.id, decision, reason: reason ?? null });
@@ -204,5 +238,6 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
       : advancesToL2
         ? "Approved at L1 — forwarded to Project Manager"
         : "Fully approved — calendar updated, applicant notified",
+    warnings,
   };
 }
