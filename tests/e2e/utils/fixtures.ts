@@ -103,6 +103,18 @@ export async function wireReportingLine(employeeEmail: string): Promise<void> {
 }
 
 /**
+ * KAN-75: point an employee's reporting line at an arbitrary Team Lead/Project
+ * Manager id (not necessarily the fixed one) — used by the availability-heatmap
+ * tests, which need a manager with a small, test-controlled headcount rather
+ * than the shared fixed Team Lead (whose reports accumulate across every spec
+ * file/run against the live DB, making an exact % assertion impossible).
+ */
+export async function wireTeamLead(employeeEmail: string, teamLeadId: string): Promise<void> {
+  const db = testDb();
+  await db.update(schema.users).set({ teamLeadId }).where(eq(schema.users.email, employeeEmail));
+}
+
+/**
  * KAN-52: the receipt-upload flow writes to the private `receipts` bucket, so it
  * must exist. Idempotent — creates it if missing, tolerates "already exists".
  * Arrangement only, via the service-role admin client. (Literal bucket name kept
