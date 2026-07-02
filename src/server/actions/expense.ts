@@ -21,7 +21,7 @@ const schema = z.object({
   category: z.enum(["sports", "learning"]),
   amountRupees: z.number().positive("Enter an amount."),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date."),
-  vendor: z.string().default(""),
+  vendor: z.string().trim().min(1, "Description is required."),
 });
 
 export type CheckOutcome = { label: string; ok: boolean; detail: string };
@@ -51,7 +51,10 @@ export async function submitExpenseAction(formData: FormData): Promise<SubmitRes
 
   const file = formData.get("receipt");
   const hasFile = file instanceof File && file.size > 0;
-  if (hasFile && !isAllowedReceiptType(file.type)) {
+  if (!hasFile) {
+    return { ok: false, error: "A supporting document is required." };
+  }
+  if (!isAllowedReceiptType(file.type)) {
     return { ok: false, error: "Unsupported file type — upload a PDF, JPG, or PNG." };
   }
 
