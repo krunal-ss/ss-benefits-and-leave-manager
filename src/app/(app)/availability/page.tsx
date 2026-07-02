@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import { requireAccess } from "@/server/auth/current-user";
 import { getTeamAvailability, type AvailabilityDay } from "@/server/manager/availability";
 import { getCapacitySummary, type CapacitySummary } from "@/server/manager/capacity-summary";
+import { getCapacityForecast } from "@/server/manager/capacity-forecast";
+import { CapacityForecastChart } from "./capacity-forecast-chart";
 import { WEEKDAY_NAMES } from "@/server/calendar";
 import { todayISO } from "@/lib/fy";
 import { cn } from "@/lib/cn";
@@ -132,8 +134,14 @@ export default async function AvailabilityPage({
 }) {
   const user = await requireAccess("/availability");
   const { m, team, date } = await searchParams;
+  // KAN-79: the forecast is independent of the month grid (always a rolling
+  // window starting today) — fetched alongside it rather than blocking on it.
+  const [availability, forecast] = await Promise.all([
+    getTeamAvailability(user, m, team),
+    getCapacityForecast(user, team),
+  ]);
   const { weeks, month, monthLabel, prevMonth, nextMonth, thisMonth, fyLabel, headcount, teamId, teamName, teams } =
-    await getTeamAvailability(user, m, team);
+    availability;
 
   const canSwitchTeams = teams.length > 1;
   const todayIso = todayISO();
@@ -218,6 +226,19 @@ export default async function AvailabilityPage({
             <CapacitySummaryCard title="Selected day" summary={selectedSummary} />
           )}
         </div>
+      )}
+
+      {forecast.headcount > 0 && forecast.points.length > 0 && (
+        <Card className="flex flex-col gap-3 rounded-xl px-[18px] py-4">
+          <div>
+            <h2 className="text-[15px] font-semibold tracking-[-0.01em]">Capacity forecast</h2>
+            <p className="text-xs text-muted-foreground">
+              Next {forecast.windowDays} days ({formatDayLabel(forecast.startDate)} – {formatDayLabel(forecast.endDate)}) for{" "}
+              {forecast.teamName || "the team"} — plan around known future gaps before they&apos;re confirmed.
+            </p>
+          </div>
+          <CapacityForecastChart points={forecast.points} />
+        </Card>
       )}
 
       {headcount === 0 ? (
