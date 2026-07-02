@@ -105,15 +105,68 @@ export type RangeDayAvailability = {
   holidayName: string;
   isWorkingDay: boolean;
   headcount: number;
-  /** Unavailable units from leave (approved or pending); half-day = 0.5. */
+  /** Unavailable units from leave (approved OR pending); half-day = 0.5. */
   onLeave: number;
+  /** Unavailable units from APPROVED leave only (a subset of `onLeave`) — KAN-79. */
+  onLeaveApproved: number;
   /** Count of reports with any WFH that day — available, shown for context only. */
   onWfh: number;
   /** headcount - onLeave, floored at 0. WFH does not reduce this. */
   availableCount: number;
   /** Rounded 0-100, or null when not a working day / no headcount. */
   availablePct: number | null;
+  /** headcount - onLeaveApproved, floored at 0 — the "confirmed" figure, ignoring pending requests (KAN-79). */
+  availableCountApproved: number;
+  /** Rounded 0-100 confirmed-only figure, or null when not a working day / no headcount (KAN-79). */
+  availablePctApproved: number | null;
 };
+
+type DayUserUnit = { kind: "leave" | "wfh"; unit: number };
+
+/**
+ * Reduce a set of (possibly overlapping) leave/WFH rows into one winning
+ * per-user-per-day entry: leave takes precedence over WFH, and the larger
+ * unit wins when the same kind overlaps twice for the same user/day. Shared
+ * by the combined (approved+pending) and approved-only passes in
+ * `getAvailabilityForRange` so the precedence rule lives in exactly one
+ * place.
+ */
+function buildDayUserUnitMap(
+  rows: { userId: string; kind: "leave" | "wfh"; from: string; to: string; halfDay: boolean }[],
+  fromDate: string,
+  toDate: string,
+): Map<string, Map<string, DayUserUnit>> {
+  const dayUserUnit = new Map<string, Map<string, DayUserUnit>>();
+  for (const r of rows) {
+    const unit = r.halfDay ? 0.5 : 1;
+    let d = r.from < fromDate ? fromDate : r.from;
+    const end = r.to > toDate ? toDate : r.to;
+    while (d <= end) {
+      const byUser = dayUserUnit.get(d) ?? new Map();
+      const existing = byUser.get(r.userId);
+      // If a person somehow has overlapping requests the same day, leave
+      // (unavailable) takes precedence over WFH, and we keep the larger unit.
+      if (!existing || (r.kind === "leave" && existing.kind !== "leave") || (r.kind === existing.kind && unit > existing.unit)) {
+        byUser.set(r.userId, { kind: r.kind, unit });
+      }
+      dayUserUnit.set(d, byUser);
+      d = nextISO(d);
+    }
+  }
+  return dayUserUnit;
+}
+
+function sumLeaveUnits(byUser: Map<string, DayUserUnit> | undefined): { onLeave: number; onWfh: number } {
+  let onLeave = 0;
+  let onWfh = 0;
+  if (byUser) {
+    for (const { kind, unit } of byUser.values()) {
+      if (kind === "leave") onLeave += unit;
+      else onWfh += 1;
+    }
+  }
+  return { onLeave, onWfh };
+}
 
 /**
  * Per-day availability for an arbitrary inclusive date range — the same
@@ -124,6 +177,12 @@ export type RangeDayAvailability = {
  * other set of user ids that define the "team" being checked). Both
  * `getTeamAvailability` (per-month) and the KAN-77 staffing guard (arbitrary
  * request ranges) build on this single day-level calculation.
+ *
+ * KAN-79: also splits out an APPROVED-only figure (`onLeaveApproved` /
+ * `availableCountApproved` / `availablePctApproved`) alongside the existing
+ * combined approved+pending figures, so the capacity forecast can show a
+ * "confirmed" series distinct from an "at-risk if pending gets approved"
+ * series without a second day-loop.
  */
 export async function getAvailabilityForRange(
   reportIds: string[],
@@ -134,7 +193,8 @@ export async function getAvailabilityForRange(
   const headcount = reportIds.length;
   if (fromDate > toDate) return [];
 
-  const dayUserUnit = new Map<string, Map<string, { kind: "leave" | "wfh"; unit: number }>>();
+  let dayUserUnitAll = new Map<string, Map<string, DayUserUnit>>();
+  let dayUserUnitApproved = new Map<string, Map<string, DayUserUnit>>();
   if (headcount > 0) {
     const rows = await db
       .select({
@@ -143,6 +203,7 @@ export async function getAvailabilityForRange(
         from: leaveRequests.fromDate,
         to: leaveRequests.toDate,
         halfDay: leaveRequests.halfDay,
+        status: leaveRequests.status,
       })
       .from(leaveRequests)
       .where(
@@ -154,22 +215,12 @@ export async function getAvailabilityForRange(
         ),
       );
 
-    for (const r of rows) {
-      const unit = r.halfDay ? 0.5 : 1;
-      let d = r.from < fromDate ? fromDate : r.from;
-      const end = r.to > toDate ? toDate : r.to;
-      while (d <= end) {
-        const byUser = dayUserUnit.get(d) ?? new Map();
-        const existing = byUser.get(r.userId);
-        // If a person somehow has overlapping requests the same day, leave
-        // (unavailable) takes precedence over WFH, and we keep the larger unit.
-        if (!existing || (r.kind === "leave" && existing.kind !== "leave") || (r.kind === existing.kind && unit > existing.unit)) {
-          byUser.set(r.userId, { kind: r.kind, unit });
-        }
-        dayUserUnit.set(d, byUser);
-        d = nextISO(d);
-      }
-    }
+    dayUserUnitAll = buildDayUserUnitMap(rows, fromDate, toDate);
+    dayUserUnitApproved = buildDayUserUnitMap(
+      rows.filter((r) => r.status === "approved"),
+      fromDate,
+      toDate,
+    );
   }
 
   const holRows = await db
@@ -187,18 +238,14 @@ export async function getAvailabilityForRange(
     const isHoliday = !!holidayMap[d];
     const isWeekend = dow === 0 || dow === 6;
 
-    const byUser = dayUserUnit.get(d);
-    let onLeave = 0;
-    let onWfh = 0;
-    if (byUser) {
-      for (const { kind, unit } of byUser.values()) {
-        if (kind === "leave") onLeave += unit;
-        else onWfh += 1;
-      }
-    }
+    const { onLeave, onWfh } = sumLeaveUnits(dayUserUnitAll.get(d));
+    const { onLeave: onLeaveApproved } = sumLeaveUnits(dayUserUnitApproved.get(d));
+
     const availableCount = Math.max(0, headcount - onLeave);
+    const availableCountApproved = Math.max(0, headcount - onLeaveApproved);
     const isWorkingDay = !isWeekend && !isHoliday && headcount > 0;
     const availablePct = isWorkingDay ? Math.round((availableCount / headcount) * 100) : null;
+    const availablePctApproved = isWorkingDay ? Math.round((availableCountApproved / headcount) * 100) : null;
 
     days.push({
       date: d,
@@ -208,14 +255,67 @@ export async function getAvailabilityForRange(
       isWorkingDay,
       headcount,
       onLeave,
+      onLeaveApproved,
       onWfh,
       availableCount,
       availablePct,
+      availableCountApproved,
+      availablePctApproved,
     });
     d = nextISO(d);
   }
 
   return days;
+}
+
+export type TeamScope = {
+  /** The manager (Team Lead/Project Manager) this scope resolves to; "" when none could be resolved. */
+  teamId: string;
+  teamName: string;
+  /** Other teams the viewer may switch to (HR Head/Admin only; empty for TL/PM). */
+  teams: TeamOption[];
+  reportIds: string[];
+  headcount: number;
+};
+
+/**
+ * Resolve which manager's "team" a viewer may see — the single ownership
+ * rule shared by every capacity view (the KAN-75 heatmap, the KAN-79
+ * forecast, and future ones): a Team Lead/Project Manager always sees their
+ * own direct reports (the `teamId` param is ignored for them, enforcing
+ * ownership server-side); HR Head/Admin may pass `teamId` to view any team,
+ * defaulting deterministically (first manager by name) when omitted. Any
+ * other role resolves to an empty scope.
+ */
+export async function resolveTeamScope(user: User, teamId?: string): Promise<TeamScope> {
+  const db = getDb();
+  const isApprover = user.role === "team_lead" || user.role === "project_manager";
+  const isHrOrAdmin = user.role === "hr_head" || user.role === "admin";
+
+  let effectiveTeamId = "";
+  let teamName = "";
+  let teams: TeamOption[] = [];
+  if (isApprover) {
+    effectiveTeamId = user.id;
+    teamName = user.name;
+  } else if (isHrOrAdmin) {
+    teams = await listTeamOptions();
+    const chosen = teamId ? teams.find((t) => t.id === teamId) : undefined;
+    const fallback = teams[0];
+    const pick = chosen ?? fallback;
+    effectiveTeamId = pick?.id ?? "";
+    teamName = pick?.name ?? "";
+  }
+  // Any other role (e.g. employee somehow reaching this function) sees an empty team.
+
+  if (!effectiveTeamId) return { teamId: "", teamName, teams, reportIds: [], headcount: 0 };
+
+  const reports = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(or(eq(users.teamLeadId, effectiveTeamId), eq(users.projectManagerId, effectiveTeamId)));
+  const reportIds = reports.map((r) => r.id);
+  return { teamId: effectiveTeamId, teamName, teams, reportIds, headcount: reportIds.length };
 }
 
 /**
@@ -230,7 +330,6 @@ export async function getTeamAvailability(
   monthParam?: string,
   teamId?: string,
 ): Promise<TeamAvailabilityView> {
-  const db = getDb();
   const today = todayISO();
   const [todayY, todayM] = today.split("-").map(Number); // month is 1-based
 
@@ -258,26 +357,9 @@ export async function getTeamAvailability(
   const monthEnd = `${year}-${pad(month)}-${pad(daysInMonth)}`;
   const monthLabel = new Date(year, month0, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 
-  const isApprover = user.role === "team_lead" || user.role === "project_manager";
-  const isHrOrAdmin = user.role === "hr_head" || user.role === "admin";
-
-  // Resolve which manager's team we're viewing. TL/PM: always themselves
-  // (ownership — a manager's own reports, never an arbitrary teamId param).
-  let effectiveTeamId = "";
-  let teamName = "";
-  let teams: TeamOption[] = [];
-  if (isApprover) {
-    effectiveTeamId = user.id;
-    teamName = user.name;
-  } else if (isHrOrAdmin) {
-    teams = await listTeamOptions();
-    const chosen = teamId ? teams.find((t) => t.id === teamId) : undefined;
-    const fallback = teams[0];
-    const pick = chosen ?? fallback;
-    effectiveTeamId = pick?.id ?? "";
-    teamName = pick?.name ?? "";
-  }
-  // Any other role (e.g. employee somehow reaching this function) sees an empty team.
+  // Resolve which manager's team we're viewing — same ownership rule
+  // everywhere (TL/PM: always themselves; HR/Admin: any team via `teamId`).
+  const { teamId: effectiveTeamId, teamName, teams, reportIds, headcount } = await resolveTeamScope(user, teamId);
 
   const emptyView: TeamAvailabilityView = {
     weeks: [],
@@ -293,13 +375,6 @@ export async function getTeamAvailability(
     teams,
   };
   if (!effectiveTeamId) return emptyView;
-
-  const reports = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(or(eq(users.teamLeadId, effectiveTeamId), eq(users.projectManagerId, effectiveTeamId)));
-  const reportIds = reports.map((r) => r.id);
-  const headcount = reportIds.length;
 
   // The day-level calc (weekend/holiday exclusion, half-day=50%, WFH=available)
   // lives once in getAvailabilityForRange — this just maps its per-date output
