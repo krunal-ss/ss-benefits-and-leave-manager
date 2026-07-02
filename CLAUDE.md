@@ -52,6 +52,7 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 - **Some employee dashboard figures are still mocked** in `src/server/benefits.ts`. DB/Supabase/Resend clients are lazy singletons (`getDb()`, `createSupabaseServerClient()`, `sendEmail()`) reading zod-validated env via `getEnv()` — so `pnpm build` never needs env; a feature only fails when its key is missing at runtime.
 - **Design tokens** live in `src/app/globals.css` (shadcn/zinc CSS variables mapped into Tailwind v4 via `@theme inline`). Style with utilities (`bg-card`, `text-muted-foreground`), never hex — see the `design-system` skill.
 - **Expense auto-verification** is the pure, explainable rule engine in `src/server/verification.ts` (+ optional Claude vision OCR parse).
+- **HR-only settings screens** live under `src/app/(app)/settings/<name>/` (e.g. `settings/approvals`, `settings/staffing-thresholds`), gated `hr_head`/`admin` in `MODULE_ACCESS`, backed by a single/multi-row config table + audited server action — see `staffingThreshold` (KAN-74, minimum team-availability % consumed later by the Capacity Planner epic) for the latest example.
 
 ## Skills available (load on demand)
 - `nextjs-standards` — App Router / RSC / data-fetching conventions

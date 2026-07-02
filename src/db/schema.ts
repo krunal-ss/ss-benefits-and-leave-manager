@@ -191,6 +191,27 @@ export const approvalPolicy = pgTable("approval_policy", {
 export type ApprovalPolicyRow = typeof approvalPolicy.$inferSelect;
 // ---- end KAN-46 ----
 
+// ---- KAN-74: staffing threshold config (Smart Team Availability & Capacity
+// Planner epic). HR/Admin-configurable minimum "% of team available" — one
+// org-wide default row (scope="org", scopeValue=null) plus optional
+// department overrides (scope="department", scopeValue=<department name>).
+// Consulted later in the epic to warn approvers when a leave/WFH request
+// would drop a team below the configured percentage.
+export const staffingThresholdScopeEnum = pgEnum("staffing_threshold_scope", ["org", "department"]);
+
+export const staffingThreshold = pgTable("staffing_threshold", {
+  id: uuid().primaryKey().defaultRandom(),
+  scope: staffingThresholdScopeEnum().notNull(),
+  // Department name (free text, matches users.department); null for the org-wide row.
+  scopeValue: text(),
+  minAvailablePercent: integer().notNull(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid().references(() => users.id),
+});
+
+export type StaffingThreshold = typeof staffingThreshold.$inferSelect;
+// ---- end KAN-74 ----
+
 // ---- shared ----
 export const holidays = pgTable("holidays", {
   id: uuid().primaryKey().defaultRandom(),

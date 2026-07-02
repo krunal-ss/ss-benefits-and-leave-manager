@@ -54,6 +54,9 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   // --- KAN-46 (approval policy switch + notification CC) START ---
   { prefix: "/settings/approvals", roles: ["hr_head", "admin"] },
   // --- KAN-46 END ---
+  // --- KAN-74 (staffing threshold configuration) START ---
+  { prefix: "/settings/staffing-thresholds", roles: ["hr_head", "admin"] },
+  // --- KAN-74 END ---
 ];
 
 /** May `role` access `path`? Unknown paths (e.g. "/") are allowed. */
@@ -102,6 +105,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       // --- KAN-46 (approval policy switch + notification CC) START ---
       { href: "/settings/approvals", label: "Approval policy", key: "settings-approvals" },
       // --- KAN-46 END ---
+      // --- KAN-74 (staffing threshold configuration) START ---
+      { href: "/settings/staffing-thresholds", label: "Staffing thresholds", key: "settings-staffing-thresholds" },
+      // --- KAN-74 END ---
     ],
   },
   // --- KAN-49 (admin console) START ---
