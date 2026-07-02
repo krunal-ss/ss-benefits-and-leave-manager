@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   Download,
   FileCheck2,
+  Grid3x3, // KAN-75: availability heatmap icon
   History,
   LayoutDashboard,
   type LucideIcon,
@@ -31,6 +32,8 @@ const ICONS: Record<string, LucideIcon> = {
   approvals: ClipboardCheck,
   calendar: CalendarCheck,
   "calendar-hr": CalendarDays,
+  availability: Grid3x3, // KAN-75
+  "availability-hr": Grid3x3, // KAN-75
   expenses: FileCheck2,
   "expenses-history": History,
   reports: BarChart3,
