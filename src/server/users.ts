@@ -60,6 +60,9 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   // --- KAN-74 (staffing threshold configuration) START ---
   { prefix: "/settings/staffing-thresholds", roles: ["hr_head", "admin"] },
   // --- KAN-74 END ---
+  // --- KAN-78 (HR department-wide availability overview) START ---
+  { prefix: "/departments", roles: ["hr_head", "admin"] },
+  // --- KAN-78 END ---
 ];
 
 /** May `role` access `path`? Unknown paths (e.g. "/") are allowed. */
@@ -104,6 +107,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       { href: "/expenses", label: "Expense queue", key: "expenses" },
       { href: "/expenses/history", label: "Decided claims", key: "expenses-history" },
       { href: "/reports", label: "Reports", key: "reports" }, // KAN-44: HR reporting dashboard
+      // --- KAN-78 (HR department-wide availability overview) START ---
+      { href: "/departments", label: "Departments", key: "departments" },
+      // --- KAN-78 END ---
       // --- KAN-45 (reimbursement export) START ---
       { href: "/expenses/export", label: "Reimbursement export", key: "expenses-export" },
       // --- KAN-45 END ---
