@@ -115,6 +115,36 @@ export async function wireTeamLead(employeeEmail: string, teamLeadId: string): P
 }
 
 /**
+ * KAN-77: put a user in a specific department — the staffing guard resolves a
+ * department-scoped threshold override via `users.department`, and signup
+ * doesn't collect one, so tests wire it directly for deterministic scoping
+ * (a fresh, unique department per test avoids any cross-test interference).
+ */
+export async function setUserDepartment(employeeEmail: string, department: string): Promise<void> {
+  const db = testDb();
+  await db.update(schema.users).set({ department }).where(eq(schema.users.email, employeeEmail));
+}
+
+/** KAN-77: flag/unflag a user as a sole/critical-skill holder for the staffing guard's critical-role check. */
+export async function setCriticalRole(employeeEmail: string, isCriticalRole: boolean): Promise<void> {
+  const db = testDb();
+  await db.update(schema.users).set({ isCriticalRole }).where(eq(schema.users.email, employeeEmail));
+}
+
+/**
+ * KAN-77: create a department-scoped staffing threshold override directly
+ * (bypassing the HR settings UI) so a test's team has a known, isolated
+ * threshold regardless of whatever the shared org-wide default happens to be
+ * at the time the suite runs (department overrides always win — see
+ * staffing-guard.ts). Always inserts a fresh row; pass a unique department
+ * name per test.
+ */
+export async function setDepartmentThreshold(department: string, minAvailablePercent: number): Promise<void> {
+  const db = testDb();
+  await db.insert(schema.staffingThreshold).values({ scope: "department", scopeValue: department, minAvailablePercent });
+}
+
+/**
  * KAN-52: the receipt-upload flow writes to the private `receipts` bucket, so it
  * must exist. Idempotent — creates it if missing, tolerates "already exists".
  * Arrangement only, via the service-role admin client. (Literal bucket name kept
