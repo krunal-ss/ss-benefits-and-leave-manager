@@ -217,6 +217,30 @@ export const staffingThreshold = pgTable("staffing_threshold", {
 export type StaffingThreshold = typeof staffingThreshold.$inferSelect;
 // ---- end KAN-74 ----
 
+// ---- KAN-79: capacity-forecast snapshots (Smart Team Availability & Capacity
+// Planner epic). The 2-4 week forward-looking trend on /availability is
+// computed LIVE from leaveRequests — this table is NOT read by that forecast.
+// It exists so a future scheduled job can persist a daily point-in-time
+// snapshot per scope, building up real HISTORICAL trend data over time (there
+// is no such job yet in this repo — a future story must add one before this
+// table has any rows to show). `writeCapacitySnapshot` in
+// src/server/manager/capacity-forecast.ts computes+inserts one row on demand.
+export const teamCapacitySnapshot = pgTable("team_capacity_snapshot", {
+  id: uuid().primaryKey().defaultRandom(),
+  date: date().notNull(),
+  // 'team' (scopeId = a manager's user id) | 'department' (scopeId = department name) | 'org' (scopeId = null).
+  scopeType: text().notNull(),
+  scopeId: text(),
+  totalHeadcount: integer().notNull(),
+  // Numeric, not integer — half-day leave produces fractional counts (e.g. 3.5), same convention as leaveBalances.
+  availableCount: numeric({ precision: 6, scale: 1 }).notNull(),
+  capacityPercent: integer().notNull(),
+  computedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export type TeamCapacitySnapshot = typeof teamCapacitySnapshot.$inferSelect;
+// ---- end KAN-79 ----
+
 // ---- shared ----
 export const holidays = pgTable("holidays", {
   id: uuid().primaryKey().defaultRandom(),
