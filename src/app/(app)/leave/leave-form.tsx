@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Check, CircleAlert, House, TriangleAlert } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { Check, CircleAlert, House, ShieldAlert, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label, Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/providers";
-import { applyLeaveAction } from "@/server/actions/leave";
+import { applyLeaveAction, previewLeaveWarningsAction } from "@/server/actions/leave";
 import { LEAVE_TYPES, type LeaveTypeKey } from "@/server/leave";
 import type { ApproverOption } from "@/server/manager/directory";
+import type { StaffingWarning } from "@/server/manager/staffing-guard";
 import { workingDaysBetween } from "@/lib/working-days";
 import { cn } from "@/lib/cn";
 
@@ -53,6 +54,10 @@ export function LeaveForm({
   const [submitted, setSubmitted] = useState(false);
   const [submitTried, setSubmitTried] = useState(false);
   const [pending, startTransition] = useTransition();
+  // KAN-77 — advisory staffing warnings, refreshed live as the request shape
+  // changes so the applicant sees them WHILE filling the form, not only after
+  // submitting (the story's own AC: non-blocking, but visible up front).
+  const [warnings, setWarnings] = useState<StaffingWarning[]>([]);
 
   const set = (patch: Partial<typeof leave>) => {
     setLeave((l) => ({ ...l, ...patch }));
@@ -95,6 +100,33 @@ export function LeaveForm({
   const balLabel = isWFH ? "WFH balance" : "Available balance";
   const balText = isWFH ? `${bal} days left this month` : isLOP ? "N/A (unpaid)" : `${bal} days`;
 
+  // KAN-77 — debounced live preview: re-check whenever the request shape
+  // changes, so the warning is visible before the applicant ever clicks submit.
+  useEffect(() => {
+    if (wd <= 0 || overlaps) {
+      setWarnings([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      previewLeaveWarningsAction({
+        requestType: leave.type,
+        from: leave.from,
+        to: leave.to,
+        halfDay: leave.halfDay,
+      }).then((res) => {
+        if (!cancelled) setWarnings(res.warnings);
+      });
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [leave.type, leave.from, leave.to, leave.halfDay, wd, overlaps]);
+
+  const thresholdWarnings = warnings.filter((w) => w.type === "threshold");
+  const criticalRoleWarnings = warnings.filter((w) => w.type === "critical_role");
+
   function submit() {
     setSubmitTried(true);
     if (wd <= 0) {
@@ -128,6 +160,7 @@ export function LeaveForm({
         return;
       }
       setSubmitted(true);
+      setWarnings(res.warnings ?? []); // reconcile with the action's own (authoritative) check
       const lopNote = res.lopDays && res.lopDays > 0 ? ` · ${res.lopDays} day(s) over balance flagged LOP` : "";
       flash(`Request submitted — sent to ${teamLeadName ?? "your Team Lead"} (L1)${lopNote}`, "ok");
     });
@@ -292,6 +325,28 @@ export function LeaveForm({
             <div className="flex items-center gap-2.5 rounded-[9px] bg-red-500/[0.11] px-[13px] py-[11px] text-[12.5px] text-destructive">
               <TriangleAlert className="size-[15px] shrink-0" strokeWidth={2} />
               <span>You already have a leave/WFH request that covers one of these dates.</span>
+            </div>
+          )}
+
+          {/* KAN-77 — advisory only: shown so the applicant is aware before/while
+              submitting, but never blocks the Submit button. */}
+          {thresholdWarnings.length > 0 && (
+            <div className="flex items-start gap-2.5 rounded-[9px] bg-amber-500/[0.12] px-[13px] py-[11px] text-[12.5px] text-amber-700">
+              <TriangleAlert className="mt-0.5 size-[15px] shrink-0" strokeWidth={2} />
+              <span>
+                Team availability would drop below the configured staffing threshold on{" "}
+                {thresholdWarnings.length === 1 ? thresholdWarnings[0].date : `${thresholdWarnings.length} day(s)`} — your
+                approver will see the same warning.
+              </span>
+            </div>
+          )}
+          {criticalRoleWarnings.length > 0 && (
+            <div className="flex items-start gap-2.5 rounded-[9px] bg-amber-500/[0.12] px-[13px] py-[11px] text-[12.5px] text-amber-700">
+              <ShieldAlert className="mt-0.5 size-[15px] shrink-0" strokeWidth={2} />
+              <span>
+                No other critical-role holder would be available to cover for you on{" "}
+                {criticalRoleWarnings.length === 1 ? criticalRoleWarnings[0].date : `${criticalRoleWarnings.length} day(s)`}.
+              </span>
             </div>
           )}
 
