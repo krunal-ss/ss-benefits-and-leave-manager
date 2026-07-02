@@ -42,6 +42,9 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   { prefix: "/leave", roles: ALL_ROLES },
   { prefix: "/approvals", roles: ["team_lead", "project_manager"] },
   { prefix: "/calendar", roles: ["team_lead", "project_manager", "hr_head", "admin"] },
+  // --- KAN-75 (team availability heatmap) START ---
+  { prefix: "/availability", roles: ["team_lead", "project_manager", "hr_head", "admin"] },
+  // --- KAN-75 END ---
   { prefix: "/expenses", roles: ["hr_head", "admin"] },
   { prefix: "/reports", roles: ["hr_head", "admin"] }, // KAN-44: HR reporting dashboard
   // --- KAN-45 (reimbursement export) START ---
@@ -90,6 +93,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/approvals", label: "Approvals", key: "approvals" },
       { href: "/calendar", label: "Team calendar", key: "calendar" },
+      // --- KAN-75 (team availability heatmap) START ---
+      { href: "/availability", label: "Availability heatmap", key: "availability" },
+      // --- KAN-75 END ---
     ],
   },
   {
@@ -102,6 +108,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       { href: "/expenses/export", label: "Reimbursement export", key: "expenses-export" },
       // --- KAN-45 END ---
       { href: "/calendar", label: "Org calendar", key: "calendar-hr" },
+      // --- KAN-75 (team availability heatmap) START ---
+      { href: "/availability", label: "Team availability", key: "availability-hr" },
+      // --- KAN-75 END ---
       // --- KAN-46 (approval policy switch + notification CC) START ---
       { href: "/settings/approvals", label: "Approval policy", key: "settings-approvals" },
       // --- KAN-46 END ---
