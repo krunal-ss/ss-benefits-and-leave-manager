@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "isCriticalRole" boolean DEFAULT false NOT NULL;

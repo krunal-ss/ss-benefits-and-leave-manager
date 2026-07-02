@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { ShieldAlert, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -49,6 +50,11 @@ export function ApprovalCard({ request }: { request: ApprovalRequest }) {
   const [pending, startTransition] = useTransition();
   const k = kindClasses(request.kind);
   const l1done = request.level >= 2;
+  // KAN-77 — computed server-side when the queue loaded, so the approver sees
+  // it on the card itself before making a decision (advisory only — never
+  // disables Approve).
+  const thresholdWarnings = request.warnings.filter((w) => w.type === "threshold");
+  const criticalRoleWarnings = request.warnings.filter((w) => w.type === "critical_role");
 
   const decide = (approve: boolean) => {
     startTransition(async () => {
@@ -81,6 +87,26 @@ export function ApprovalCard({ request }: { request: ApprovalRequest }) {
       </div>
 
       <LevelProgress l1done={l1done} />
+
+      {thresholdWarnings.length > 0 && (
+        <div className="flex items-start gap-2.5 rounded-[9px] bg-amber-500/[0.12] px-[13px] py-[11px] text-[12.5px] text-amber-700">
+          <TriangleAlert className="mt-0.5 size-[15px] shrink-0" strokeWidth={2} />
+          <span>
+            Approving would drop team availability below the configured threshold on{" "}
+            {thresholdWarnings.length === 1 ? thresholdWarnings[0].date : `${thresholdWarnings.length} day(s)`}.
+          </span>
+        </div>
+      )}
+      {criticalRoleWarnings.length > 0 && (
+        <div className="flex items-start gap-2.5 rounded-[9px] bg-amber-500/[0.12] px-[13px] py-[11px] text-[12.5px] text-amber-700">
+          <ShieldAlert className="mt-0.5 size-[15px] shrink-0" strokeWidth={2} />
+          <span>
+            {request.name} is the only available critical-role holder on{" "}
+            {criticalRoleWarnings.length === 1 ? criticalRoleWarnings[0].date : `${criticalRoleWarnings.length} day(s)`} —
+            approving would leave the team without coverage.
+          </span>
+        </div>
+      )}
 
       <div className="flex items-center gap-2.5">
         <span className="text-xs text-muted-foreground">

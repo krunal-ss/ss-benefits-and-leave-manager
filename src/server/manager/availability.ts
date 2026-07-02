@@ -66,7 +66,9 @@ export type TeamAvailabilityView = {
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
-function nextISO(iso: string): string {
+/** ISO yyyy-mm-dd for the calendar day after `iso`. Exported for callers that
+ * walk an arbitrary date range (e.g. the KAN-77 staffing guard). */
+export function nextISO(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   const dt = new Date(y, m - 1, d + 1);
   return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
@@ -94,6 +96,126 @@ async function listTeamOptions(): Promise<TeamOption[]> {
     .where(inArray(users.role, [...MANAGER_ROLES]))
     .orderBy(asc(users.name));
   return rows;
+}
+
+export type RangeDayAvailability = {
+  date: string; // ISO yyyy-mm-dd
+  isWeekend: boolean;
+  isHoliday: boolean;
+  holidayName: string;
+  isWorkingDay: boolean;
+  headcount: number;
+  /** Unavailable units from leave (approved or pending); half-day = 0.5. */
+  onLeave: number;
+  /** Count of reports with any WFH that day — available, shown for context only. */
+  onWfh: number;
+  /** headcount - onLeave, floored at 0. WFH does not reduce this. */
+  availableCount: number;
+  /** Rounded 0-100, or null when not a working day / no headcount. */
+  availablePct: number | null;
+};
+
+/**
+ * Per-day availability for an arbitrary inclusive date range — the same
+ * business rules as `getTeamAvailability` (weekends/holidays excluded,
+ * half-day leave = 50% unavailable, WFH counts as available), but shaped for
+ * a plain `[fromDate, toDate]` window instead of a calendar-month grid.
+ * `reportIds` is resolved by the caller (a manager's direct reports, or any
+ * other set of user ids that define the "team" being checked). Both
+ * `getTeamAvailability` (per-month) and the KAN-77 staffing guard (arbitrary
+ * request ranges) build on this single day-level calculation.
+ */
+export async function getAvailabilityForRange(
+  reportIds: string[],
+  fromDate: string,
+  toDate: string,
+): Promise<RangeDayAvailability[]> {
+  const db = getDb();
+  const headcount = reportIds.length;
+  if (fromDate > toDate) return [];
+
+  const dayUserUnit = new Map<string, Map<string, { kind: "leave" | "wfh"; unit: number }>>();
+  if (headcount > 0) {
+    const rows = await db
+      .select({
+        userId: leaveRequests.userId,
+        kind: leaveRequests.kind,
+        from: leaveRequests.fromDate,
+        to: leaveRequests.toDate,
+        halfDay: leaveRequests.halfDay,
+      })
+      .from(leaveRequests)
+      .where(
+        and(
+          inArray(leaveRequests.userId, reportIds),
+          lte(leaveRequests.fromDate, toDate),
+          gte(leaveRequests.toDate, fromDate),
+          notInArray(leaveRequests.status, ["rejected", "cancelled"]),
+        ),
+      );
+
+    for (const r of rows) {
+      const unit = r.halfDay ? 0.5 : 1;
+      let d = r.from < fromDate ? fromDate : r.from;
+      const end = r.to > toDate ? toDate : r.to;
+      while (d <= end) {
+        const byUser = dayUserUnit.get(d) ?? new Map();
+        const existing = byUser.get(r.userId);
+        // If a person somehow has overlapping requests the same day, leave
+        // (unavailable) takes precedence over WFH, and we keep the larger unit.
+        if (!existing || (r.kind === "leave" && existing.kind !== "leave") || (r.kind === existing.kind && unit > existing.unit)) {
+          byUser.set(r.userId, { kind: r.kind, unit });
+        }
+        dayUserUnit.set(d, byUser);
+        d = nextISO(d);
+      }
+    }
+  }
+
+  const holRows = await db
+    .select({ date: holidaysTable.date, name: holidaysTable.name })
+    .from(holidaysTable)
+    .where(and(gte(holidaysTable.date, fromDate), lte(holidaysTable.date, toDate)));
+  const holidayMap: Record<string, string> = {};
+  for (const h of holRows) holidayMap[h.date] = h.name;
+
+  const days: RangeDayAvailability[] = [];
+  let d = fromDate;
+  while (d <= toDate) {
+    const [y, m, day] = d.split("-").map(Number);
+    const dow = new Date(y, m - 1, day).getDay();
+    const isHoliday = !!holidayMap[d];
+    const isWeekend = dow === 0 || dow === 6;
+
+    const byUser = dayUserUnit.get(d);
+    let onLeave = 0;
+    let onWfh = 0;
+    if (byUser) {
+      for (const { kind, unit } of byUser.values()) {
+        if (kind === "leave") onLeave += unit;
+        else onWfh += 1;
+      }
+    }
+    const availableCount = Math.max(0, headcount - onLeave);
+    const isWorkingDay = !isWeekend && !isHoliday && headcount > 0;
+    const availablePct = isWorkingDay ? Math.round((availableCount / headcount) * 100) : null;
+
+    days.push({
+      date: d,
+      isWeekend,
+      isHoliday,
+      holidayName: isHoliday ? holidayMap[d] : "",
+      isWorkingDay,
+      headcount,
+      onLeave,
+      onWfh,
+      availableCount,
+      availablePct,
+    });
+    d = nextISO(d);
+  }
+
+  return days;
 }
 
 /**
@@ -179,52 +301,11 @@ export async function getTeamAvailability(
   const reportIds = reports.map((r) => r.id);
   const headcount = reportIds.length;
 
-  // Per-day, per-user unavailable/wfh units — keyed by ISO date then userId.
-  const dayUserUnit = new Map<string, Map<string, { kind: "leave" | "wfh"; unit: number }>>();
-
-  if (headcount > 0) {
-    const rows = await db
-      .select({
-        userId: leaveRequests.userId,
-        kind: leaveRequests.kind,
-        from: leaveRequests.fromDate,
-        to: leaveRequests.toDate,
-        halfDay: leaveRequests.halfDay,
-      })
-      .from(leaveRequests)
-      .where(
-        and(
-          inArray(leaveRequests.userId, reportIds),
-          lte(leaveRequests.fromDate, monthEnd),
-          gte(leaveRequests.toDate, monthStart),
-          notInArray(leaveRequests.status, ["rejected", "cancelled"]),
-        ),
-      );
-
-    for (const r of rows) {
-      const unit = r.halfDay ? 0.5 : 1;
-      let d = r.from < monthStart ? monthStart : r.from;
-      const end = r.to > monthEnd ? monthEnd : r.to;
-      while (d <= end) {
-        const byUser = dayUserUnit.get(d) ?? new Map();
-        const existing = byUser.get(r.userId);
-        // If a person somehow has overlapping requests the same day, leave
-        // (unavailable) takes precedence over WFH, and we keep the larger unit.
-        if (!existing || (r.kind === "leave" && existing.kind !== "leave") || (r.kind === existing.kind && unit > existing.unit)) {
-          byUser.set(r.userId, { kind: r.kind, unit });
-        }
-        dayUserUnit.set(d, byUser);
-        d = nextISO(d);
-      }
-    }
-  }
-
-  const holRows = await db
-    .select({ date: holidaysTable.date, name: holidaysTable.name })
-    .from(holidaysTable)
-    .where(and(gte(holidaysTable.date, monthStart), lte(holidaysTable.date, monthEnd)));
-  const holidayMap: Record<string, string> = {};
-  for (const h of holRows) holidayMap[h.date] = h.name;
+  // The day-level calc (weekend/holiday exclusion, half-day=50%, WFH=available)
+  // lives once in getAvailabilityForRange — this just maps its per-date output
+  // onto the calendar-month grid this view renders.
+  const rangeDays = await getAvailabilityForRange(reportIds, monthStart, monthEnd);
+  const rangeByDate = new Map(rangeDays.map((d) => [d.date, d]));
 
   const first = new Date(year, month0, 1);
   const startDow = first.getDay();
@@ -239,36 +320,21 @@ export async function getTeamAvailability(
   for (let w = 0; w < cells.length / 7; w++) {
     const days = cells.slice(w * 7, w * 7 + 7).map<AvailabilityDay>((c) => {
       const iso = `${year}-${pad(month)}-${pad(c.day)}`;
-      const dow = c.inMonth ? new Date(year, month0, c.day).getDay() : -1;
-      const isHoliday = c.inMonth && !!holidayMap[iso];
-      const isWeekend = c.inMonth && (dow === 0 || dow === 6);
-
-      const byUser = c.inMonth ? dayUserUnit.get(iso) : undefined;
-      let onLeave = 0;
-      let onWfh = 0;
-      if (byUser) {
-        for (const { kind, unit } of byUser.values()) {
-          if (kind === "leave") onLeave += unit;
-          else onWfh += 1;
-        }
-      }
-      const availableCount = Math.max(0, headcount - onLeave);
-      const isWorkingDay = c.inMonth && !isWeekend && !isHoliday && headcount > 0;
-      const availablePct = isWorkingDay ? Math.round((availableCount / headcount) * 100) : null;
+      const info = c.inMonth ? rangeByDate.get(iso) : undefined;
 
       return {
         date: iso,
         day: c.day,
         inMonth: c.inMonth,
-        isWeekend,
-        isHoliday,
-        holidayName: isHoliday ? holidayMap[iso] : "",
+        isWeekend: info?.isWeekend ?? false,
+        isHoliday: info?.isHoliday ?? false,
+        holidayName: info?.holidayName ?? "",
         isToday: c.inMonth && iso === today,
         headcount: c.inMonth ? headcount : 0,
-        onLeave,
-        onWfh,
-        availableCount,
-        availablePct,
+        onLeave: info?.onLeave ?? 0,
+        onWfh: info?.onWfh ?? 0,
+        availableCount: info?.availableCount ?? 0,
+        availablePct: info?.availablePct ?? null,
       };
     });
     weeks.push({ days });

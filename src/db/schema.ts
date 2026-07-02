@@ -58,6 +58,11 @@ export const users = pgTable("users", {
   teamLeadId: uuid().references((): AnyPgColumn => users.id),
   projectManagerId: uuid().references((): AnyPgColumn => users.id),
   department: text(),
+  // KAN-77 — flags a sole/critical-skill holder (e.g. the only person who can
+  // deploy, or the only DBA on a team). Consulted by the staffing guard to warn
+  // when their leave/WFH would leave the team without ANY available critical-role
+  // holder for a day. HR/Admin-managed; defaults false for every existing user.
+  isCriticalRole: boolean().notNull().default(false),
   joinDate: date(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });

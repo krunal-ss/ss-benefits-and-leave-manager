@@ -3,6 +3,7 @@ import { and, count, eq, gte, lte, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { leaveRequests, leaveTypes, users, type User } from "@/db/schema";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
+import { checkStaffingWarnings, type StaffingWarning } from "@/server/manager/staffing-guard"; // KAN-77
 import { todayISO } from "@/lib/fy";
 import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
 
@@ -22,6 +23,8 @@ export type ApprovalRequest = {
   days: string;
   level: 1 | 2; // current pending level
   reason: string;
+  /** KAN-77 — advisory only; empty when nothing is flagged for this request's date range. */
+  warnings: StaffingWarning[];
 };
 
 export type OutTodayItem = {
@@ -100,14 +103,22 @@ export async function getApprovalQueue(
   const rows = await db
     .select({
       id: leaveRequests.id,
+      userId: leaveRequests.userId,
       name: users.name,
       department: users.department,
       kind: leaveRequests.kind,
       code: leaveTypes.code,
       from: leaveRequests.fromDate,
       to: leaveRequests.toDate,
+      halfDay: leaveRequests.halfDay,
       days: leaveRequests.workingDays,
       reason: leaveRequests.reason,
+      // KAN-77 — the applicant's own reporting line/critical-role flag, used
+      // to compute the staffing guard warnings for this row (see "team"
+      // definition in staffing-guard.ts — the applicant's real reports-to-TL
+      // siblings, independent of which TL this request happens to be routed to).
+      applicantTeamLeadId: users.teamLeadId,
+      applicantIsCriticalRole: users.isCriticalRole,
     })
     .from(leaveRequests)
     .innerJoin(users, eq(leaveRequests.userId, users.id))
@@ -117,18 +128,35 @@ export async function getApprovalQueue(
     .limit(np.limit + 1) // fetch one extra to detect hasMore
     .offset(np.offset);
 
-  const mapped = rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    initials: initialsOf(r.name),
-    role: r.department ?? "Team member",
-    type: typeLabel(r.kind, r.code),
-    kind: r.kind,
-    dates: fmtRange(r.from, r.to),
-    days: fmtDays(Number(r.days)),
-    level: scope.level,
-    reason: r.reason ?? "—",
-  }));
+  // Advisory-only warnings, computed per row so the approver sees them on the
+  // queue itself (before they act), not just as a toast after deciding. The
+  // request is already persisted (pending), so the guard reads current DB
+  // availability directly — no simulation needed.
+  const mapped = await Promise.all(
+    rows.map(async (r) => ({
+      id: r.id,
+      name: r.name,
+      initials: initialsOf(r.name),
+      role: r.department ?? "Team member",
+      type: typeLabel(r.kind, r.code),
+      kind: r.kind,
+      dates: fmtRange(r.from, r.to),
+      days: fmtDays(Number(r.days)),
+      level: scope.level,
+      reason: r.reason ?? "—",
+      warnings: await checkStaffingWarnings({
+        requesterId: r.userId,
+        teamLeadId: r.applicantTeamLeadId,
+        department: r.department,
+        isCriticalRole: r.applicantIsCriticalRole,
+        kind: r.kind,
+        fromDate: r.from,
+        toDate: r.to,
+        halfDay: r.halfDay,
+        persisted: true,
+      }),
+    })),
+  );
 
   return buildPage(mapped, np);
 }
