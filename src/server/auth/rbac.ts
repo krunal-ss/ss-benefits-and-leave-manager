@@ -25,6 +25,9 @@ export const can = {
   // holidays) is HR-Head/Admin; changing users' roles + reporting lines is a
   // higher-trust action gated to Admin only.
   manageUsers: (role: AppRole) => role === "admin",
+  // KAN-78: org-wide, cross-department availability overview — HR Head/Admin
+  // only (never a manager's own scoped view; see src/server/hr/department-overview.ts).
+  viewDepartmentOverview: (role: AppRole) => role === "hr_head" || role === "admin",
 } as const;
 
 export type Capability = keyof typeof can;
