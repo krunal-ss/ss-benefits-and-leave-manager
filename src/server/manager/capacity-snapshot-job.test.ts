@@ -4,6 +4,11 @@
 // writeCapacitySnapshot's own insert-shaping are already covered by
 // capacity-forecast.test.ts and capacity-forecast.write-snapshot.test.ts, so
 // this mocks writeCapacitySnapshot itself rather than re-testing it.
+//
+// KAN-81: also covers the wiring to the low-staffing breach check — mocks
+// checkLowStaffingAndNotify (its own behavior is unit-tested in
+// capacity-alert.test.ts) and asserts it's invoked for org/department
+// results but never for a "team" scope result (no threshold exists there).
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -28,6 +33,9 @@ vi.mock("./availability", () => ({
 const writeCapacitySnapshot = vi.fn();
 vi.mock("./capacity-forecast", () => ({ writeCapacitySnapshot }));
 
+const checkLowStaffingAndNotify = vi.fn().mockResolvedValue(undefined);
+vi.mock("./capacity-alert", () => ({ checkLowStaffingAndNotify }));
+
 describe("runDailyCapacitySnapshotJob", () => {
   it("snapshots the org, every non-null department, and every manager's team for the given date", async () => {
     writeCapacitySnapshot.mockImplementation((params: { scopeType: string; scopeId: string | null; date: string }) =>
@@ -47,10 +55,18 @@ describe("runDailyCapacitySnapshotJob", () => {
     // org + 2 departments + 2 teams — the null department must not produce its own scope.
     expect(writeCapacitySnapshot).toHaveBeenCalledTimes(5);
     expect(result.succeeded).toHaveLength(5);
+
+    // KAN-81 — the breach check runs for org/department results only, never for "team".
+    expect(checkLowStaffingAndNotify).toHaveBeenCalledTimes(3);
+    expect(checkLowStaffingAndNotify).toHaveBeenCalledWith(expect.objectContaining({ scopeType: "org" }));
+    expect(checkLowStaffingAndNotify).toHaveBeenCalledWith(expect.objectContaining({ scopeType: "department", scopeId: "Engineering" }));
+    expect(checkLowStaffingAndNotify).toHaveBeenCalledWith(expect.objectContaining({ scopeType: "department", scopeId: "Sales" }));
+    expect(checkLowStaffingAndNotify).not.toHaveBeenCalledWith(expect.objectContaining({ scopeType: "team" }));
   });
 
   it("collects a per-scope failure instead of throwing, so one bad scope doesn't drop the rest", async () => {
     writeCapacitySnapshot.mockReset();
+    checkLowStaffingAndNotify.mockClear();
     writeCapacitySnapshot.mockImplementation((params: { scopeType: string; scopeId: string | null }) =>
       params.scopeType === "department" && params.scopeId === "Sales"
         ? Promise.reject(new Error("boom"))
