@@ -19,6 +19,17 @@ describe("rbac capabilities", () => {
     expect(() => assertCan("employee", "approveExpense")).toThrow(ForbiddenError);
     expect(() => assertCan("hr_head", "approveExpense")).not.toThrow();
   });
+
+  // KAN-80: availability CSV export — anyone who can see a capacity view
+  // (Team Lead/Project Manager's own heatmap, or HR Head/Admin's heatmap +
+  // department overview), never an employee.
+  it("exportAvailability allows every approver/HR/admin role, never an employee", () => {
+    expect(can.exportAvailability("team_lead")).toBe(true);
+    expect(can.exportAvailability("project_manager")).toBe(true);
+    expect(can.exportAvailability("hr_head")).toBe(true);
+    expect(can.exportAvailability("admin")).toBe(true);
+    expect(can.exportAvailability("employee")).toBe(false);
+  });
 });
 
 describe("rbac ownership", () => {

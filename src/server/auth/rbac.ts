@@ -28,6 +28,12 @@ export const can = {
   // KAN-78: org-wide, cross-department availability overview — HR Head/Admin
   // only (never a manager's own scoped view; see src/server/hr/department-overview.ts).
   viewDepartmentOverview: (role: AppRole) => role === "hr_head" || role === "admin",
+  // KAN-80: CSV export of a capacity view — any role that can already see one
+  // of the underlying screens (the /availability heatmap for team_lead/
+  // project_manager, or /availability + /departments for hr_head/admin — see
+  // MODULE_ACCESS in src/server/users.ts). Never an employee.
+  exportAvailability: (role: AppRole) =>
+    role === "team_lead" || role === "project_manager" || role === "hr_head" || role === "admin",
 } as const;
 
 export type Capability = keyof typeof can;

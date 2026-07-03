@@ -19,6 +19,21 @@ import { and, asc, eq, gte, inArray, lte, notInArray, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { holidays as holidaysTable, leaveRequests, users, type User } from "@/db/schema";
 import { currentFy, todayISO } from "@/lib/fy";
+import type { AppRole } from "@/server/auth/rbac";
+import { clipDateRange } from "./availability-shape";
+
+// KAN-80: filters shared by the heatmap, the HR department overview, and their
+// CSV export. All optional so omitting them preserves the exact pre-KAN-80
+// behavior of every existing caller.
+export type AvailabilityFilters = {
+  /** Narrows which of the resolved member ids are included, by users.role. */
+  role?: AppRole;
+  /** Only requests of this leave type count as "on leave" for the calc (WFH always has a null leaveTypeId, so it's excluded whenever this is set). */
+  leaveTypeId?: string;
+  /** Inclusive date-range bounds, independent of the heatmap's month-nav. */
+  fromDate?: string;
+  toDate?: string;
+};
 
 export type AvailabilityDay = {
   date: string; // ISO yyyy-mm-dd
@@ -87,8 +102,9 @@ function parseYearMonth(s: string | undefined): { year: number; month0: number }
 
 const MANAGER_ROLES = ["team_lead", "project_manager"] as const;
 
-/** Managers HR Head/Admin can switch the heatmap between, sorted by name. */
-async function listTeamOptions(): Promise<TeamOption[]> {
+/** Managers HR Head/Admin can switch the heatmap between, sorted by name. Also
+ * reused by the KAN-79 daily snapshot job to enumerate every team scope. */
+export async function listTeamOptions(): Promise<TeamOption[]> {
   const db = getDb();
   const rows = await db
     .select({ id: users.id, name: users.name })
@@ -183,11 +199,19 @@ function sumLeaveUnits(byUser: Map<string, DayUserUnit> | undefined): { onLeave:
  * combined approved+pending figures, so the capacity forecast can show a
  * "confirmed" series distinct from an "at-risk if pending gets approved"
  * series without a second day-loop.
+ *
+ * KAN-80: `leaveTypeId`, when passed, restricts which requests count as "on
+ * leave" to that one leave type — this also excludes every WFH row (WFH
+ * always has a null leaveTypeId), which is the desired behavior when a
+ * viewer filters the heatmap/export down to one leave type. Omitting it
+ * preserves the exact pre-KAN-80 (all leave types + WFH) behavior for every
+ * existing caller.
  */
 export async function getAvailabilityForRange(
   reportIds: string[],
   fromDate: string,
   toDate: string,
+  leaveTypeId?: string,
 ): Promise<RangeDayAvailability[]> {
   const db = getDb();
   const headcount = reportIds.length;
@@ -212,6 +236,7 @@ export async function getAvailabilityForRange(
           lte(leaveRequests.fromDate, toDate),
           gte(leaveRequests.toDate, fromDate),
           notInArray(leaveRequests.status, ["rejected", "cancelled"]),
+          ...(leaveTypeId ? [eq(leaveRequests.leaveTypeId, leaveTypeId)] : []),
         ),
       );
 
@@ -286,8 +311,13 @@ export type TeamScope = {
  * ownership server-side); HR Head/Admin may pass `teamId` to view any team,
  * defaulting deterministically (first manager by name) when omitted. Any
  * other role resolves to an empty scope.
+ *
+ * KAN-80: `roleFilter`, when passed, narrows the resolved reports to only
+ * those with that `users.role` — applied after ownership is resolved, so it
+ * can only ever shrink a viewer's own already-authorized scope, never widen
+ * it. Omitting it preserves the exact pre-KAN-80 behavior.
  */
-export async function resolveTeamScope(user: User, teamId?: string): Promise<TeamScope> {
+export async function resolveTeamScope(user: User, teamId?: string, roleFilter?: AppRole): Promise<TeamScope> {
   const db = getDb();
   const isApprover = user.role === "team_lead" || user.role === "project_manager";
   const isHrOrAdmin = user.role === "hr_head" || user.role === "admin";
@@ -310,10 +340,11 @@ export async function resolveTeamScope(user: User, teamId?: string): Promise<Tea
 
   if (!effectiveTeamId) return { teamId: "", teamName, teams, reportIds: [], headcount: 0 };
 
+  const reportLineFilter = or(eq(users.teamLeadId, effectiveTeamId), eq(users.projectManagerId, effectiveTeamId));
   const reports = await db
     .select({ id: users.id })
     .from(users)
-    .where(or(eq(users.teamLeadId, effectiveTeamId), eq(users.projectManagerId, effectiveTeamId)));
+    .where(roleFilter ? and(reportLineFilter, eq(users.role, roleFilter)) : reportLineFilter);
   const reportIds = reports.map((r) => r.id);
   return { teamId: effectiveTeamId, teamName, teams, reportIds, headcount: reportIds.length };
 }
@@ -324,11 +355,19 @@ export async function resolveTeamScope(user: User, teamId?: string): Promise<Tea
  * the team calendar. `teamId` (a manager's user id) is honoured only for
  * HR Head/Admin — a Team Lead/Project Manager always sees their own reports
  * regardless of what's passed, enforcing ownership server-side.
+ *
+ * KAN-80: an optional `filters` narrows the grid — `role` narrows team
+ * membership (via `resolveTeamScope`), `leaveTypeId` restricts which requests
+ * count as "on leave" (via `getAvailabilityForRange`), and `fromDate`/`toDate`
+ * clip the fetched range to their intersection with the viewed month (days
+ * outside that intersection render blank, same as an out-of-month cell).
+ * Omitting `filters` preserves the exact pre-KAN-80 behavior.
  */
 export async function getTeamAvailability(
   user: User,
   monthParam?: string,
   teamId?: string,
+  filters?: AvailabilityFilters,
 ): Promise<TeamAvailabilityView> {
   const today = todayISO();
   const [todayY, todayM] = today.split("-").map(Number); // month is 1-based
@@ -359,7 +398,11 @@ export async function getTeamAvailability(
 
   // Resolve which manager's team we're viewing — same ownership rule
   // everywhere (TL/PM: always themselves; HR/Admin: any team via `teamId`).
-  const { teamId: effectiveTeamId, teamName, teams, reportIds, headcount } = await resolveTeamScope(user, teamId);
+  const { teamId: effectiveTeamId, teamName, teams, reportIds, headcount } = await resolveTeamScope(
+    user,
+    teamId,
+    filters?.role,
+  );
 
   const emptyView: TeamAvailabilityView = {
     weeks: [],
@@ -378,8 +421,12 @@ export async function getTeamAvailability(
 
   // The day-level calc (weekend/holiday exclusion, half-day=50%, WFH=available)
   // lives once in getAvailabilityForRange — this just maps its per-date output
-  // onto the calendar-month grid this view renders.
-  const rangeDays = await getAvailabilityForRange(reportIds, monthStart, monthEnd);
+  // onto the calendar-month grid this view renders. KAN-80: a fromDate/toDate
+  // filter clips the fetched window to its intersection with the viewed
+  // month — days outside it simply have no entry in rangeByDate below, and
+  // render blank the same way an out-of-month cell already does.
+  const { from: rangeFrom, to: rangeTo } = clipDateRange(monthStart, monthEnd, filters?.fromDate, filters?.toDate);
+  const rangeDays = await getAvailabilityForRange(reportIds, rangeFrom, rangeTo, filters?.leaveTypeId);
   const rangeByDate = new Map(rangeDays.map((d) => [d.date, d]));
 
   const first = new Date(year, month0, 1);

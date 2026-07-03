@@ -20,7 +20,7 @@ import "server-only";
 // smaller, more consistent change than adding one.
 import { getDb } from "@/db";
 import { users, type User } from "@/db/schema";
-import { assertCan } from "@/server/auth/rbac";
+import { assertCan, type AppRole } from "@/server/auth/rbac";
 import { listThresholds } from "@/server/hr/staffing-thresholds";
 import { getAvailabilityForRange } from "@/server/manager/availability";
 import { todayISO } from "@/lib/fy";
@@ -54,12 +54,26 @@ export type DepartmentOverview = {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+// KAN-80: filters applied consistently with the heatmap's own AvailabilityFilters
+// (see src/server/manager/availability.ts) — `role` narrows department
+// membership, `department` narrows to a single department's row, and
+// `leaveTypeId` restricts which requests count as "on leave".
+export type DepartmentOverviewFilters = {
+  role?: AppRole;
+  department?: string;
+  leaveTypeId?: string;
+};
+
 /**
  * Org-wide availability grouped by department, for `date` (defaults to
  * today). HR Head/Admin only — throws for any other role so this can never
  * leak into a manager's own scoped view.
  */
-export async function getDepartmentOverview(user: User, dateParam?: string): Promise<DepartmentOverview> {
+export async function getDepartmentOverview(
+  user: User,
+  dateParam?: string,
+  filters?: DepartmentOverviewFilters,
+): Promise<DepartmentOverview> {
   assertCan(user.role, "viewDepartmentOverview");
 
   const date = dateParam && ISO_DATE.test(dateParam) ? dateParam : todayISO();
@@ -71,6 +85,7 @@ export async function getDepartmentOverview(user: User, dateParam?: string): Pro
 
   const byDept = new Map<string, { id: string; name: string; role: string }[]>();
   for (const u of allUsers) {
+    if (filters?.role && u.role !== filters.role) continue;
     const department = u.department?.trim() || "Unassigned";
     const list = byDept.get(department) ?? [];
     list.push({ id: u.id, name: u.name, role: u.role });
@@ -80,7 +95,8 @@ export async function getDepartmentOverview(user: User, dateParam?: string): Pro
   const { orgDefault, departmentOverrides } = await listThresholds();
   const overrideByDept = new Map(departmentOverrides.map((o) => [o.scopeValue ?? "", o.minAvailablePercent]));
 
-  const departments = [...byDept.keys()].sort((a, b) => a.localeCompare(b));
+  let departments = [...byDept.keys()].sort((a, b) => a.localeCompare(b));
+  if (filters?.department) departments = departments.filter((d) => d === filters.department);
 
   const rows: DepartmentAvailabilityRow[] = [];
   for (const department of departments) {
@@ -90,7 +106,7 @@ export async function getDepartmentOverview(user: User, dateParam?: string): Pro
     // Single-day range — same shared day-level calc the heatmap and staffing
     // guard use, just scoped to this department's users instead of one
     // manager's reports.
-    const [day] = await getAvailabilityForRange(ids, date, date);
+    const [day] = await getAvailabilityForRange(ids, date, date, filters?.leaveTypeId);
 
     const overridePercent = overrideByDept.get(department);
     const hasOverride = overridePercent !== undefined;
@@ -118,4 +134,34 @@ export async function getDepartmentOverview(user: User, dateParam?: string): Pro
   }
 
   return { date, rows };
+}
+
+/**
+ * KAN-80: resolve one department's member ids (optionally narrowed by role) —
+ * the same grouping `getDepartmentOverview` computes internally, factored out
+ * for the CSV export route, which needs a multi-day range for a single
+ * department rather than this module's single-day, every-department view.
+ * Callers MUST enforce `assertCan(user.role, "viewDepartmentOverview")`
+ * themselves first — this function performs no RBAC check of its own.
+ */
+export async function resolveDepartmentMemberIds(department: string, roleFilter?: AppRole): Promise<string[]> {
+  const db = getDb();
+  const rows = await db.select({ id: users.id, department: users.department, role: users.role }).from(users);
+  return rows
+    .filter((u) => (u.department?.trim() || "Unassigned") === department)
+    .filter((u) => !roleFilter || u.role === roleFilter)
+    .map((u) => u.id);
+}
+
+/**
+ * KAN-80: every distinct department name (or "Unassigned"), sorted — cheap,
+ * unfiltered read used to populate the department-filter dropdown so its
+ * option list doesn't collapse to whatever `getDepartmentOverview` currently
+ * has filtered down to.
+ */
+export async function listDepartmentNames(): Promise<string[]> {
+  const db = getDb();
+  const rows = await db.select({ department: users.department }).from(users);
+  const names = new Set(rows.map((r) => r.department?.trim() || "Unassigned"));
+  return [...names].sort((a, b) => a.localeCompare(b));
 }

@@ -48,6 +48,9 @@ export const leaveRequestStatusEnum = pgEnum("leave_request_status", [
 export const requestKindEnum = pgEnum("request_kind", ["leave", "wfh"]);
 export const decisionEnum = pgEnum("decision", ["approved", "rejected"]);
 
+// KAN-111 — AI Expense Verification & Receipt Intelligence.
+export const receiptVerdictEnum = pgEnum("receipt_verdict", ["approve", "review", "reject"]);
+
 // ---- core ----
 export const users = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
@@ -108,6 +111,38 @@ export const benefitClaims = pgTable("benefit_claims", {
   fy: text().notNull(), // e.g. "2026-27"
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+// ---- KAN-111: AI Expense Verification & Receipt Intelligence ----
+// Additive to `benefitClaims.verificationResult` (the pass/fail rule outcomes,
+// untouched by this feature): one row per claim holding the explainable AI
+// score, the fraud/anomaly signals, and any duplicate match, for the HR-facing
+// "Receipt Intelligence" screen. Computed once at submission time (KAN-115).
+export type AiScoreFactor = { label: string; delta: number; positive: boolean };
+export type FraudSignal = { label: string; detail: string; severity: "ok" | "warn" | "high" };
+export type DuplicateMatch = { claimId: string; similarityPercent: number; note: string };
+// Per-field OCR readout (PRD "Database" section calls for OCR data alongside
+// the AI score) — confidencePercent is 0-100, pre-rounded for direct display.
+export type OcrField = { label: string; value: string; confidencePercent: number };
+
+export const receiptVerifications = pgTable("receipt_verifications", {
+  id: uuid().primaryKey().defaultRandom(),
+  // cascade: deleting a claim (an employee may delete their own while pending_hr,
+  // see delete-claim.ts) must delete its receipt-intelligence row too — nothing
+  // may block or orphan a claim delete.
+  claimId: uuid()
+    .notNull()
+    .unique()
+    .references(() => benefitClaims.id, { onDelete: "cascade" }),
+  aiScore: integer().notNull(),
+  verdict: receiptVerdictEnum().notNull(),
+  verdictReason: text().notNull(),
+  factors: jsonb().$type<AiScoreFactor[]>().notNull().default([]),
+  fraudSignals: jsonb().$type<FraudSignal[]>().notNull().default([]),
+  duplicateMatch: jsonb().$type<DuplicateMatch | null>(),
+  ocrFields: jsonb().$type<OcrField[]>().notNull().default([]),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+// ---- end KAN-111 ----
 
 // ---- Module B: Leave & WFH ----
 export const leaveTypes = pgTable("leave_types", {
@@ -220,11 +255,11 @@ export type StaffingThreshold = typeof staffingThreshold.$inferSelect;
 // ---- KAN-79: capacity-forecast snapshots (Smart Team Availability & Capacity
 // Planner epic). The 2-4 week forward-looking trend on /availability is
 // computed LIVE from leaveRequests — this table is NOT read by that forecast.
-// It exists so a future scheduled job can persist a daily point-in-time
-// snapshot per scope, building up real HISTORICAL trend data over time (there
-// is no such job yet in this repo — a future story must add one before this
-// table has any rows to show). `writeCapacitySnapshot` in
-// src/server/manager/capacity-forecast.ts computes+inserts one row on demand.
+// It persists a daily point-in-time snapshot per scope (org, department, team),
+// building up real HISTORICAL trend data over time. Populated by the Vercel
+// Cron job at src/app/api/cron/capacity-snapshot/route.ts (see vercel.json),
+// which calls src/server/manager/capacity-snapshot-job.ts once a day — a
+// future story must still add the UI that reads this table's history.
 export const teamCapacitySnapshot = pgTable("team_capacity_snapshot", {
   id: uuid().primaryKey().defaultRandom(),
   date: date().notNull(),
