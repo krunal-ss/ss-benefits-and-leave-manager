@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ROLE_LABEL } from "@/server/users";
-import type { AppRole } from "@/server/auth/rbac";
 import type { AdminUserRow, ApproverOption } from "@/server/admin/data";
 import { SectionCard } from "@/app/(app)/admin/section-card";
 import { Th, Td, EmptyRow } from "@/app/(app)/admin/table-cells";
@@ -38,7 +37,7 @@ export function UsersSection({ users, approvers }: { users: AdminUserRow[]; appr
                       <div className="font-medium">{u.name}</div>
                       <div className="text-[11.5px] text-muted-foreground">{u.email}</div>
                     </Td>
-                    <Td>{ROLE_LABEL[u.role as AppRole] ?? u.role}</Td>
+                    <Td>{ROLE_LABEL[u.role] ?? u.role}</Td>
                     <Td className="text-muted-foreground">{u.department ?? "—"}</Td>
                     <Td className="text-muted-foreground">{nameFor(u.teamLeadId)}</Td>
                     <Td className="text-muted-foreground">{nameFor(u.projectManagerId)}</Td>

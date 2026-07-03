@@ -201,8 +201,9 @@ export function SubmitForm({
 
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <Label>Amount (₹)</Label>
+              <Label htmlFor="claimAmount">Amount (₹)</Label>
               <Input
+                id="claimAmount"
                 value={claim.amount}
                 onChange={(e) => setField({ amount: e.target.value })}
                 inputMode="numeric"
@@ -213,16 +214,17 @@ export function SubmitForm({
               </div>
             </div>
             <div>
-              <Label>Date of expense</Label>
-              <Input type="date" value={claim.date} onChange={(e) => setField({ date: e.target.value })} />
+              <Label htmlFor="claimDate">Date of expense</Label>
+              <Input id="claimDate" type="date" value={claim.date} onChange={(e) => setField({ date: e.target.value })} />
             </div>
           </div>
 
           <div>
-            <Label>
+            <Label htmlFor="claimVendor">
               Vendor / description <span className="text-destructive">*</span>
             </Label>
             <Input
+              id="claimVendor"
               value={claim.vendor}
               onChange={(e) => setField({ vendor: e.target.value })}
               placeholder="e.g. Cult.fit annual membership"
@@ -235,10 +237,11 @@ export function SubmitForm({
           </div>
 
           <div>
-            <Label>
+            <Label htmlFor="claimReceipt">
               Supporting document <span className="text-destructive">*</span>
             </Label>
             <input
+              id="claimReceipt"
               ref={fileInputRef}
               type="file"
               accept={ACCEPT}

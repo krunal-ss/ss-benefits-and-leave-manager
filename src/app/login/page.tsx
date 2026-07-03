@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Github, Mail, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,16 +28,21 @@ type View = "login" | "signup" | "forgot" | "reset";
 const initial: AuthState = {};
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const { isDark, toggleTheme } = useTheme();
   const { flash } = useToast();
   const [view, setView] = useState<View>("login");
 
   // Where to land after login: the protected path the user was sent here from
   // (middleware adds ?redirectTo=…), passed straight through to loginAction.
-  const [redirectTo, setRedirectTo] = useState("");
-  useEffect(() => {
-    setRedirectTo(new URLSearchParams(window.location.search).get("redirectTo") ?? "");
-  }, []);
+  const redirectTo = useSearchParams().get("redirectTo") ?? "";
 
   const [login, loginAct, loginPending] = useActionState(loginAction, initial);
   const [signup, signupAct, signupPending] = useActionState(signupAction, initial);
@@ -73,7 +79,7 @@ export default function LoginPage() {
                 </Field>
                 <div>
                   <div className="mb-2 flex items-center">
-                    <Label className="mb-0">Password</Label>
+                    <Label htmlFor="loginPassword" className="mb-0">Password</Label>
                     <button
                       type="button"
                       onClick={() => setView("forgot")}
@@ -82,7 +88,7 @@ export default function LoginPage() {
                       Forgot your password?
                     </button>
                   </div>
-                  <Input name="password" type="password" required placeholder="••••••••" />
+                  <Input id="loginPassword" name="password" type="password" required placeholder="••••••••" />
                 </div>
                 <FormError state={login} />
                 <Button type="submit" className="w-full" disabled={loginPending}>
@@ -115,8 +121,9 @@ export default function LoginPage() {
                   <Input name="email" type="email" required placeholder="aarav@smartsense.com" />
                 </Field>
                 <div>
-                  <Label>Role</Label>
+                  <Label htmlFor="signupRole">Role</Label>
                   <select
+                    id="signupRole"
                     name="role"
                     defaultValue="employee"
                     className="h-[38px] w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -132,8 +139,8 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div>
-                  <Label>Password</Label>
-                  <Input name="password" type="password" required placeholder="At least 8 characters" />
+                  <Label htmlFor="signupPassword">Password</Label>
+                  <Input id="signupPassword" name="password" type="password" required placeholder="At least 8 characters" />
                   <div className="mt-1.5 text-[11.5px] text-muted-foreground">
                     Use 8+ characters with a mix of letters and numbers.
                   </div>

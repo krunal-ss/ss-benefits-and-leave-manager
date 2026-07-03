@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,14 +32,27 @@ export function DepartmentThresholdDrawer({
       onClose,
     );
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const title = threshold ? `Edit ${threshold.scopeValue}` : "New department override";
+
   return (
     <>
       <div onClick={onClose} className="fixed inset-0 z-[60] bg-black/50" />
-      <div className="fixed inset-y-0 right-0 z-[70] flex w-[420px] max-w-[92vw] flex-col border-l bg-card shadow-2xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="fixed inset-y-0 right-0 z-[70] flex w-[420px] max-w-[92vw] flex-col border-l bg-card shadow-2xl"
+      >
         <div className="flex items-center gap-3 border-b px-[22px] py-[18px]">
-          <div className="text-base font-semibold">
-            {threshold ? `Edit ${threshold.scopeValue}` : "New department override"}
-          </div>
+          <div className="text-base font-semibold">{title}</div>
           <button
             onClick={onClose}
             aria-label="Close"

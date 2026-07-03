@@ -1,6 +1,4 @@
-"use client";
-
-// KAN-74 — Client shell for the staffing-thresholds config screen: the
+// KAN-74 — Server-rendered shell for the staffing-thresholds config screen: the
 // org-wide default (single row, edited in place) plus a table of per-department
 // overrides (create/edit via a drawer). Mirrors the admin console's
 // list+drawer CRUD pattern (src/app/(app)/admin/admin-console.tsx).

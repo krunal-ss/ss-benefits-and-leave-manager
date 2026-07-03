@@ -16,7 +16,7 @@ const ROLE_OPTIONS: AppRole[] = ["employee", "team_lead", "project_manager", "hr
 
 export function UserDrawer({ user, approvers, onClose }: { user: AdminUserRow; approvers: ApproverOption[]; onClose: () => void }) {
   const { save, pending } = useAdminSave();
-  const [role, setRole] = useState<AppRole>(user.role as AppRole);
+  const [role, setRole] = useState<AppRole>(user.role);
   const [department, setDepartment] = useState(user.department ?? "");
   const [teamLeadId, setTeamLeadId] = useState(user.teamLeadId ?? "");
   const [projectManagerId, setProjectManagerId] = useState(user.projectManagerId ?? "");

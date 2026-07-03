@@ -1,5 +1,3 @@
-"use client";
-
 import { ThemeProvider } from "./theme-provider";
 import { ToastProvider } from "./toast-provider";
 import { SupabaseSessionProvider } from "./supabase-session";
