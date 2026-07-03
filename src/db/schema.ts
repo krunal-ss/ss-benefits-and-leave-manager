@@ -238,7 +238,6 @@ export const teamCapacitySnapshot = pgTable("team_capacity_snapshot", {
   computedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-export type TeamCapacitySnapshot = typeof teamCapacitySnapshot.$inferSelect;
 // ---- end KAN-79 ----
 
 // ---- shared ----
@@ -270,8 +269,4 @@ export const auditLog = pgTable("audit_log", {
 });
 
 export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type BenefitClaim = typeof benefitClaims.$inferSelect;
-export type LeaveRequest = typeof leaveRequests.$inferSelect;
 export type LeaveType = typeof leaveTypes.$inferSelect;
-export type LeaveBalance = typeof leaveBalances.$inferSelect;

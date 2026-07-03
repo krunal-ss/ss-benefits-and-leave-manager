@@ -4,7 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { Check, CircleAlert, House, ShieldAlert, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label, Textarea } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/providers";
 import { applyLeaveAction, previewLeaveWarningsAction } from "@/server/actions/leave";
 import { LEAVE_TYPES, type LeaveTypeKey } from "@/server/leave";
@@ -13,8 +14,18 @@ import type { StaffingWarning } from "@/server/manager/staffing-guard";
 import { workingDaysBetween } from "@/lib/working-days";
 import { cn } from "@/lib/cn";
 
-const EMPTY = {
-  type: "CL" as LeaveTypeKey,
+type LeaveDraft = {
+  type: LeaveTypeKey;
+  from: string;
+  to: string;
+  halfDay: boolean;
+  reason: string;
+  teamLeadId: string;
+  projectManagerId: string;
+};
+
+const EMPTY: LeaveDraft = {
+  type: "CL",
   from: "2026-07-06",
   to: "2026-07-08",
   halfDay: false,
@@ -204,10 +215,11 @@ export function LeaveForm({
 
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <Label>
+              <Label htmlFor="leaveFrom">
                 From <span className="text-destructive">*</span>
               </Label>
               <input
+                id="leaveFrom"
                 type="date"
                 value={leave.from}
                 onChange={(e) => set({ from: e.target.value })}
@@ -220,10 +232,11 @@ export function LeaveForm({
               )}
             </div>
             <div>
-              <Label>
+              <Label htmlFor="leaveTo">
                 To <span className="text-destructive">*</span>
               </Label>
               <input
+                id="leaveTo"
                 type="date"
                 value={leave.to}
                 onChange={(e) => set({ to: e.target.value })}
@@ -260,10 +273,11 @@ export function LeaveForm({
 
           <div className="grid grid-cols-2 gap-3.5">
             <div>
-              <Label>
+              <Label htmlFor="leaveTeamLead">
                 Team Lead (L1) <span className="text-destructive">*</span>
               </Label>
               <select
+                id="leaveTeamLead"
                 value={leave.teamLeadId}
                 onChange={(e) => set({ teamLeadId: e.target.value })}
                 aria-invalid={submitTried && teamLeadMissing}
@@ -282,10 +296,11 @@ export function LeaveForm({
               )}
             </div>
             <div>
-              <Label>
+              <Label htmlFor="leaveProjectManager">
                 Project Manager (L2) <span className="text-destructive">*</span>
               </Label>
               <select
+                id="leaveProjectManager"
                 value={leave.projectManagerId}
                 onChange={(e) => set({ projectManagerId: e.target.value })}
                 aria-invalid={submitTried && projectManagerMissing}
@@ -306,10 +321,11 @@ export function LeaveForm({
           </div>
 
           <div>
-            <Label>
+            <Label htmlFor="leaveReason">
               Reason <span className="text-destructive">*</span>
             </Label>
             <Textarea
+              id="leaveReason"
               value={leave.reason}
               onChange={(e) => set({ reason: e.target.value })}
               placeholder="Add context for your approvers…"

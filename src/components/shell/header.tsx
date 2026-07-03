@@ -34,7 +34,7 @@ export function Header() {
         >
           {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
         </button>
-        <div className="inline-flex size-[34px] cursor-pointer items-center justify-center rounded-lg border bg-background shadow-xs hover:bg-accent">
+        <div aria-label="Notifications" className="inline-flex size-[34px] items-center justify-center rounded-lg border bg-background shadow-xs">
           <Bell className="size-4" />
         </div>
       </div>

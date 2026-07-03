@@ -2,6 +2,7 @@ import "server-only";
 import { asc } from "drizzle-orm";
 import { getDb } from "@/db";
 import { benefitCategories, holidays, leaveTypes, users } from "@/db/schema";
+import type { AppRole } from "@/server/auth/rbac";
 
 // KAN-49: read services for the Admin console. Reads only — every mutation lives
 // in a server action under src/server/admin/actions.ts (audited + capability-gated).
@@ -10,7 +11,7 @@ export type AdminUserRow = {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: AppRole;
   department: string | null;
   teamLeadId: string | null;
   projectManagerId: string | null;

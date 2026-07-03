@@ -7,6 +7,7 @@ import { expectedAccrued, policyFromRow } from "@/server/leave/accrual";
 import { currentFy, todayISO } from "@/lib/fy";
 import type { Category, ClaimStatus, RecentClaim } from "@/server/benefits";
 import type { LeaveCard, UpcomingItem } from "@/server/leave";
+import { isActiveStatus } from "@/server/employee/requests";
 
 const WFH_MONTHLY_QUOTA = 8;
 const STATUS_LABEL: Record<string, ClaimStatus> = {
@@ -153,7 +154,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     .orderBy(leaveRequests.fromDate);
 
   const upcoming: UpcomingItem[] = requestRows
-    .filter((r) => r.to >= today && r.status !== "rejected" && r.status !== "cancelled")
+    .filter((r) => r.to >= today && isActiveStatus(r.status))
     .slice(0, 4)
     .map((r) => ({
       title: r.kind === "wfh" ? "Work from home" : (r.typeName ?? "Leave"),

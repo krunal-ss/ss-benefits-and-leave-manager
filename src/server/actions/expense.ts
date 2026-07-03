@@ -12,7 +12,6 @@ import {
   parseReceiptWithClaude,
   runRuleChecks,
   type ExtractedReceipt,
-  type ReceiptMediaType,
 } from "@/server/verification";
 import { isAllowedReceiptType, uploadReceipt } from "@/server/supabase/storage";
 import { currentFy, todayISO } from "@/lib/fy";
@@ -88,7 +87,7 @@ export async function submitExpenseAction(formData: FormData): Promise<SubmitRes
   if (hasFile) {
     try {
       const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
-      extracted = await parseReceiptWithClaude(base64, file.type as ReceiptMediaType);
+      extracted = await parseReceiptWithClaude(base64, file.type);
     } catch {
       extracted = { amountPaise: null, date: null, vendor: null, confidence: 0 };
     }
