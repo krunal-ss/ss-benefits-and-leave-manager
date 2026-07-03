@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { buildFraudSignals, computeAiScore, fyBounds, runRuleChecks, type ClaimVerificationInput } from "./verification";
+import {
+  buildFraudSignals,
+  buildOcrFields,
+  computeAiScore,
+  EMPTY_EXTRACTED_RECEIPT,
+  fyBounds,
+  runRuleChecks,
+  type ClaimVerificationInput,
+} from "./verification";
 
 const base: ClaimVerificationInput = {
   hasDocument: true,
@@ -118,5 +126,24 @@ describe("buildFraudSignals (KAN-111)", () => {
     const signals = buildFraudSignals(checks, { isDuplicate: false });
     expect(signals.find((s) => s.label === "Amount mismatch")?.severity).toBe("high");
     expect(signals.find((s) => s.label === "Over balance")?.severity).toBe("warn");
+  });
+});
+
+describe("buildOcrFields (KAN-111)", () => {
+  it("returns an empty list when nothing was extracted", () => {
+    expect(buildOcrFields(EMPTY_EXTRACTED_RECEIPT)).toEqual([]);
+  });
+
+  it("maps vendor/amount/date with their own confidence percentages", () => {
+    const fields = buildOcrFields({
+      amountPaise: 600000,
+      date: "2026-06-20",
+      vendor: "Cult.fit",
+      confidence: 0.9,
+      fieldConfidence: { amount: 0.95, date: 0.8, vendor: 0.6 },
+    });
+    expect(fields.find((f) => f.label === "Vendor")?.confidencePercent).toBe(60);
+    expect(fields.find((f) => f.label === "Total amount")).toMatchObject({ value: "₹6,000", confidencePercent: 95 });
+    expect(fields.find((f) => f.label === "Expense date")).toMatchObject({ value: "2026-06-20", confidencePercent: 80 });
   });
 });

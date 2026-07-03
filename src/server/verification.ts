@@ -2,9 +2,10 @@
 // explainable (never a black box): it returns every rule outcome for audit.
 // An optional Claude vision pass extracts amount/date/vendor from the receipt.
 
-import type { AiScoreFactor, FraudSignal, VerificationResult } from "@/db/schema";
+import type { AiScoreFactor, FraudSignal, OcrField, VerificationResult } from "@/db/schema";
 import { receiptVerdictEnum } from "@/db/schema";
 import { fyBounds } from "@/lib/fy";
+import { formatINR } from "@/lib/format";
 
 // Re-exported for callers/tests that import it from the verification module.
 export { fyBounds };
@@ -149,6 +150,28 @@ export function buildFraudSignals(
     );
   }
   return signals;
+}
+
+/** Per-field OCR readout for the Receipt Intelligence screen's "extracted fields" panel. */
+export function buildOcrFields(extracted: ExtractedReceipt): OcrField[] {
+  if (extracted.amountPaise === null && extracted.date === null && extracted.vendor === null) return [];
+  return [
+    {
+      label: "Vendor",
+      value: extracted.vendor?.trim() || "—",
+      confidencePercent: Math.round(extracted.fieldConfidence.vendor * 100),
+    },
+    {
+      label: "Total amount",
+      value: extracted.amountPaise !== null ? formatINR(extracted.amountPaise / 100) : "—",
+      confidencePercent: Math.round(extracted.fieldConfidence.amount * 100),
+    },
+    {
+      label: "Expense date",
+      value: extracted.date ?? "—",
+      confidencePercent: Math.round(extracted.fieldConfidence.date * 100),
+    },
+  ];
 }
 // ---- end KAN-111 ----
 

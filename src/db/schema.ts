@@ -120,19 +120,26 @@ export const benefitClaims = pgTable("benefit_claims", {
 export type AiScoreFactor = { label: string; delta: number; positive: boolean };
 export type FraudSignal = { label: string; detail: string; severity: "ok" | "warn" | "high" };
 export type DuplicateMatch = { claimId: string; similarityPercent: number; note: string };
+// Per-field OCR readout (PRD "Database" section calls for OCR data alongside
+// the AI score) — confidencePercent is 0-100, pre-rounded for direct display.
+export type OcrField = { label: string; value: string; confidencePercent: number };
 
 export const receiptVerifications = pgTable("receipt_verifications", {
   id: uuid().primaryKey().defaultRandom(),
+  // cascade: deleting a claim (an employee may delete their own while pending_hr,
+  // see delete-claim.ts) must delete its receipt-intelligence row too — nothing
+  // may block or orphan a claim delete.
   claimId: uuid()
     .notNull()
     .unique()
-    .references(() => benefitClaims.id),
+    .references(() => benefitClaims.id, { onDelete: "cascade" }),
   aiScore: integer().notNull(),
   verdict: receiptVerdictEnum().notNull(),
   verdictReason: text().notNull(),
   factors: jsonb().$type<AiScoreFactor[]>().notNull().default([]),
   fraudSignals: jsonb().$type<FraudSignal[]>().notNull().default([]),
   duplicateMatch: jsonb().$type<DuplicateMatch | null>(),
+  ocrFields: jsonb().$type<OcrField[]>().notNull().default([]),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 // ---- end KAN-111 ----

@@ -10,6 +10,7 @@ import { assertCan } from "@/server/auth/rbac";
 import { getCategoryBalanceByKey } from "@/server/employee/balances";
 import {
   buildFraudSignals,
+  buildOcrFields,
   computeAiScore,
   EMPTY_EXTRACTED_RECEIPT,
   parseReceiptWithClaude,
@@ -202,6 +203,7 @@ export async function submitExpenseAction(formData: FormData): Promise<SubmitRes
     duplicateMatch: duplicateMatch
       ? { claimId: duplicateMatch.id, similarityPercent: duplicateMatch.similarityPercent, note: duplicateNote! }
       : null,
+    ocrFields: buildOcrFields(extracted),
   });
 
   await db.insert(auditLog).values({
