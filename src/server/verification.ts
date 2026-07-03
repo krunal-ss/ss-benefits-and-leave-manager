@@ -2,7 +2,8 @@
 // explainable (never a black box): it returns every rule outcome for audit.
 // An optional Claude vision pass extracts amount/date/vendor from the receipt.
 
-import type { VerificationResult } from "@/db/schema";
+import type { AiScoreFactor, FraudSignal, VerificationResult } from "@/db/schema";
+import { receiptVerdictEnum } from "@/db/schema";
 import { fyBounds } from "@/lib/fy";
 
 // Re-exported for callers/tests that import it from the verification module.
@@ -54,14 +55,128 @@ export function runRuleChecks(input: ClaimVerificationInput): VerificationResult
   };
 }
 
+// ---- KAN-111: AI confidence score + fraud signals ----
+// Additive, explainable layer on top of `runRuleChecks` — every point on the
+// score traces back to a named rule outcome, so it stays auditable (never a
+// black-box LLM score). Computed once per submission (KAN-115) and persisted
+// to `receiptVerifications`, independent of the pass/fail auto-approve gate.
+
+export type AiVerdict = (typeof receiptVerdictEnum.enumValues)[number];
+export type AiScoreResult = { score: number; verdict: AiVerdict; factors: AiScoreFactor[] };
+
+// How much each rule outcome moves the score, off a neutral 50 baseline. The
+// weights sum to 50 (a passing check adds its weight, a failing one subtracts
+// it) so a fully clean claim lands exactly at 100 instead of saturating the
+// clamp on the first check — otherwise every claim with at most one minor flag
+// would score identically to a perfect one. Duplicate detection is weighted
+// heaviest — it's the single strongest fraud indicator this engine can check.
+const CHECK_WEIGHTS: Record<string, number> = {
+  "File readable": 3,
+  "Not a duplicate": 15,
+  "Amount matches receipt": 10,
+  "Within current FY": 5,
+  "Balance sufficient": 8,
+  "Vendor / category sanity": 4,
+  "OCR confidence": 5,
+};
+const DEFAULT_CHECK_WEIGHT = 5;
+const BASELINE_SCORE = 50;
+
+/** Deterministic 0-100 confidence score + verdict, explained by per-check factors. */
+export function computeAiScore(
+  checks: VerificationResult["checks"],
+  opts: { isDuplicate: boolean },
+): AiScoreResult {
+  let score = BASELINE_SCORE;
+  const factors: AiScoreFactor[] = [];
+  for (const check of checks) {
+    const weight = CHECK_WEIGHTS[check.label] ?? DEFAULT_CHECK_WEIGHT;
+    const delta = check.ok ? weight : -weight;
+    score += delta;
+    factors.push({
+      label: check.ok ? `${check.label} — ${check.detail}` : `${check.label} failed — ${check.detail}`,
+      delta,
+      positive: check.ok,
+    });
+  }
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  // A duplicate always recommends reject, regardless of how the other checks land.
+  // The approve threshold is deliberately close to 100: any real rule failure
+  // already routes the claim to HR (see runRuleChecks), so the score should only
+  // read "approve" for a genuinely clean claim — never for one sitting in the
+  // HR queue with an open flag.
+  const verdict: AiVerdict = opts.isDuplicate ? "reject" : score >= 95 ? "approve" : score >= 55 ? "review" : "reject";
+  return { score, verdict, factors };
+}
+
+// Rule check → fraud signal mapping. Only covers things this engine can
+// honestly derive from real data — no fabricated forensics (e.g. no image
+// tamper/ELA claim, since nothing here actually inspects pixel data).
+const FRAUD_RULES: {
+  match: string;
+  okLabel: string;
+  failLabel: string;
+  failSeverity: FraudSignal["severity"];
+}[] = [
+  { match: "Amount matches receipt", okLabel: "Amount match", failLabel: "Amount mismatch", failSeverity: "high" },
+  { match: "Balance sufficient", okLabel: "Within balance", failLabel: "Over balance", failSeverity: "warn" },
+  { match: "OCR confidence", okLabel: "OCR confidence", failLabel: "Low OCR confidence", failSeverity: "warn" },
+  {
+    match: "Vendor / category sanity",
+    okLabel: "Vendor recognised",
+    failLabel: "Vendor / category unclear",
+    failSeverity: "warn",
+  },
+];
+
+/** Explainable fraud/anomaly signal list for the Receipt Intelligence screen. */
+export function buildFraudSignals(
+  checks: VerificationResult["checks"],
+  opts: { isDuplicate: boolean; duplicateNote?: string },
+): FraudSignal[] {
+  const signals: FraudSignal[] = [
+    opts.isDuplicate
+      ? { label: "Duplicate suspected", detail: opts.duplicateNote ?? "Matches a prior claim.", severity: "high" }
+      : { label: "Duplicate check", detail: "No matching prior receipt.", severity: "ok" },
+  ];
+  for (const rule of FRAUD_RULES) {
+    const check = checks.find((c) => c.label === rule.match);
+    if (!check) continue;
+    signals.push(
+      check.ok
+        ? { label: rule.okLabel, detail: check.detail, severity: "ok" }
+        : { label: rule.failLabel, detail: check.detail, severity: rule.failSeverity },
+    );
+  }
+  return signals;
+}
+// ---- end KAN-111 ----
+
 // Vision model for receipt field extraction — Haiku is fast + cheap for OCR.
 const OCR_MODEL = "claude-haiku-4-5-20251001";
+
+// KAN-111: per-field confidence (falls back to the overall `confidence` when
+// the model omits it) — powers the "extracted fields" confidence bars on the
+// Receipt Intelligence screen.
+export type FieldConfidence = { amount: number; date: number; vendor: number };
 
 export type ExtractedReceipt = {
   amountPaise: number | null;
   date: string | null;
   vendor: string | null;
   confidence: number;
+  fieldConfidence: FieldConfidence;
+};
+
+// Shared "nothing extracted" fallback — used when there's no file, OCR throws,
+// or the model's response doesn't parse. Exported so callers (e.g. the submit
+// action's pre-OCR default) don't each redeclare the same literal.
+export const EMPTY_EXTRACTED_RECEIPT: ExtractedReceipt = {
+  amountPaise: null,
+  date: null,
+  vendor: null,
+  confidence: 0,
+  fieldConfidence: { amount: 0, date: 0, vendor: 0 },
 };
 
 export type ReceiptMediaType = "image/png" | "image/jpeg" | "application/pdf";
@@ -69,23 +184,32 @@ export type ReceiptMediaType = "image/png" | "image/jpeg" | "application/pdf";
 const OCR_PROMPT =
   "Extract the receipt's total amount (in paise, integer — multiply rupees by 100), " +
   "the date (ISO YYYY-MM-DD), and the vendor name. Respond ONLY with JSON: " +
-  '{"amountPaise":number|null,"date":string|null,"vendor":string|null,"confidence":number}. ' +
-  "confidence is your 0..1 certainty the fields are correct; use a low value if the document is unreadable.";
+  '{"amountPaise":number|null,"date":string|null,"vendor":string|null,"confidence":number,' +
+  '"fieldConfidence":{"amount":number,"date":number,"vendor":number}}. ' +
+  "confidence is your overall 0..1 certainty the fields are correct; fieldConfidence gives a " +
+  "separate 0..1 certainty per field. Use a low value if the document is unreadable.";
 
 function parseExtraction(text: string | undefined): ExtractedReceipt {
-  if (!text) return { amountPaise: null, date: null, vendor: null, confidence: 0 };
+  if (!text) return EMPTY_EXTRACTED_RECEIPT;
   try {
     // The model may wrap JSON in prose/markdown — pull the first {...} block.
     const match = text.match(/\{[\s\S]*\}/);
     const parsed = JSON.parse(match ? match[0] : text) as Partial<ExtractedReceipt>;
+    const confidence = typeof parsed.confidence === "number" ? parsed.confidence : 0;
+    const fc = parsed.fieldConfidence;
     return {
       amountPaise: typeof parsed.amountPaise === "number" ? parsed.amountPaise : null,
       date: typeof parsed.date === "string" ? parsed.date : null,
       vendor: typeof parsed.vendor === "string" ? parsed.vendor : null,
-      confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0,
+      confidence,
+      fieldConfidence: {
+        amount: typeof fc?.amount === "number" ? fc.amount : confidence,
+        date: typeof fc?.date === "number" ? fc.date : confidence,
+        vendor: typeof fc?.vendor === "number" ? fc.vendor : confidence,
+      },
     };
   } catch {
-    return { amountPaise: null, date: null, vendor: null, confidence: 0 };
+    return EMPTY_EXTRACTED_RECEIPT;
   }
 }
 
