@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/capacity-snapshot",
+      "schedule": "30 18 * * *"
+    }
+  ]
+}
