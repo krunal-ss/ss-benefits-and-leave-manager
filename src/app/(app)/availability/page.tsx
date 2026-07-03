@@ -12,8 +12,22 @@ import { todayISO } from "@/lib/fy";
 import { cn } from "@/lib/cn";
 import { formatDayLabel, pctTextClass } from "@/app/(app)/availability/availability-format";
 import { CapacitySummaryCard } from "@/app/(app)/availability/capacity-summary-card";
+import { AvailabilityFilterBar } from "@/app/(app)/availability/availability-filter-bar";
+import { listLeaveTypes } from "@/server/admin/data";
+import { roleEnum } from "@/db/schema";
+import type { AppRole } from "@/server/auth/rbac";
 
 export const metadata = { title: "Team availability · SmartSense" };
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Last calendar day of a `YYYY-MM` month, as an ISO yyyy-mm-dd string — the default export range when no date filter is set. */
+function lastDayOfMonth(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  const last = new Date(y, m, 0).getDate();
+  return `${ym}-${String(last).padStart(2, "0")}`;
+}
 
 function hrefFor(m: string | null, teamId: string): string | null {
   if (m === null) return null;
@@ -50,15 +64,34 @@ function dayBg(d: AvailabilityDay): string {
 export default async function AvailabilityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ m?: string; team?: string; date?: string }>;
+  searchParams: Promise<{
+    m?: string;
+    team?: string;
+    date?: string;
+    role?: string;
+    leaveType?: string;
+    from?: string;
+    to?: string;
+  }>;
 }) {
   const user = await requireAccess("/availability");
-  const { m, team, date } = await searchParams;
+  const { m, team, date, role, leaveType, from, to } = await searchParams;
+
+  // KAN-80: validate every filter param before it reaches a query — an
+  // unrecognized role/leave-type/date is silently dropped rather than passed
+  // through, same defensive posture as the existing `date` param above.
+  const roleFilter = role && (roleEnum.enumValues as readonly string[]).includes(role) ? (role as AppRole) : undefined;
+  const leaveTypeFilter = leaveType && UUID.test(leaveType) ? leaveType : undefined;
+  const fromFilter = from && ISO_DATE.test(from) ? from : undefined;
+  const toFilter = to && ISO_DATE.test(to) ? to : undefined;
+  const filters = { role: roleFilter, leaveTypeId: leaveTypeFilter, fromDate: fromFilter, toDate: toFilter };
+
   // KAN-79: the forecast is independent of the month grid (always a rolling
   // window starting today) — fetched alongside it rather than blocking on it.
-  const [availability, forecast] = await Promise.all([
-    getTeamAvailability(user, m, team),
+  const [availability, forecast, leaveTypes] = await Promise.all([
+    getTeamAvailability(user, m, team, filters),
     getCapacityForecast(user, team),
+    listLeaveTypes(),
   ]);
   const { weeks, month, monthLabel, prevMonth, nextMonth, thisMonth, fyLabel, headcount, teamId, teamName, teams } =
     availability;
@@ -118,6 +151,15 @@ export default async function AvailabilityPage({
           </div>
         </div>
       </div>
+
+      <AvailabilityFilterBar
+        leaveTypes={leaveTypes.map((t) => ({ id: t.id, name: t.name }))}
+        role={roleFilter ?? ""}
+        leaveTypeId={leaveTypeFilter ?? ""}
+        from={fromFilter ?? `${month}-01`}
+        to={toFilter ?? lastDayOfMonth(month)}
+        teamId={teamId}
+      />
 
       {canSwitchTeams && (
         <div className="flex flex-wrap items-center gap-2">
