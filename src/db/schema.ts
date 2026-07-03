@@ -48,6 +48,9 @@ export const leaveRequestStatusEnum = pgEnum("leave_request_status", [
 export const requestKindEnum = pgEnum("request_kind", ["leave", "wfh"]);
 export const decisionEnum = pgEnum("decision", ["approved", "rejected"]);
 
+// KAN-111 — AI Expense Verification & Receipt Intelligence.
+export const receiptVerdictEnum = pgEnum("receipt_verdict", ["approve", "review", "reject"]);
+
 // ---- core ----
 export const users = pgTable("users", {
   id: uuid().primaryKey().defaultRandom(),
@@ -108,6 +111,31 @@ export const benefitClaims = pgTable("benefit_claims", {
   fy: text().notNull(), // e.g. "2026-27"
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
+
+// ---- KAN-111: AI Expense Verification & Receipt Intelligence ----
+// Additive to `benefitClaims.verificationResult` (the pass/fail rule outcomes,
+// untouched by this feature): one row per claim holding the explainable AI
+// score, the fraud/anomaly signals, and any duplicate match, for the HR-facing
+// "Receipt Intelligence" screen. Computed once at submission time (KAN-115).
+export type AiScoreFactor = { label: string; delta: number; positive: boolean };
+export type FraudSignal = { label: string; detail: string; severity: "ok" | "warn" | "high" };
+export type DuplicateMatch = { claimId: string; similarityPercent: number; note: string };
+
+export const receiptVerifications = pgTable("receipt_verifications", {
+  id: uuid().primaryKey().defaultRandom(),
+  claimId: uuid()
+    .notNull()
+    .unique()
+    .references(() => benefitClaims.id),
+  aiScore: integer().notNull(),
+  verdict: receiptVerdictEnum().notNull(),
+  verdictReason: text().notNull(),
+  factors: jsonb().$type<AiScoreFactor[]>().notNull().default([]),
+  fraudSignals: jsonb().$type<FraudSignal[]>().notNull().default([]),
+  duplicateMatch: jsonb().$type<DuplicateMatch | null>(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+// ---- end KAN-111 ----
 
 // ---- Module B: Leave & WFH ----
 export const leaveTypes = pgTable("leave_types", {
