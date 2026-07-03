@@ -1,38 +1,11 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { MonthNavButton } from "@/components/ui/month-nav-button";
+import { LegendDot } from "@/components/ui/legend-dot";
 import { requireAccess } from "@/server/auth/current-user";
 import { getTeamCalendar } from "@/server/calendar";
-import { cn } from "@/lib/cn";
 import { CalendarGrid } from "./calendar-grid";
 
 export const metadata = { title: "Team calendar · SmartSense" };
-
-function MonthNavButton({ month, dir }: { month: string | null; dir: "prev" | "next" }) {
-  const Icon = dir === "prev" ? ChevronLeft : ChevronRight;
-  const label = dir === "prev" ? "Previous month" : "Next month";
-  const base = "flex size-8 items-center justify-center rounded-lg border";
-  if (!month) {
-    return (
-      <span aria-disabled className={cn(base, "cursor-not-allowed text-muted-foreground/40")}>
-        <Icon className="size-4" strokeWidth={2} />
-      </span>
-    );
-  }
-  return (
-    <Link href={`/calendar?m=${month}`} aria-label={label} className={cn(base, "text-muted-foreground transition-colors hover:bg-accent hover:text-foreground")}>
-      <Icon className="size-4" strokeWidth={2} />
-    </Link>
-  );
-}
-
-function LegendDot({ className, label }: { className: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span className={cn("size-[9px] rounded-sm", className)} />
-      {label}
-    </span>
-  );
-}
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ m?: string }> }) {
   const user = await requireAccess("/calendar");
@@ -49,13 +22,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-3.5">
-          <LegendDot className="bg-blue-600" label="Leave" />
-          <LegendDot className="bg-violet-600" label="WFH" />
-          <LegendDot className="bg-amber-500" label="Holiday" />
+          <LegendDot shape="square" className="bg-blue-600" label="Leave" />
+          <LegendDot shape="square" className="bg-violet-600" label="WFH" />
+          <LegendDot shape="square" className="bg-amber-500" label="Holiday" />
           <div className="ml-1.5 flex items-center gap-2">
-            <MonthNavButton month={prevMonth} dir="prev" />
+            <MonthNavButton href={prevMonth ? `/calendar?m=${prevMonth}` : null} dir="prev" />
             <span className="min-w-[124px] text-center text-sm font-semibold">{monthLabel}</span>
-            <MonthNavButton month={nextMonth} dir="next" />
+            <MonthNavButton href={nextMonth ? `/calendar?m=${nextMonth}` : null} dir="next" />
             {thisMonth && (
               <Link
                 href="/calendar"

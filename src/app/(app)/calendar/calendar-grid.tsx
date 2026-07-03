@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import type { CalendarEvent, CalWeek, DayCell } from "@/server/calendar";
 import { DayOverviewPopover, type DayOverview } from "./day-overview-popover";
 import { LeaveDetailModal } from "./leave-detail-modal";
+import { EventPill } from "@/app/(app)/calendar/event-pill";
 
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -17,23 +18,6 @@ function dayBg(d: DayCell): string {
   if (d.isHoliday) return "bg-amber-500/[0.09]";
   if (d.isWeekend) return "bg-muted/55";
   return "bg-card";
-}
-
-function EventPill({ event, onClick }: { event: CalendarEvent; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex w-full items-center gap-1.5 rounded-[5px] px-1.5 py-0.5 text-left transition-colors",
-        event.kind === "leave" ? "bg-blue-600/[0.13] hover:bg-blue-600/[0.22]" : "bg-violet-600/[0.14] hover:bg-violet-600/[0.24]",
-      )}
-    >
-      <span className={cn("size-1.5 shrink-0 rounded-full", event.kind === "leave" ? "bg-blue-600" : "bg-violet-600")} />
-      <span className={cn("truncate text-[10.5px] font-medium", event.kind === "leave" ? "text-blue-600" : "text-violet-600")}>
-        {event.label}
-      </span>
-    </button>
-  );
 }
 
 export function CalendarGrid({ weeks, monthLabel }: { weeks: CalWeek[]; monthLabel: string }) {

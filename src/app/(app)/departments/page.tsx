@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { requireAccess } from "@/server/auth/current-user";
-import { getDepartmentOverview, type DepartmentAvailabilityRow } from "@/server/hr/department-overview";
-import { cn } from "@/lib/cn";
+import { getDepartmentOverview } from "@/server/hr/department-overview";
+import { DepartmentRow } from "@/app/(app)/departments/department-row";
 
 export const metadata = { title: "Departments · SmartSense" };
 
@@ -20,77 +19,6 @@ export const metadata = { title: "Departments · SmartSense" };
 function formatDayLabel(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, m - 1, d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-}
-
-/** Text color for the % available figure, same bands as the availability heatmap. */
-function pctTextClass(pct: number): string {
-  if (pct >= 80) return "text-emerald-600";
-  if (pct >= 50) return "text-amber-600";
-  return "text-red-600";
-}
-
-function StatusBadge({ row }: { row: DepartmentAvailabilityRow }) {
-  if (row.availablePct === null) {
-    return (
-      <span className="rounded-full bg-muted px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground">
-        Non-working day
-      </span>
-    );
-  }
-  if (row.belowThreshold) {
-    return (
-      <span className="rounded-full bg-red-600/10 px-2.5 py-1 text-[11.5px] font-medium text-red-600">At risk</span>
-    );
-  }
-  return (
-    <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11.5px] font-medium text-emerald-600">OK</span>
-  );
-}
-
-function DepartmentRow({ row }: { row: DepartmentAvailabilityRow }) {
-  return (
-    <tr className="border-b last:border-b-0">
-      <td className="px-4 py-3 text-[13px] font-medium">{row.department}</td>
-      <td className="px-4 py-3 text-[13px] tabular text-muted-foreground">{row.headcount}</td>
-      <td className="px-4 py-3 text-[13px]">
-        {row.availablePct === null ? (
-          <span className="text-muted-foreground">—</span>
-        ) : (
-          <span className="flex items-baseline gap-1.5">
-            <span className={cn("font-semibold tabular", pctTextClass(row.availablePct))}>{row.availablePct}%</span>
-            <span className="text-[11.5px] text-muted-foreground">
-              {row.availableCount}/{row.headcount} available
-            </span>
-          </span>
-        )}
-      </td>
-      <td className="px-4 py-3 text-[13px] text-muted-foreground">
-        {row.thresholdPercent === null
-          ? "Not configured"
-          : `${row.thresholdPercent}% (${row.thresholdSource === "department" ? "override" : "org default"})`}
-      </td>
-      <td className="px-4 py-3">
-        <StatusBadge row={row} />
-      </td>
-      <td className="px-4 py-3">
-        {row.managers.length === 0 ? (
-          <span className="text-[12.5px] text-muted-foreground">No manager on file</span>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {row.managers.map((m) => (
-              <Link
-                key={m.id}
-                href={`/availability?team=${m.id}`}
-                className="rounded-full border px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                {m.name} heatmap →
-              </Link>
-            ))}
-          </div>
-        )}
-      </td>
-    </tr>
-  );
 }
 
 export default async function DepartmentsPage({

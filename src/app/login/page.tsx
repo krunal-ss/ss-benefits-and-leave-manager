@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useState } from "react";
 import { ArrowLeft, Check, Github, Mail, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { BrandMark } from "@/components/shell/brand";
 import { useTheme, useToast } from "@/components/providers";
 import { ROLE_LABEL, SIGNUP_ROLES } from "@/server/users";
@@ -14,6 +15,13 @@ import {
   signupAction,
   updatePasswordAction,
 } from "./actions";
+import { LoginCard } from "@/app/login/login-card";
+import { Heading } from "@/app/login/heading";
+import { Field } from "@/app/login/field";
+import { FormError } from "@/app/login/form-error";
+import { Divider } from "@/app/login/divider";
+import { Switcher } from "@/app/login/switcher";
+import { SuccessPanel } from "@/app/login/success-panel";
 
 type View = "login" | "signup" | "forgot" | "reset";
 const initial: AuthState = {};
@@ -56,7 +64,7 @@ export default function LoginPage() {
 
         {view === "login" && (
           <>
-            <Card>
+            <LoginCard>
               <form action={loginAct} className="flex flex-col gap-[18px]">
                 <input type="hidden" name="redirectTo" value={redirectTo} />
                 <Heading title="Login to your account" sub="Enter your email below to sign in." />
@@ -90,14 +98,14 @@ export default function LoginPage() {
                 <Github className="size-4" />
                 Continue with GitHub
               </Button>
-            </Card>
+            </LoginCard>
             <Switcher prompt="Don't have an account?" action="Sign up" onClick={() => setView("signup")} />
           </>
         )}
 
         {view === "signup" && (
           <>
-            <Card>
+            <LoginCard>
               <form action={signupAct} className="flex flex-col gap-[18px]">
                 <Heading title="Create an account" sub="Sign up with your work email to get started." />
                 <Field label="Full name">
@@ -136,14 +144,14 @@ export default function LoginPage() {
                   {signupPending ? "Creating…" : "Create account"}
                 </Button>
               </form>
-            </Card>
+            </LoginCard>
             <Switcher prompt="Already have an account?" action="Login" onClick={() => setView("login")} />
           </>
         )}
 
         {view === "forgot" && (
           <>
-            <Card>
+            <LoginCard>
               {forgot.ok ? (
                 <SuccessPanel
                   icon={<Mail className="size-[22px]" strokeWidth={2} />}
@@ -165,7 +173,7 @@ export default function LoginPage() {
                   </Button>
                 </form>
               )}
-            </Card>
+            </LoginCard>
             <div className="text-center text-[13px] text-muted-foreground">
               <button onClick={() => setView("login")} className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-foreground">
                 <ArrowLeft className="size-3.5" />
@@ -176,7 +184,7 @@ export default function LoginPage() {
         )}
 
         {view === "reset" && (
-          <Card>
+          <LoginCard>
             {reset.ok ? (
               <SuccessPanel
                 icon={<Check className="size-[22px]" strokeWidth={2.5} />}
@@ -201,88 +209,9 @@ export default function LoginPage() {
                 </Button>
               </form>
             )}
-          </Card>
+          </LoginCard>
         )}
       </div>
-    </div>
-  );
-}
-
-function Card({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-[18px] rounded-[14px] border bg-card p-[26px] shadow-sm">{children}</div>;
-}
-
-function Heading({ title, sub }: { title: string; sub: string }) {
-  return (
-    <div className="flex flex-col gap-[5px]">
-      <div className="text-[18px] font-semibold tracking-[-0.01em]">{title}</div>
-      <div className="text-[13px] text-muted-foreground">{sub}</div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <Label>{label}</Label>
-      {children}
-    </div>
-  );
-}
-
-function FormError({ state }: { state: AuthState }) {
-  if (!state.error) return null;
-  return <p className="text-[12.5px] text-destructive">{state.error}</p>;
-}
-
-function Divider() {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="h-px flex-1 bg-border" />
-      <span className="text-[11.5px] text-muted-foreground">Or continue with</span>
-      <span className="h-px flex-1 bg-border" />
-    </div>
-  );
-}
-
-function Switcher({ prompt, action, onClick }: { prompt: string; action: string; onClick: () => void }) {
-  return (
-    <div className="text-center text-[13px] text-muted-foreground">
-      {prompt}{" "}
-      <button onClick={onClick} className="cursor-pointer font-medium text-foreground underline underline-offset-2">
-        {action}
-      </button>
-    </div>
-  );
-}
-
-function SuccessPanel({
-  icon,
-  title,
-  sub,
-  actionLabel,
-  onAction,
-  variant,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  sub: string;
-  actionLabel: string;
-  onAction: () => void;
-  variant: "primary" | "outline";
-}) {
-  return (
-    <div className="flex flex-col items-center gap-[13px] py-1.5 text-center">
-      <span className="flex size-11 items-center justify-center rounded-full bg-emerald-500/[0.14] text-emerald-500">
-        {icon}
-      </span>
-      <div>
-        <div className="text-base font-semibold">{title}</div>
-        <div className="mt-1 text-[13px] text-muted-foreground">{sub}</div>
-      </div>
-      <Button variant={variant} className="mt-1 w-full" onClick={onAction}>
-        {actionLabel}
-      </Button>
     </div>
   );
 }

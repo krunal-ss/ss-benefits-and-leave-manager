@@ -8,27 +8,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > If an entry grows into a multi-step "how to", promote it into a Skill under `.claude/skills/`.
 
 ## What this project is
+
 Internal employee portal, two modules sharing one auth + role model:
+
 - **Benefit Wallet:** annual category-capped allowances (Sports ₹15,000, Learning ₹45,000 per FY). Submit expense + receipt → auto-verify → auto-approve or route to HR Head → reimburse at FY-end.
 - **Leave & WFH Manager:** KEKA-style apply + multi-level approval (Team Lead → Project Manager) + email notifications.
 
 Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporting lines are DATA, never hard-coded.
 
 ## Stack (authoritative)
+
 - Frontend: Next.js (App Router) + TypeScript (strict) + Tailwind + shadcn/ui
-- DB: Supabase (Postgres + Auth + Storage + RLS)   <!-- swap target: Neon + Better Auth -->
+- DB: Supabase (Postgres + Auth + Storage + RLS) <!-- swap target: Neon + Better Auth -->
 - ORM: Drizzle
 - Email: Resend
 - Tests: Playwright (E2E), Vitest + Testing Library (unit/component)
 - Currency: INR. Financial year: 1 Apr – 31 Mar.
 
 ## Commands
+
 - Install `pnpm i` · Dev `pnpm dev` · Build (also runs typecheck + lint) `pnpm build`
 - Unit (Vitest): `pnpm test` · watch `pnpm test:watch` · one file `pnpm test src/server/verification.test.ts` · one case `pnpm test -t "fails on a duplicate"`
 - E2E: `pnpm e2e` (one-time first: `pnpm exec playwright install chromium`)
 - DB (Drizzle, needs `DATABASE_URL`): `pnpm db:generate` (SQL from schema) → `pnpm db:migrate` / `pnpm db:push` / `pnpm db:studio`
 
 ## Repo conventions
+
 - Package manager: pnpm.
 - App Router: prefer Server Components; mark Client Components with `"use client"` only when needed (state, effects, browser APIs).
 - Data access goes through `src/server/` (never query the DB from a Client Component).
@@ -37,6 +42,7 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 - Uploaded documents: object storage + signed URLs only. Never public.
 
 ## Folder map
+
 - `src/app/(app)/` — authenticated routes; `src/app/login/` — auth (outside the shell)
 - `src/components/` — `providers/`, `shell/` (sidebar+header), `ui/` (primitives)
 - `src/server/` — services + mock data: `auth/rbac.ts`, `supabase/`, `email/`, `verification.ts`
@@ -46,6 +52,7 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 - `.claude/skills/` — project skills (see below)
 
 ## Architecture (big picture)
+
 - **Screens are role-scoped routes** under `src/app/(app)/`, wrapped by the shell in `(app)/layout.tsx` (employee: dashboard/submit/leave · TL: approvals/calendar · HR: expenses/calendar). `/` redirects to `/dashboard`.
 - **Roles come from the authenticated user** (`users.role`). The sidebar identity + nav and module access derive from it; `canAccessPath` / `homeRouteFor` / `NAV_SECTIONS` in `src/server/users.ts` are the single access policy, enforced server-side by `requireAccess(path)` (`src/server/auth/current-user.ts`). Provider tree (`src/components/providers/`): Supabase session → Theme → Toast.
 - **HR expense queue is real DB data** — `src/server/hr/expenses.ts` reads `pending_hr` claims; `src/server/actions/decide-expense.ts` approves/rejects (audit + email). Leave/WFH approvals are real DB data too — see `src/server/manager/`.
@@ -56,12 +63,18 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 - **`teamCapacitySnapshot`** (KAN-79) exists for a FUTURE historical capacity trend — it is not read by the live 2-4 week forecast on `/availability` (that's computed on the fly from `leaveRequests`) and stays empty until a scheduled job calls `writeCapacitySnapshot` (`src/server/manager/capacity-forecast.ts`) regularly; no such job exists yet in this repo.
 
 ## Skills available (load on demand)
+
 - `nextjs-standards` — App Router / RSC / data-fetching conventions
 - `design-system` — tokens, shadcn usage, UI/UX rules
 - `e2e-testing` — how to write + what a Playwright test must satisfy
 - `prd-to-stories` — turn a PRD section into JIRA-ready epics/stories/sub-tasks
 
 ## Hard rules
+
 - Never auto-approve an expense whose verification was inconclusive — route to HR Head.
 - Never deduct/restore a leave balance without writing an `AuditLog` row.
 - Working-day counts must exclude weekends + configured holidays.
+
+## Available Agents
+
+- React Refactoring Architect (`.claude/agents/react-refactoring-architect.md`) — component/hook quality and Next.js/React best practices; standards live in the agent file itself, not duplicated here.

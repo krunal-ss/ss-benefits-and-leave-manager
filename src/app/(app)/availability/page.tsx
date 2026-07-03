@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { MonthNavButton } from "@/components/ui/month-nav-button";
+import { LegendDot } from "@/components/ui/legend-dot";
 import { requireAccess } from "@/server/auth/current-user";
 import { getTeamAvailability, type AvailabilityDay } from "@/server/manager/availability";
 import { getCapacitySummary, type CapacitySummary } from "@/server/manager/capacity-summary";
@@ -9,6 +10,8 @@ import { CapacityForecastChart } from "./capacity-forecast-chart";
 import { WEEKDAY_NAMES } from "@/server/calendar";
 import { todayISO } from "@/lib/fy";
 import { cn } from "@/lib/cn";
+import { formatDayLabel, pctTextClass } from "@/app/(app)/availability/availability-format";
+import { CapacitySummaryCard } from "@/app/(app)/availability/capacity-summary-card";
 
 export const metadata = { title: "Team availability · SmartSense" };
 
@@ -29,51 +32,6 @@ function hrefForDate(month: string, teamId: string, date: string): string {
   return `/availability?${params.toString()}`;
 }
 
-function formatDayLabel(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-}
-
-/** Half-day leave produces fractional counts (e.g. 0.5) — show one decimal only when needed. */
-function formatCount(n: number): string {
-  return Number.isInteger(n) ? String(n) : n.toFixed(1);
-}
-
-function MonthNavButton({ month, teamId, dir }: { month: string | null; teamId: string; dir: "prev" | "next" }) {
-  const Icon = dir === "prev" ? ChevronLeft : ChevronRight;
-  const label = dir === "prev" ? "Previous month" : "Next month";
-  const base = "flex size-8 items-center justify-center rounded-lg border";
-  const href = hrefFor(month, teamId);
-  if (!href) {
-    return (
-      <span aria-disabled className={cn(base, "cursor-not-allowed text-muted-foreground/40")}>
-        <Icon className="size-4" strokeWidth={2} />
-      </span>
-    );
-  }
-  return (
-    <Link href={href} aria-label={label} className={cn(base, "text-muted-foreground transition-colors hover:bg-accent hover:text-foreground")}>
-      <Icon className="size-4" strokeWidth={2} />
-    </Link>
-  );
-}
-
-function LegendDot({ className, label }: { className: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span className={cn("size-[9px] rounded-full", className)} />
-      {label}
-    </span>
-  );
-}
-
-/** Text color for the % available figure, banded so the grid reads as a heatmap. */
-function pctTextClass(pct: number): string {
-  if (pct >= 80) return "text-emerald-600";
-  if (pct >= 50) return "text-amber-600";
-  return "text-red-600";
-}
-
 /** Cell background tint, same bands as pctTextClass but much lighter. */
 function pctBgClass(pct: number): string {
   if (pct >= 80) return "bg-emerald-500/[0.08]";
@@ -87,44 +45,6 @@ function dayBg(d: AvailabilityDay): string {
   if (d.isWeekend) return "bg-muted/55";
   if (d.availablePct === null) return "bg-card"; // e.g. no headcount yet
   return pctBgClass(d.availablePct);
-}
-
-/** KAN-76: % available / on-leave / WFH card for "today" or the clicked date. */
-function CapacitySummaryCard({ title, summary }: { title: string; summary: CapacitySummary }) {
-  const isWorking = summary.isWorkingDay && summary.availablePct !== null;
-  return (
-    <Card
-      role="group"
-      aria-label={`${title} capacity summary`}
-      className="flex flex-col gap-1.5 rounded-xl px-[18px] py-4"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[12.5px] font-medium text-muted-foreground">{title}</span>
-        <span className="text-[11px] text-muted-foreground">{formatDayLabel(summary.date)}</span>
-      </div>
-      {isWorking ? (
-        <>
-          <div className="flex items-baseline gap-2">
-            <span className={cn("tabular text-2xl font-semibold tracking-[-0.01em]", pctTextClass(summary.availablePct!))}>
-              {summary.availablePct}%
-            </span>
-            <span className="text-[12.5px] text-muted-foreground">available</span>
-          </div>
-          <div className="flex gap-3 text-xs text-muted-foreground">
-            <span>{formatCount(summary.onLeaveCount)} on leave</span>
-            <span className="font-medium text-violet-600">{summary.wfhCount} WFH</span>
-          </div>
-        </>
-      ) : (
-        <div className="flex flex-col gap-0.5 py-0.5">
-          <span className="text-base font-semibold text-muted-foreground">
-            {summary.holidayName || "Non-working day"}
-          </span>
-          <span className="text-xs text-muted-foreground">Excluded from the capacity calc</span>
-        </div>
-      )}
-    </Card>
-  );
 }
 
 export default async function AvailabilityPage({
@@ -180,13 +100,13 @@ export default async function AvailabilityPage({
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-3.5">
-          <LegendDot className="bg-emerald-500" label="High (≥80%)" />
-          <LegendDot className="bg-amber-500" label="Moderate (50–79%)" />
-          <LegendDot className="bg-red-600" label="Low (<50%)" />
+          <LegendDot shape="circle" className="bg-emerald-500" label="High (≥80%)" />
+          <LegendDot shape="circle" className="bg-amber-500" label="Moderate (50–79%)" />
+          <LegendDot shape="circle" className="bg-red-600" label="Low (<50%)" />
           <div className="ml-1.5 flex items-center gap-2">
-            <MonthNavButton month={prevMonth} teamId={teamId} dir="prev" />
+            <MonthNavButton href={hrefFor(prevMonth, teamId)} dir="prev" />
             <span className="min-w-[124px] text-center text-sm font-semibold">{monthLabel}</span>
-            <MonthNavButton month={nextMonth} teamId={teamId} dir="next" />
+            <MonthNavButton href={hrefFor(nextMonth, teamId)} dir="next" />
             {thisMonth && (
               <Link
                 href={hrefFor(thisMonth, teamId) ?? "/availability"}
