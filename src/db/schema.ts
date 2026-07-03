@@ -220,11 +220,11 @@ export type StaffingThreshold = typeof staffingThreshold.$inferSelect;
 // ---- KAN-79: capacity-forecast snapshots (Smart Team Availability & Capacity
 // Planner epic). The 2-4 week forward-looking trend on /availability is
 // computed LIVE from leaveRequests — this table is NOT read by that forecast.
-// It exists so a future scheduled job can persist a daily point-in-time
-// snapshot per scope, building up real HISTORICAL trend data over time (there
-// is no such job yet in this repo — a future story must add one before this
-// table has any rows to show). `writeCapacitySnapshot` in
-// src/server/manager/capacity-forecast.ts computes+inserts one row on demand.
+// It persists a daily point-in-time snapshot per scope (org, department, team),
+// building up real HISTORICAL trend data over time. Populated by the Vercel
+// Cron job at src/app/api/cron/capacity-snapshot/route.ts (see vercel.json),
+// which calls src/server/manager/capacity-snapshot-job.ts once a day — a
+// future story must still add the UI that reads this table's history.
 export const teamCapacitySnapshot = pgTable("team_capacity_snapshot", {
   id: uuid().primaryKey().defaultRandom(),
   date: date().notNull(),

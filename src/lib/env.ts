@@ -10,6 +10,8 @@ const schema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(1).default("SmartSense <no-reply@smartsense.example>"),
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  // KAN-79 — authenticates the Vercel Cron call to /api/cron/capacity-snapshot.
+  CRON_SECRET: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof schema>;
