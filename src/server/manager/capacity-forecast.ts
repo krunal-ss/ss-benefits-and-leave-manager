@@ -12,10 +12,10 @@ import "server-only";
 // testable without a DB — see capacity-forecast.test.ts).
 //
 // `writeCapacitySnapshot` persists today's numbers for a scope into
-// `teamCapacitySnapshot` (src/db/schema.ts) for FUTURE historical-trend use.
-// There is no scheduled job in this repo that calls it — a later story must
-// add one before that table has meaningful history. It is exercised directly
-// (called once, tested) so the write path is proven correct ahead of that.
+// `teamCapacitySnapshot` (src/db/schema.ts) for historical-trend use. It's
+// invoked once a day, per scope, by the Vercel Cron job in
+// ./capacity-snapshot-job.ts (src/app/api/cron/capacity-snapshot/route.ts) —
+// a later story must still add the UI that reads that history.
 import { eq, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { teamCapacitySnapshot, users, type User } from "@/db/schema";
@@ -102,12 +102,10 @@ export type TeamCapacitySnapshotResult = typeof teamCapacitySnapshot.$inferSelec
 
 /**
  * Compute today's (or `date`'s) capacity for a scope and persist it into
- * `teamCapacitySnapshot` — a single point-in-time row, for FUTURE use once a
- * scheduled job calls this daily to build up real historical trend data.
- * No such job exists yet in this repo (see the KAN-79 note in
- * src/db/schema.ts); this function is complete and tested but not wired to a
- * scheduler. Records the CONFIRMED (approved-only) figure — a snapshot is a
- * historical record, not an at-risk projection.
+ * `teamCapacitySnapshot` — a single point-in-time row. Called once daily per
+ * scope by ./capacity-snapshot-job.ts's Vercel Cron job to build up real
+ * historical trend data. Records the CONFIRMED (approved-only) figure — a
+ * snapshot is a historical record, not an at-risk projection.
  */
 export async function writeCapacitySnapshot(params: {
   scopeType: SnapshotScopeType;

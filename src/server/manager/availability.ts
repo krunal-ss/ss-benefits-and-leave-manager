@@ -87,8 +87,9 @@ function parseYearMonth(s: string | undefined): { year: number; month0: number }
 
 const MANAGER_ROLES = ["team_lead", "project_manager"] as const;
 
-/** Managers HR Head/Admin can switch the heatmap between, sorted by name. */
-async function listTeamOptions(): Promise<TeamOption[]> {
+/** Managers HR Head/Admin can switch the heatmap between, sorted by name. Also
+ * reused by the KAN-79 daily snapshot job to enumerate every team scope. */
+export async function listTeamOptions(): Promise<TeamOption[]> {
   const db = getDb();
   const rows = await db
     .select({ id: users.id, name: users.name })
