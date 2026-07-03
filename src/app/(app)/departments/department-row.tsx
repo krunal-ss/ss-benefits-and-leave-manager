@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { DepartmentAvailabilityRow } from "@/server/hr/department-overview";
 import { cn } from "@/lib/cn";
 import { DepartmentStatusBadge } from "@/app/(app)/departments/department-status-badge";
+import { DepartmentExportButton } from "@/app/(app)/departments/department-export-button";
 
 /** Text color for the % available figure, same bands as the availability heatmap. */
 function pctTextClass(pct: number): string {
@@ -10,7 +11,17 @@ function pctTextClass(pct: number): string {
   return "text-red-600";
 }
 
-export function DepartmentRow({ row }: { row: DepartmentAvailabilityRow }) {
+export function DepartmentRow({
+  row,
+  date,
+  role,
+  leaveTypeId,
+}: {
+  row: DepartmentAvailabilityRow;
+  date: string;
+  role?: string;
+  leaveTypeId?: string;
+}) {
   return (
     <tr className="border-b last:border-b-0">
       <td className="px-4 py-3 text-[13px] font-medium">{row.department}</td>
@@ -51,6 +62,9 @@ export function DepartmentRow({ row }: { row: DepartmentAvailabilityRow }) {
             ))}
           </div>
         )}
+      </td>
+      <td className="px-4 py-3">
+        <DepartmentExportButton department={row.department} date={date} role={role} leaveTypeId={leaveTypeId} />
       </td>
     </tr>
   );
