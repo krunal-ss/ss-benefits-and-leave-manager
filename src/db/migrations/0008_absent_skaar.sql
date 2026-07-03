@@ -1,0 +1,1 @@
+ALTER TABLE "receipt_verifications" ADD COLUMN "ocrFields" jsonb DEFAULT '[]'::jsonb NOT NULL;
