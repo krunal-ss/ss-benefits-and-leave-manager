@@ -87,7 +87,7 @@ src/
   db/                   # Drizzle schema, client, migrations
   lib/                  # formatINR, working-days, env (zod)
 tests/e2e/              # Playwright specs
-docs/                   # PRD
+.claude/docs/           # PRDs
 design/source/          # the imported Claude Design comp + tokens (reference)
 ```
 

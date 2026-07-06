@@ -28,4 +28,7 @@ For each epic, produce stories; for each story, produce sub-tasks and acceptance
 - After drafting, sync to JIRA via the Atlassian MCP connector: create the Epic, then Stories under it, then Sub-tasks under each Story; set status as work progresses.
 
 ## Source of truth
-The backlog is derived from `PRD-Benefit-Wallet-and-Leave-Manager.md` §11 (epics E0–E6). Start there.
+PRDs live in `.claude/docs/`. The original backlog (epics E0–E6) is derived from `PRD-Benefit-Wallet-and-Leave-Manager.md` §11 — start there for that scope. Later feature PRDs, each mapped to its own epic:
+- `PRD-Smart-Team-Availability-Capacity-Planner.md` → epic KAN-73
+- `PRD-AI-Expense-Verification-Receipt-Intelligence.md` → epic KAN-110
+- `PRD-Productivity-Usability-Enhancements.md` → epic KAN-124 (Expense Draft Save, Claim Resubmission, Leave Cancellation Request)
