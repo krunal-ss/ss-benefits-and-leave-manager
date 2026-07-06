@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { Check, Pencil, RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
+import { VersionBadge } from "@/components/ui/version-badge";
 import { useToast } from "@/components/providers";
 import { deleteClaimAction } from "@/server/actions/delete-claim";
 import { deleteDraftAction } from "@/server/actions/draft-expense";
@@ -72,7 +73,10 @@ export function DetailModal({ claim, onClose }: { claim: MyClaim; onClose: () =>
         <div className="flex flex-col gap-3.5 px-5 py-4 text-[13px]">
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted-foreground">Status</span>
-            <StatusPill label={claim.statusLabel} className={STATUS_CLS[claim.status] ?? "bg-muted text-muted-foreground"} />
+            <div className="flex items-center gap-1.5">
+              <StatusPill label={claim.statusLabel} className={STATUS_CLS[claim.status] ?? "bg-muted text-muted-foreground"} />
+              {claim.version > 1 && <VersionBadge version={claim.version} />}
+            </div>
           </div>
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted-foreground">Submitted on</span>
@@ -124,6 +128,18 @@ export function DetailModal({ claim, onClose }: { claim: MyClaim; onClose: () =>
               <Trash2 className="size-4" />
               Delete
             </Button>
+          </div>
+        )}
+
+        {claim.status === "rejected" && !confirming && (
+          <div className="flex gap-2.5 border-t border-border px-5 py-4">
+            <Link
+              href={`/submit?resubmit=${claim.id}`}
+              className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[9px] bg-primary px-4 text-[13.5px] font-medium text-primary-foreground shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <RotateCcw className="size-4" />
+              Edit & resubmit
+            </Link>
           </div>
         )}
 

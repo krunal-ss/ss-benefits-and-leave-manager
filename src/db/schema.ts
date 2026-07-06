@@ -149,6 +149,30 @@ export const receiptVerifications = pgTable("receipt_verifications", {
 });
 // ---- end KAN-111 ----
 
+// ---- KAN-126: Claim Resubmission. A `rejected` claim can be edited and
+// resubmitted under the SAME `benefitClaims` row (no new claim). Each
+// resubmission snapshots the PRE-EDIT state here before applying the edit, so
+// `rejected` is no longer a terminal/dead-end status — see resubmit-claim.ts.
+// The claim's current "version number" is derived as (row count for this
+// claimId here) + 1, never stored redundantly on `benefitClaims` itself.
+export const benefitClaimVersions = pgTable("benefit_claim_versions", {
+  id: uuid().primaryKey().defaultRandom(),
+  claimId: uuid()
+    .notNull()
+    .references(() => benefitClaims.id, { onDelete: "cascade" }),
+  versionNumber: integer().notNull(),
+  amountPaise: integer(),
+  categoryId: uuid().references(() => benefitCategories.id),
+  expenseDate: date(),
+  vendor: text(),
+  documentUrl: text(),
+  documentHash: text(),
+  status: claimStatusEnum().notNull(),
+  decisionReason: text(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+// ---- end KAN-126 ----
+
 // ---- Module B: Leave & WFH ----
 export const leaveTypes = pgTable("leave_types", {
   id: uuid().primaryKey().defaultRandom(),

@@ -5,6 +5,7 @@ import { getDecidedClaims } from "@/server/hr/expenses";
 import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { VersionBadge } from "@/components/ui/version-badge";
 import { Pager } from "@/components/ui/pager";
 import { formatINR } from "@/lib/format";
 import { pageParam } from "@/lib/page-param";
@@ -70,7 +71,10 @@ export default async function DecidedClaimsPage({
                       <div className="flex items-center gap-2.5">
                         <Avatar initials={c.initials} className="size-[30px] text-[11.5px]" />
                         <div>
-                          <div className="font-medium">{c.name}</div>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            {c.name}
+                            {c.version > 1 && <VersionBadge version={c.version} />}
+                          </div>
                           <div className="text-[11.5px] text-muted-foreground">
                             {c.dept} · {c.ref}
                           </div>

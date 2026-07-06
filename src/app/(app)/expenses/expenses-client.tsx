@@ -7,6 +7,7 @@ import { CircleCheckBig } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
+import { VersionBadge } from "@/components/ui/version-badge";
 import { useToast } from "@/components/providers";
 import { HARD_FLAGS, type QueuedClaim } from "@/server/hr/queue-types";
 import { decideExpenseAction } from "@/server/actions/decide-expense";
@@ -121,7 +122,10 @@ export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedCla
                     <div className="flex items-center gap-2.5">
                       <Avatar initials={q.initials} className="size-[30px] text-[11.5px]" />
                       <div>
-                        <div className="font-medium">{q.name}</div>
+                        <div className="flex items-center gap-1.5 font-medium">
+                          {q.name}
+                          {q.version > 1 && <VersionBadge version={q.version} />}
+                        </div>
                         <div className="text-[11.5px] text-muted-foreground">{q.dept}</div>
                       </div>
                     </div>

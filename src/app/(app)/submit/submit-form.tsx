@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Check, Dumbbell, FileText, GraduationCap, Save, Upload, X } from "lucide-react";
+import { Check, Dumbbell, FileText, GraduationCap, RotateCcw, Save, Upload, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/providers";
 import { submitExpenseAction, type CheckOutcome } from "@/server/actions/expense";
 import { saveDraftAction, submitDraftAction } from "@/server/actions/draft-expense";
+import { resubmitClaimAction } from "@/server/actions/resubmit-claim";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { Row } from "@/app/(app)/submit/balance-row";
@@ -27,6 +28,19 @@ export type DraftPrefill = {
   date: string | null;
   vendor: string | null;
   hasDocument: boolean;
+};
+
+// KAN-126 — prefill for the /submit?resubmit=<id> flow (editing a rejected claim).
+// Deliberately simpler than DraftPrefill: a resubmit is never a draft, so it carries
+// no autosave/save-draft state, just the fields to edit + the version it becomes.
+export type ResubmitPrefill = {
+  id: string;
+  category: CategoryKey | null;
+  amountRupees: number | null;
+  date: string | null;
+  vendor: string | null;
+  hasDocument: boolean;
+  nextVersion: number;
 };
 
 const EMPTY = { amount: "", date: "2026-06-20", vendor: "" };
@@ -47,19 +61,26 @@ export function SubmitForm({
   sportsCap,
   learningCap,
   draft,
+  resubmit,
 }: {
   sportsAvail: number;
   learningAvail: number;
   sportsCap: number;
   learningCap: number;
   draft?: DraftPrefill | null;
+  resubmit?: ResubmitPrefill | null;
 }) {
   const { flash } = useToast();
-  const [category, setCategory] = useState<CategoryKey>(draft?.category ?? "sports");
+  const isResubmit = !!resubmit;
+  const [category, setCategory] = useState<CategoryKey>(draft?.category ?? resubmit?.category ?? "sports");
   const [claim, setClaim] = useState({
-    amount: draft?.amountRupees ? String(draft.amountRupees) : EMPTY.amount,
-    date: draft?.date ?? EMPTY.date,
-    vendor: draft?.vendor ?? EMPTY.vendor,
+    amount: draft?.amountRupees
+      ? String(draft.amountRupees)
+      : resubmit?.amountRupees
+        ? String(resubmit.amountRupees)
+        : EMPTY.amount,
+    date: draft?.date ?? resubmit?.date ?? EMPTY.date,
+    vendor: draft?.vendor ?? resubmit?.vendor ?? EMPTY.vendor,
   });
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -75,9 +96,11 @@ export function SubmitForm({
   // any pending timer and awaits the chain first — otherwise a slow autosave whose
   // response hasn't landed yet (stale `draftId` closure) can create a SECOND draft
   // row instead of updating the first one.
+  // None of this runs in resubmit mode (see `isResubmit` guards below) — a
+  // resubmission is never a draft, so `draftId` stays null for its whole life.
   const [draftId, setDraftId] = useState<string | null>(draft?.id ?? null);
   const draftIdRef = useRef<string | null>(draft?.id ?? null);
-  const [hasExistingDocument, setHasExistingDocument] = useState(draft?.hasDocument ?? false);
+  const [hasExistingDocument, setHasExistingDocument] = useState(draft?.hasDocument ?? resubmit?.hasDocument ?? false);
   const [autosavedAt, setAutosavedAt] = useState<string | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const skipNextAutosave = useRef(true); // don't autosave on initial mount
@@ -160,15 +183,18 @@ export function SubmitForm({
     fd.set("date", claim.date);
     fd.set("vendor", claim.vendor);
     if (file) fd.set("receipt", file);
-    if (idOverride) fd.set("draftId", idOverride);
+    if (isResubmit) fd.set("claimId", resubmit!.id);
+    else if (idOverride) fd.set("draftId", idOverride);
     return fd;
   }
 
   // Silent background autosave — debounced, and only once there's something worth
   // keeping (an empty form autosaving on page load would just litter drafts).
   // Runs are chained through `autosaveChain` so a slow save can never overlap with
-  // the next one and race on which row is "the" draft.
+  // the next one and race on which row is "the" draft. Never runs in resubmit mode
+  // — a resubmit is never a draft, so it has nothing to autosave.
   useEffect(() => {
+    if (isResubmit) return;
     if (skipNextAutosave.current) {
       skipNextAutosave.current = false;
       return;
@@ -210,6 +236,20 @@ export function SubmitForm({
     setSubmitTried(true);
     if (descriptionMissing || fileMissing) return;
     startTransition(async () => {
+      if (isResubmit) {
+        const res = await resubmitClaimAction(buildFormData(null));
+        if (!res.ok || !res.status || !res.checks) {
+          flash(res.error ?? "Could not resubmit the claim", "warn");
+          return;
+        }
+        setResult({ status: res.status, checks: res.checks });
+        setHasExistingDocument(false);
+        flash(
+          res.status === "auto_approved" ? "Resubmitted — auto-approved" : "Resubmitted — routed to HR Head for manual review",
+          res.status === "auto_approved" ? "ok" : "warn",
+        );
+        return;
+      }
       await settleAutosave();
       const id = draftIdRef.current;
       const fd = buildFormData(id);
@@ -265,10 +305,12 @@ export function SubmitForm({
       <div className="flex flex-wrap items-start gap-3">
         <div>
           <h1 className="text-[23px] font-semibold tracking-[-0.02em]">
-            {isEditingDraft ? "Edit draft" : "Submit an expense claim"}
+            {isResubmit ? "Edit & resubmit claim" : isEditingDraft ? "Edit draft" : "Submit an expense claim"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Upload a receipt and we&apos;ll try to auto-approve it against your benefit allowance.
+            {isResubmit
+              ? "Fix the flagged fields, replace the receipt if needed, and we’ll run verification again."
+              : "Upload a receipt and we’ll try to auto-approve it against your benefit allowance."}
           </p>
         </div>
         <div className="ml-auto inline-flex flex-col items-end gap-1.5">
@@ -284,6 +326,20 @@ export function SubmitForm({
           />
         </div>
       </div>
+
+      {isResubmit && (
+        <div
+          className="flex items-center gap-2.5 rounded-[11px] border border-blue-600/35 bg-blue-600/[0.08] px-[15px] py-3 text-[13px]"
+          style={{ maxWidth: maxW }}
+        >
+          <RotateCcw className="size-[17px] shrink-0 text-blue-600" strokeWidth={2} />
+          <div>
+            Resubmitting claim <span className="font-semibold">{resubmit!.id.slice(0, 8)}</span> · this
+            keeps the same claim ID as version {resubmit!.nextVersion}. Fix the flagged fields and replace
+            the receipt, then run verification again.
+          </div>
+        </div>
+      )}
 
       {isEditingDraft && (
         <div
@@ -442,18 +498,22 @@ export function SubmitForm({
               <Check className="size-4" strokeWidth={2} />
               {pending && !savingDraft ? "Verifying…" : "Run verification & submit"}
             </Button>
-            <Button variant="outline" onClick={saveDraft} disabled={pending}>
-              <Save className="size-4" strokeWidth={2} />
-              {savingDraft ? "Saving…" : "Save draft"}
-            </Button>
+            {!isResubmit && (
+              <Button variant="outline" onClick={saveDraft} disabled={pending}>
+                <Save className="size-4" strokeWidth={2} />
+                {savingDraft ? "Saving…" : "Save draft"}
+              </Button>
+            )}
             <Button variant="outline" onClick={reset} disabled={pending}>
               Clear
             </Button>
           </div>
-          <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
-            <Save className="size-[13px]" strokeWidth={2} />
-            {autosavedAt ? `Autosaved · ${autosavedAt}` : "Not saved yet"}
-          </div>
+          {!isResubmit && (
+            <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+              <Save className="size-[13px]" strokeWidth={2} />
+              {autosavedAt ? `Autosaved · ${autosavedAt}` : "Not saved yet"}
+            </div>
+          )}
         </Card>
 
         {variant === "split" && (

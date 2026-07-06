@@ -1,7 +1,7 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
-import { benefitCategories, benefitClaims } from "@/db/schema";
+import { benefitCategories, benefitClaimVersions, benefitClaims } from "@/db/schema";
 import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
 import type { CategoryKey } from "@/server/benefits";
 
@@ -32,6 +32,8 @@ export type MyClaim = {
   canDelete: boolean;
   /** KAN-125 — deletable/editable via the draft-expense actions instead. */
   isDraft: boolean;
+  /** KAN-126 — 1 for a never-resubmitted claim; N = (prior versions) + 1. */
+  version: number;
 };
 
 /** A page of the employee's benefit/expense claims, newest first (KAN-70). */
@@ -61,6 +63,21 @@ export async function listMyClaims(
     .limit(np.limit + 1) // fetch one extra to detect hasMore
     .offset(np.offset);
 
+  const versionCounts = new Map<string, number>();
+  if (rows.length > 0) {
+    const counts = await db
+      .select({ claimId: benefitClaimVersions.claimId, value: count() })
+      .from(benefitClaimVersions)
+      .where(
+        inArray(
+          benefitClaimVersions.claimId,
+          rows.map((r) => r.id),
+        ),
+      )
+      .groupBy(benefitClaimVersions.claimId);
+    for (const c of counts) versionCounts.set(c.claimId, c.value);
+  }
+
   const mapped = rows.map((r) => ({
     id: r.id,
     category: r.category ?? "Uncategorized",
@@ -78,6 +95,7 @@ export async function listMyClaims(
     createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
     canDelete: r.status === "pending_hr",
     isDraft: r.status === "draft",
+    version: (versionCounts.get(r.id) ?? 0) + 1,
   }));
 
   return buildPage(mapped, np);
@@ -123,5 +141,55 @@ export async function getDraftClaim(userId: string, draftId: string): Promise<Dr
     date: row.date,
     vendor: row.vendor,
     hasDocument: !!row.documentUrl,
+  };
+}
+
+export type RejectedClaim = {
+  id: string;
+  category: CategoryKey | null;
+  amountRupees: number | null;
+  date: string | null;
+  vendor: string | null;
+  hasDocument: boolean;
+  decisionReason: string | null;
+  /** The version this claim will become once resubmitted (current version + 1). */
+  nextVersion: number;
+};
+
+/** A single `rejected` claim, owned by `userId`, for the resubmit-editing flow (KAN-126). Null if not found/not rejected/not owned. */
+export async function getRejectedClaim(userId: string, claimId: string): Promise<RejectedClaim | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      id: benefitClaims.id,
+      status: benefitClaims.status,
+      amountPaise: benefitClaims.amountPaise,
+      date: benefitClaims.expenseDate,
+      vendor: benefitClaims.vendor,
+      documentUrl: benefitClaims.documentUrl,
+      decisionReason: benefitClaims.decisionReason,
+      categoryName: benefitCategories.name,
+    })
+    .from(benefitClaims)
+    .leftJoin(benefitCategories, eq(benefitClaims.categoryId, benefitCategories.id))
+    .where(and(eq(benefitClaims.id, claimId), eq(benefitClaims.userId, userId)))
+    .limit(1);
+
+  if (!row || row.status !== "rejected") return null;
+
+  const [{ value: priorVersionCount }] = await db
+    .select({ value: count() })
+    .from(benefitClaimVersions)
+    .where(eq(benefitClaimVersions.claimId, row.id));
+
+  return {
+    id: row.id,
+    category: row.categoryName ? keyOf(row.categoryName) : null,
+    amountRupees: row.amountPaise ? row.amountPaise / 100 : null,
+    date: row.date,
+    vendor: row.vendor,
+    hasDocument: !!row.documentUrl,
+    decisionReason: row.decisionReason,
+    nextVersion: priorVersionCount + 2,
   };
 }

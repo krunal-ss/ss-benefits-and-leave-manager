@@ -21,6 +21,8 @@ export type QueuedClaim = {
   confidence: string; // e.g. "High (96%)"
   flags: string[];
   checks: RuleCheck[];
+  /** KAN-126 — 1 for a never-resubmitted claim; N = (prior versions) + 1. */
+  version: number;
 };
 
 // Flags that represent a hard failure (red) vs a soft warning (amber).

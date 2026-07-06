@@ -1,10 +1,11 @@
 import "server-only";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, count, desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "@/db";
 import {
   auditLog,
   benefitCategories,
+  benefitClaimVersions,
   benefitClaims,
   receiptVerifications,
   users,
@@ -40,6 +41,21 @@ const FLAG_FOR_CHECK: { match: string; flag: string }[] = [
   { match: "Vendor", flag: "Vendor unclear" },
   { match: "Within current FY", flag: "Outside FY" },
 ];
+
+// KAN-126 — a claim's version number (1 = never resubmitted) is derived from
+// how many prior snapshots it has in `benefit_claim_versions`, never stored
+// redundantly on `benefitClaims` itself.
+async function versionCountsFor(db: ReturnType<typeof getDb>, claimIds: string[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (claimIds.length === 0) return counts;
+  const rows = await db
+    .select({ claimId: benefitClaimVersions.claimId, value: count() })
+    .from(benefitClaimVersions)
+    .where(inArray(benefitClaimVersions.claimId, claimIds))
+    .groupBy(benefitClaimVersions.claimId);
+  for (const r of rows) counts.set(r.claimId, r.value);
+  return counts;
+}
 
 function initialsOf(name: string): string {
   return name
@@ -98,6 +114,8 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
     .limit(np.limit + 1) // fetch one extra to detect hasMore
     .offset(np.offset);
 
+  const versionCounts = await versionCountsFor(db, rows.map((r) => r.id));
+
   const mapped = rows.map((r) => {
     const result = r.verificationResult ?? null;
     const checks = (result?.checks ?? []).map((c) => ({ label: c.label, ok: c.ok, detail: c.detail }));
@@ -121,6 +139,7 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
       confidence: confidenceLabel(result?.ocrConfidence),
       flags: flagsFor(result),
       checks,
+      version: (versionCounts.get(r.id) ?? 0) + 1,
     };
   });
 
@@ -177,6 +196,8 @@ export type DecidedClaim = {
   decidedBy: string; // approver name, or "System" for auto-approved
   reason: string; // decision note, or "—"
   vendor: string;
+  /** KAN-126 — 1 for a never-resubmitted claim; N = (prior versions) + 1. */
+  version: number;
 };
 
 const STATUS_LABEL: Record<string, ClaimStatus> = {
@@ -214,6 +235,8 @@ export async function getDecidedClaims(params: PageParams = {}): Promise<Paginat
     .limit(np.limit + 1) // fetch one extra to detect hasMore
     .offset(np.offset);
 
+  const versionCounts = await versionCountsFor(db, rows.map((r) => r.id));
+
   const mapped = rows.map((r) => ({
     id: r.id,
     ref: `BC-${r.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`,
@@ -228,6 +251,7 @@ export async function getDecidedClaims(params: PageParams = {}): Promise<Paginat
     decidedBy: r.approverName ?? (r.status === "auto_approved" ? "System" : "—"),
     reason: r.decisionReason?.trim() || "—",
     vendor: r.vendor ?? "—",
+    version: (versionCounts.get(r.id) ?? 0) + 1,
   }));
 
   return buildPage(mapped, np);
@@ -258,6 +282,7 @@ const AUDIT_ACTION_LABEL: Record<string, string> = {
   approved_expense: "Approved",
   rejected_expense: "Rejected",
   view_receipt: "Receipt viewed",
+  resubmit_expense: "Edited & resubmitted",
 };
 
 function auditDetail(action: string, payload: Record<string, unknown> | null): string {
@@ -272,6 +297,8 @@ function auditDetail(action: string, payload: Record<string, unknown> | null): s
       return typeof payload.reason === "string" && payload.reason.trim() ? payload.reason : `${formatINR(Number(payload.amountPaise ?? 0) / 100)}`;
     case "view_receipt":
       return "Signed URL issued (60s TTL)";
+    case "resubmit_expense":
+      return `Now v${payload.versionNumber} · ${payload.category ?? "—"} · ${formatINR(Number(payload.claimedPaise ?? 0) / 100)}`;
     default:
       return "—";
   }
@@ -306,6 +333,62 @@ export type ReceiptIntelligenceDuplicate = {
   note: string;
 };
 
+// ---- KAN-126: Claim Resubmission — version history read ----
+
+export type ClaimVersionSnapshot = {
+  versionNumber: number;
+  amount: number; // rupees
+  category: string;
+  date: string;
+  vendor: string;
+  status: (typeof benefitClaims.$inferSelect)["status"];
+  statusLabel: ClaimStatus;
+  decisionReason: string;
+  supersededAt: string; // when this snapshot was replaced by the next edit
+};
+
+/**
+ * Prior version snapshots for a claim that has been edited/resubmitted at
+ * least once (AC4), oldest first. Same RBAC gate as `getReceiptIntelligence` —
+ * a review surface, not a public one. Empty for a claim never resubmitted.
+ */
+export async function getClaimVersionHistory(
+  requester: Pick<User, "id" | "role">,
+  claimId: string,
+): Promise<ClaimVersionSnapshot[]> {
+  assertCan(requester.role, "approveExpense");
+
+  const db = getDb();
+  const rows = await db
+    .select({
+      versionNumber: benefitClaimVersions.versionNumber,
+      amountPaise: benefitClaimVersions.amountPaise,
+      expenseDate: benefitClaimVersions.expenseDate,
+      vendor: benefitClaimVersions.vendor,
+      status: benefitClaimVersions.status,
+      decisionReason: benefitClaimVersions.decisionReason,
+      createdAt: benefitClaimVersions.createdAt,
+      category: benefitCategories.name,
+    })
+    .from(benefitClaimVersions)
+    .leftJoin(benefitCategories, eq(benefitClaimVersions.categoryId, benefitCategories.id))
+    .where(eq(benefitClaimVersions.claimId, claimId))
+    .orderBy(asc(benefitClaimVersions.versionNumber));
+
+  return rows.map((r) => ({
+    versionNumber: r.versionNumber,
+    amount: (r.amountPaise ?? 0) / 100,
+    category: r.category ?? "—",
+    date: r.expenseDate ? fmtDate(r.expenseDate) : "—",
+    vendor: r.vendor ?? "—",
+    status: r.status,
+    statusLabel: STATUS_LABEL[r.status] ?? "Approved",
+    decisionReason: r.decisionReason?.trim() || "—",
+    supersededAt: fmtDateTime(r.createdAt),
+  }));
+}
+// ---- end KAN-126 ----
+
 export type ReceiptIntelligence = {
   id: string;
   ref: string;
@@ -332,6 +415,10 @@ export type ReceiptIntelligence = {
   receiptUrl: string | null;
   fileExt: string | null;
   canDecide: boolean;
+  /** KAN-126 — 1 for a never-resubmitted claim; N = (prior versions) + 1. */
+  version: number;
+  /** Prior version snapshots, oldest first; empty unless `version > 1`. */
+  versionHistory: ClaimVersionSnapshot[];
 };
 
 /**
@@ -435,6 +522,8 @@ export async function getReceiptIntelligence(
   // "Receipt viewed" row lands on the *next* load of this page, not this one).
   const receipt = await getReceiptUrlForClaim(requester, claimId);
 
+  const versionHistory = await getClaimVersionHistory(requester, claimId);
+
   return {
     id: row.id,
     ref: shortRef(row.id),
@@ -461,6 +550,8 @@ export async function getReceiptIntelligence(
     receiptUrl: receipt.ok ? receipt.url : null,
     fileExt: row.documentUrl?.split(".").pop()?.toLowerCase() ?? null,
     canDecide: row.status === "pending_hr",
+    version: versionHistory.length + 1,
+    versionHistory,
   };
 }
 // ---- end KAN-112/117 ----

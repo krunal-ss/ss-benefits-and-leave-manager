@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { VersionBadge } from "@/components/ui/version-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -51,8 +52,9 @@ export function ReviewDrawer({
         <div className="flex items-center gap-3 border-b px-[22px] py-[18px]">
           <div>
             <div className="text-base font-semibold">{claim.name}</div>
-            <div className="text-[12.5px] text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
               {claim.dept} · claim {claim.ref}
+              {claim.version > 1 && <VersionBadge version={claim.version} />}
             </div>
           </div>
           <button

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Receipt } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/status-pill";
+import { VersionBadge } from "@/components/ui/version-badge";
 import type { MyClaim } from "@/server/employee/claims";
 import { STATUS_CLS } from "@/app/(app)/submit/claim-status";
 import { fmtDate, fmtMoney } from "@/app/(app)/submit/claim-format";
@@ -60,7 +61,10 @@ export function MyClaims({ claims }: { claims: MyClaim[] }) {
                     <td className="px-4 py-3 tabular-nums">{fmtMoney(c.amount)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{fmtDate(c.date)}</td>
                     <td className="px-4 py-3">
-                      <StatusPill label={c.statusLabel} className={STATUS_CLS[c.status] ?? "bg-muted text-muted-foreground"} />
+                      <div className="flex items-center gap-1.5">
+                        <StatusPill label={c.statusLabel} className={STATUS_CLS[c.status] ?? "bg-muted text-muted-foreground"} />
+                        {c.version > 1 && <VersionBadge version={c.version} />}
+                      </div>
                     </td>
                   </tr>
                 ))}
