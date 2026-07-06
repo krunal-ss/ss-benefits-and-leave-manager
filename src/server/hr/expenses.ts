@@ -101,7 +101,7 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
   const mapped = rows.map((r) => {
     const result = r.verificationResult ?? null;
     const checks = (result?.checks ?? []).map((c) => ({ label: c.label, ok: c.ok, detail: c.detail }));
-    const claimed = r.amountPaise / 100;
+    const claimed = r.amountPaise! / 100; // guaranteed set — pending_hr excludes draft
     // KAN-42: show what OCR actually read. Fall back to the claimed value when a
     // claim predates real OCR (no extracted block) so older rows still render.
     const ex = result?.extracted;
@@ -117,7 +117,7 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
       claimed,
       extracted,
       vendor: extractedVendor,
-      date: ex?.date?.trim() ? fmtDate(ex.date) : fmtDate(r.expenseDate),
+      date: ex?.date?.trim() ? fmtDate(ex.date) : fmtDate(r.expenseDate!),
       confidence: confidenceLabel(result?.ocrConfidence),
       flags: flagsFor(result),
       checks,
@@ -152,10 +152,10 @@ export async function getHrExpenseStats(): Promise<HrExpenseStats> {
   for (const r of rows) {
     if (r.status === "pending_hr") {
       stats.pending += 1;
-      stats.reservedPaise += r.amountPaise;
+      stats.reservedPaise += r.amountPaise!; // guaranteed set — pending_hr excludes draft
     } else if ((APPROVED_STATUSES as readonly string[]).includes(r.status)) {
       stats.approvedCount += 1;
-      stats.approvedPaise += r.amountPaise;
+      stats.approvedPaise += r.amountPaise!; // guaranteed set — approved statuses exclude draft
     } else if (r.status === "rejected") {
       stats.rejectedCount += 1;
     }
@@ -221,8 +221,8 @@ export async function getDecidedClaims(params: PageParams = {}): Promise<Paginat
     dept: r.department ?? "—",
     initials: initialsOf(r.name),
     category: r.category,
-    amount: r.amountPaise / 100,
-    date: fmtDate(r.expenseDate),
+    amount: r.amountPaise! / 100, // guaranteed set — decided statuses exclude draft
+    date: fmtDate(r.expenseDate!),
     status: r.status,
     statusLabel: STATUS_LABEL[r.status] ?? "Approved",
     decidedBy: r.approverName ?? (r.status === "auto_approved" ? "System" : "—"),
@@ -378,7 +378,7 @@ export async function getReceiptIntelligence(
   if (!row) return null;
 
   const result = row.verificationResult;
-  const claimed = row.amountPaise / 100;
+  const claimed = (row.amountPaise ?? 0) / 100;
   const ex = result?.extracted;
   const extracted = ex && ex.amountPaise !== null ? ex.amountPaise / 100 : claimed;
 
@@ -402,8 +402,8 @@ export async function getReceiptIntelligence(
         ref: shortRef(dup.claimId),
         category: matched.category,
         vendor: matched.vendor ?? "—",
-        amount: matched.amountPaise / 100,
-        date: fmtDate(matched.expenseDate),
+        amount: (matched.amountPaise ?? 0) / 100,
+        date: matched.expenseDate ? fmtDate(matched.expenseDate) : "—",
         statusLabel: STATUS_LABEL[matched.status] ?? "Approved",
         similarityPercent: dup.similarityPercent,
         note: dup.note,
@@ -445,7 +445,7 @@ export async function getReceiptIntelligence(
     claimed,
     extracted,
     vendor: ex?.vendor?.trim() || row.vendor || "—",
-    date: ex?.date?.trim() ? fmtDate(ex.date) : fmtDate(row.expenseDate),
+    date: ex?.date?.trim() ? fmtDate(ex.date) : row.expenseDate ? fmtDate(row.expenseDate) : "—",
     status: row.status,
     statusLabel: STATUS_LABEL[row.status] ?? "Approved",
     checks: result?.checks ?? [],

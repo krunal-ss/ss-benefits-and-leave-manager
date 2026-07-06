@@ -53,7 +53,7 @@ export async function markReimbursedAction(
     if (payable.length === 0) return { count: 0, totalPaise: 0 };
 
     const ids = payable.map((c) => c.id);
-    const totalPaise = payable.reduce((s, c) => s + c.amountPaise, 0);
+    const totalPaise = payable.reduce((s, c) => s + c.amountPaise!, 0); // guaranteed set — payable statuses exclude draft
 
     await tx
       .update(benefitClaims)

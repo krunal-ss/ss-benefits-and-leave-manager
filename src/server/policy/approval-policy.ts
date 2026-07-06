@@ -11,6 +11,8 @@ export type ApprovalPolicy = {
   wfhAutoApproveMaxDays: number;
   /** Extra recipients CC'd on routing/decision notifications. */
   ccEmails: string[];
+  /** KAN-127 — whether cancelling an approved leave needs the approver's sign-off. */
+  requireLeaveCancellationApproval: boolean;
 };
 
 /** Safe fallback used before HR configures anything (matches schema defaults). */
@@ -18,6 +20,7 @@ export const DEFAULT_APPROVAL_POLICY: ApprovalPolicy = {
   routingMode: "sequential",
   wfhAutoApproveMaxDays: 0,
   ccEmails: [],
+  requireLeaveCancellationApproval: true,
 };
 
 export type RequestKind = "leave" | "wfh";

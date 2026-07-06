@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ArrowRight, Check, Plus, Users, X, Zap } from "lucide-react";
+import { ArrowRight, Check, Plus, ShieldCheck, Users, X, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,9 @@ export function ApprovalPolicyForm({ policy }: { policy: ApprovalPolicy }) {
   const [wfhMax, setWfhMax] = useState<string>(String(policy.wfhAutoApproveMaxDays));
   const [ccEmails, setCcEmails] = useState<string[]>(policy.ccEmails);
   const [ccDraft, setCcDraft] = useState("");
+  const [requireCancellationApproval, setRequireCancellationApproval] = useState(
+    policy.requireLeaveCancellationApproval,
+  );
   const [pending, startTransition] = useTransition();
 
   const wfhMaxNum = useMemo(() => {
@@ -52,6 +55,7 @@ export function ApprovalPolicyForm({ policy }: { policy: ApprovalPolicy }) {
         routingMode,
         wfhAutoApproveMaxDays: wfhMaxNum,
         ccEmails,
+        requireLeaveCancellationApproval: requireCancellationApproval,
       });
       flash(res.message, res.ok ? "ok" : "warn");
     });
@@ -131,6 +135,40 @@ export function ApprovalPolicyForm({ policy }: { policy: ApprovalPolicy }) {
                   : "Auto-approve disabled"}
               </span>
             </div>
+          </div>
+        </Card>
+
+        {/* KAN-127 — leave cancellation approval */}
+        <Card className="flex flex-col gap-4 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[15px] font-semibold">Leave cancellation approval</div>
+              <p className="mt-1 text-[12.5px] text-muted-foreground">
+                Whether cancelling an already-approved leave/WFH request needs the original approver&apos;s
+                sign-off, or is applied immediately.
+              </p>
+            </div>
+            <Segmented
+              ariaLabel="Leave cancellation approval"
+              value={requireCancellationApproval ? "required" : "immediate"}
+              onChange={(v) => setRequireCancellationApproval(v === "required")}
+              options={[
+                { value: "required", label: "Needs approval" },
+                { value: "immediate", label: "Immediate" },
+              ]}
+            />
+          </div>
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-[10px] border bg-muted/40 px-4 py-3 text-[12.5px] leading-relaxed text-muted-foreground",
+            )}
+          >
+            <ShieldCheck className="size-4 shrink-0" strokeWidth={2} />
+            {requireCancellationApproval ? (
+              <span>A cancellation request waits for the approver to accept it before the balance is restored.</span>
+            ) : (
+              <span>A cancellation is applied immediately and the balance is restored right away.</span>
+            )}
           </div>
         </Card>
 

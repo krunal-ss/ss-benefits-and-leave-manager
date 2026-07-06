@@ -21,6 +21,7 @@ function toPolicy(row: ApprovalPolicyRow): ApprovalPolicy {
     routingMode: row.routingMode,
     wfhAutoApproveMaxDays: Number(row.wfhAutoApproveMaxDays),
     ccEmails: Array.isArray(row.ccEmails) ? row.ccEmails : [],
+    requireLeaveCancellationApproval: row.requireLeaveCancellationApproval,
   };
 }
 
@@ -40,6 +41,7 @@ export async function saveApprovalPolicy(params: {
   routingMode: ApprovalPolicy["routingMode"];
   wfhAutoApproveMaxDays: number;
   ccEmails: string[];
+  requireLeaveCancellationApproval: boolean;
 }): Promise<ApprovalPolicy> {
   const db = getDb();
   const ccEmails = normaliseCcEmails(params.ccEmails);
@@ -50,6 +52,7 @@ export async function saveApprovalPolicy(params: {
     routingMode: params.routingMode,
     wfhAutoApproveMaxDays: String(wfhAutoApproveMaxDays),
     ccEmails,
+    requireLeaveCancellationApproval: params.requireLeaveCancellationApproval,
     updatedAt: new Date(),
     updatedBy: params.actorId,
   };
@@ -63,6 +66,7 @@ export async function saveApprovalPolicy(params: {
         routingMode: values.routingMode,
         wfhAutoApproveMaxDays: values.wfhAutoApproveMaxDays,
         ccEmails: values.ccEmails,
+        requireLeaveCancellationApproval: values.requireLeaveCancellationApproval,
         updatedAt: values.updatedAt,
         updatedBy: values.updatedBy,
       },
@@ -74,7 +78,7 @@ export async function saveApprovalPolicy(params: {
     action: "update_approval_policy",
     entity: "approval_policy",
     entityId: POLICY_ID,
-    payload: { routingMode: values.routingMode, wfhAutoApproveMaxDays, ccEmails },
+    payload: { routingMode: values.routingMode, wfhAutoApproveMaxDays, ccEmails, requireLeaveCancellationApproval: values.requireLeaveCancellationApproval },
   });
 
   return toPolicy(row);

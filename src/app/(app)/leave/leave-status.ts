@@ -7,4 +7,5 @@ export const STATUS_CLS: Record<string, string> = {
   applied: "bg-amber-500/15 text-amber-700",
   rejected: "bg-red-500/15 text-destructive",
   cancelled: "bg-muted text-muted-foreground",
+  cancellation_requested: "bg-violet-600/[0.13] text-violet-600",
 };

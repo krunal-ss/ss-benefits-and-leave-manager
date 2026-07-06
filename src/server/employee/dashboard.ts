@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { getDb } from "@/db";
 import { benefitCategories, benefitClaims, leaveBalances, leaveRequests, leaveTypes } from "@/db/schema";
 import { getCategoryBalances } from "./balances";
@@ -126,15 +126,16 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     })
     .from(benefitClaims)
     .innerJoin(benefitCategories, eq(benefitClaims.categoryId, benefitCategories.id))
-    .where(eq(benefitClaims.userId, userId))
+    // Drafts are private working state, not activity — exclude them (KAN-125).
+    .where(and(eq(benefitClaims.userId, userId), ne(benefitClaims.status, "draft")))
     .orderBy(desc(benefitClaims.createdAt))
     .limit(5);
 
   const recentClaims: RecentClaim[] = claimRows.map((c) => ({
     vendor: c.vendor ?? "Expense claim",
     category: c.category,
-    date: fmtDate(c.date),
-    amount: c.amountPaise / 100,
+    date: fmtDate(c.date!), // guaranteed set — drafts excluded above
+    amount: c.amountPaise! / 100,
     status: STATUS_LABEL[c.status] ?? "Pending HR",
   }));
 

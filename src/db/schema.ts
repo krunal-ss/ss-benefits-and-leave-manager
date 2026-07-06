@@ -43,6 +43,10 @@ export const leaveRequestStatusEnum = pgEnum("leave_request_status", [
   "approved",
   "rejected",
   "cancelled",
+  // KAN-127 — a cancellation request against an already-`approved` leave,
+  // awaiting the approver's sign-off (only used when the policy requires it;
+  // an immediate cancellation goes straight to "cancelled").
+  "cancellation_requested",
 ]);
 
 export const requestKindEnum = pgEnum("request_kind", ["leave", "wfh"]);
@@ -96,11 +100,12 @@ export const benefitClaims = pgTable("benefit_claims", {
   userId: uuid()
     .notNull()
     .references(() => users.id),
-  categoryId: uuid()
-    .notNull()
-    .references(() => benefitCategories.id),
-  amountPaise: integer().notNull(),
-  expenseDate: date().notNull(),
+  // Nullable so a `draft` claim (KAN-125) can exist with only some fields
+  // filled in — required-ness of these three is enforced at the application
+  // layer only when a draft transitions to `submitted`.
+  categoryId: uuid().references(() => benefitCategories.id),
+  amountPaise: integer(),
+  expenseDate: date(),
   vendor: text(),
   documentUrl: text(),
   documentHash: text(), // dedupe via hash (AC2)
@@ -193,6 +198,9 @@ export const leaveRequests = pgTable("leave_requests", {
   teamLeadId: uuid().references((): AnyPgColumn => users.id),
   projectManagerId: uuid().references((): AnyPgColumn => users.id),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  // KAN-127 — set when a cancellation request/decision has happened; null otherwise.
+  cancellationReason: text(),
+  cancelledAt: timestamp({ withTimezone: true }),
 });
 
 export const approvals = pgTable("approvals", {
@@ -224,6 +232,9 @@ export const approvalPolicy = pgTable("approval_policy", {
   wfhAutoApproveMaxDays: numeric({ precision: 5, scale: 1 }).notNull().default("0"),
   // Extra recipients CC'd on every routing/decision notification email.
   ccEmails: jsonb().$type<string[]>().notNull().default([]),
+  // KAN-127 — whether cancelling an already-approved leave needs the original
+  // approver's sign-off. When false, cancellation is immediate.
+  requireLeaveCancellationApproval: boolean().notNull().default(true),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedBy: uuid().references(() => users.id),
 });

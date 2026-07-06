@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq, gte, lte, or } from "drizzle-orm";
+import { and, count, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { leaveRequests, leaveTypes, users, type User } from "@/db/schema";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
@@ -193,7 +193,9 @@ export async function getOutToday(user: User): Promise<OutTodayItem[]> {
     .where(
       and(
         or(eq(leaveRequests.teamLeadId, user.id), eq(leaveRequests.projectManagerId, user.id)),
-        eq(leaveRequests.status, "approved"),
+        // KAN-127 — a pending cancellation hasn't been finalized yet, so the
+        // person is still out until it's actually approved.
+        inArray(leaveRequests.status, ["approved", "cancellation_requested"]),
         lte(leaveRequests.fromDate, today),
         gte(leaveRequests.toDate, today),
       ),
@@ -205,6 +207,58 @@ export async function getOutToday(user: User): Promise<OutTodayItem[]> {
     initials: initialsOf(r.name),
     type: typeLabel(r.kind, r.code),
     kind: r.kind,
+  }));
+}
+
+export type CancellationRequest = {
+  id: string;
+  name: string;
+  initials: string;
+  role: string;
+  type: string;
+  kind: RequestKind;
+  dates: string;
+  days: string;
+  reason: string;
+};
+
+/** KAN-127 — approved requests whose applicant has asked to cancel, awaiting this manager's decision. */
+export async function getPendingCancellations(user: User): Promise<CancellationRequest[]> {
+  if (!approverScope(user.role)) return [];
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      id: leaveRequests.id,
+      name: users.name,
+      department: users.department,
+      kind: leaveRequests.kind,
+      code: leaveTypes.code,
+      from: leaveRequests.fromDate,
+      to: leaveRequests.toDate,
+      days: leaveRequests.workingDays,
+      cancellationReason: leaveRequests.cancellationReason,
+    })
+    .from(leaveRequests)
+    .innerJoin(users, eq(leaveRequests.userId, users.id))
+    .leftJoin(leaveTypes, eq(leaveRequests.leaveTypeId, leaveTypes.id))
+    .where(
+      and(
+        or(eq(leaveRequests.teamLeadId, user.id), eq(leaveRequests.projectManagerId, user.id)),
+        eq(leaveRequests.status, "cancellation_requested"),
+      ),
+    );
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    initials: initialsOf(r.name),
+    role: r.department ?? "Team member",
+    type: typeLabel(r.kind, r.code),
+    kind: r.kind,
+    dates: fmtRange(r.from, r.to),
+    days: fmtDays(Number(r.days)),
+    reason: r.cancellationReason?.trim() || "—",
   }));
 }
 

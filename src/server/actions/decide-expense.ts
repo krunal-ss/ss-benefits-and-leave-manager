@@ -78,7 +78,7 @@ export async function decideExpenseAction(input: z.input<typeof schema>): Promis
   });
 
   // Best-effort notification — always record the attempt in the email log.
-  const amount = formatINR(row.amountPaise / 100);
+  const amount = formatINR(row.amountPaise! / 100); // guaranteed set — a draft never reaches pending_hr
   const subject = approve
     ? `Your ${row.category} expense of ${amount} was approved`
     : `Your ${row.category} expense of ${amount} was rejected`;
