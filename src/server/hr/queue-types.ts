@@ -1,5 +1,6 @@
 // Client-safe shapes + constants for the HR expense queue (no server-only deps,
 // so the queue UI can import them). The DB queries live in ./expenses.ts.
+import type { AiVerdict } from "@/server/verification";
 
 export type RuleCheck = {
   label: string;
@@ -23,6 +24,9 @@ export type QueuedClaim = {
   checks: RuleCheck[];
   /** KAN-126 — 1 for a never-resubmitted claim; N = (prior versions) + 1. */
   version: number;
+  /** KAN-113 — explainable AI score/verdict, computed once at submission (KAN-111/115). */
+  aiScore: number;
+  aiVerdict: AiVerdict;
 };
 
 // Flags that represent a hard failure (red) vs a soft warning (amber).

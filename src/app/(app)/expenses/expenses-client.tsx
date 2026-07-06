@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { VersionBadge } from "@/components/ui/version-badge";
+import { AiScoreBadge } from "@/components/ui/ai-score-badge";
 import { useToast } from "@/components/providers";
 import { HARD_FLAGS, type QueuedClaim } from "@/server/hr/queue-types";
 import { decideExpenseAction } from "@/server/actions/decide-expense";
@@ -112,6 +113,7 @@ export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedCla
                 <th className="border-b px-3 py-[11px] text-right font-medium">Claimed</th>
                 <th className="border-b px-3 py-[11px] text-right font-medium">OCR amount</th>
                 <th className="border-b px-3 py-[11px] text-left font-medium">Flags</th>
+                <th className="border-b px-3 py-[11px] text-left font-medium">AI score</th>
                 <th className="border-b" />
               </tr>
             </thead>
@@ -144,10 +146,23 @@ export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedCla
                       ))}
                     </div>
                   </td>
+                  <td className="px-3 py-3">
+                    <Link href={`/expenses/${q.id}/intelligence`} className="inline-flex items-center gap-1.5 hover:opacity-80">
+                      <AiScoreBadge score={q.aiScore} verdict={q.aiVerdict} />
+                    </Link>
+                  </td>
                   <td className="px-5 py-3 text-right">
-                    <Button variant="outline" size="sm" onClick={() => { setSelectedId(q.id); setReason(""); }}>
-                      Review
-                    </Button>
+                    <div className="inline-flex items-center gap-2">
+                      <Link
+                        href={`/expenses/${q.id}/intelligence`}
+                        className="text-[12.5px] font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        Analyze
+                      </Link>
+                      <Button variant="outline" size="sm" onClick={() => { setSelectedId(q.id); setReason(""); }}>
+                        Review
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

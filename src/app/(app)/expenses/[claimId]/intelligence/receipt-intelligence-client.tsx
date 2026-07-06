@@ -13,14 +13,8 @@ import { useToast } from "@/components/providers";
 import { decideExpenseAction } from "@/server/actions/decide-expense";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
-import type { AiVerdict } from "@/server/verification";
+import { VERDICT_META } from "@/lib/verdict-style";
 import type { ReceiptIntelligence } from "@/server/hr/expenses";
-
-const VERDICT_META: Record<AiVerdict, { label: string; color: string; bg: string }> = {
-  approve: { label: "Recommend approve", color: "var(--emerald-500)", bg: "bg-emerald-500/10" },
-  review: { label: "Needs human review", color: "#b45309", bg: "bg-amber-500/[0.11]" },
-  reject: { label: "Recommend reject", color: "var(--destructive)", bg: "bg-red-500/[0.1]" },
-};
 
 function confidenceColor(pct: number): string {
   return pct >= 85 ? "var(--emerald-500)" : pct >= 65 ? "var(--amber-500)" : "var(--destructive)";

@@ -105,10 +105,13 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
       name: users.name,
       department: users.department,
       category: benefitCategories.name,
+      aiScore: receiptVerifications.aiScore,
+      aiVerdict: receiptVerifications.verdict,
     })
     .from(benefitClaims)
     .innerJoin(users, eq(benefitClaims.userId, users.id))
     .innerJoin(benefitCategories, eq(benefitClaims.categoryId, benefitCategories.id))
+    .leftJoin(receiptVerifications, eq(receiptVerifications.claimId, benefitClaims.id))
     .where(eq(benefitClaims.status, "pending_hr"))
     .orderBy(desc(benefitClaims.createdAt))
     .limit(np.limit + 1) // fetch one extra to detect hasMore
@@ -140,6 +143,8 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
       flags: flagsFor(result),
       checks,
       version: (versionCounts.get(r.id) ?? 0) + 1,
+      aiScore: r.aiScore ?? 0,
+      aiVerdict: r.aiVerdict ?? "review",
     };
   });
 

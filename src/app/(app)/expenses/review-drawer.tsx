@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { VersionBadge } from "@/components/ui/version-badge";
+import { AiScoreBadge } from "@/components/ui/ai-score-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -67,6 +69,16 @@ export function ReviewDrawer({
         </div>
 
         <div className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-[22px] py-5">
+          <div className="flex items-center justify-between gap-3 rounded-[10px] border px-3.5 py-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[11.5px] text-muted-foreground">AI recommendation</span>
+              <AiScoreBadge score={claim.aiScore} verdict={claim.aiVerdict} />
+            </div>
+            <Link href={`/expenses/${claim.id}/intelligence`} className="text-[12.5px] font-medium text-foreground hover:underline">
+              Full analysis →
+            </Link>
+          </div>
+
           <div className="flex h-[150px] flex-col items-center justify-center gap-[7px] rounded-[11px] border bg-muted text-muted-foreground">
             <FileText className="size-6" strokeWidth={1.8} />
             <span className="text-[12.5px]">receipt-{claim.ref}.pdf</span>
