@@ -63,6 +63,9 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   // --- KAN-78 (HR department-wide availability overview) START ---
   { prefix: "/departments", roles: ["hr_head", "admin"] },
   // --- KAN-78 END ---
+  // --- KAN-148 (benefit reminder settings) START ---
+  { prefix: "/reminders", roles: ["hr_head", "admin"] },
+  // --- KAN-148 END ---
 ];
 
 /** May `role` access `path`? Unknown paths (e.g. "/") are allowed. */
@@ -105,6 +108,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
     label: "HR Head",
     items: [
       { href: "/expenses", label: "Expense queue", key: "expenses" },
+      // --- KAN-148 (benefit reminder settings) START ---
+      { href: "/reminders", label: "Benefit reminders", key: "reminders" },
+      // --- KAN-148 END ---
       { href: "/expenses/history", label: "Decided claims", key: "expenses-history" },
       { href: "/reports", label: "Reports", key: "reports" }, // KAN-44: HR reporting dashboard
       // --- KAN-78 (HR department-wide availability overview) START ---

@@ -138,6 +138,8 @@ test("HR can compare the prior and current version after a resubmission", async 
   await page.goto(`/expenses/${claimId}/intelligence`);
   await expect(page.getByText("Resubmission · compare versions")).toBeVisible();
   await expect(page.getByText("1 prior version")).toBeVisible();
-  await expect(page.getByText("₹5,000")).toBeVisible(); // v1 amount
+  // "₹5,000" also appears in the audit trail entry for the original submission —
+  // scope to the version-compare table's own cell to avoid the strict-mode clash.
+  await expect(page.getByRole("cell", { name: "₹5,000" })).toBeVisible(); // v1 amount
   await expect(page.getByText("₹4,800").first()).toBeVisible(); // v2 (current) amount
 });

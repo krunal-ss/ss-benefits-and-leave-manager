@@ -27,6 +27,8 @@ export type QueuedClaim = {
   /** KAN-113 — explainable AI score/verdict, computed once at submission (KAN-111/115). */
   aiScore: number;
   aiVerdict: AiVerdict;
+  /** KAN-147 — ISO timestamp; the SLA clock's start. Raw, not pre-computed, so `<SlaBadge>` can tick it live client-side. */
+  createdAt: string;
 };
 
 // Flags that represent a hard failure (red) vs a soft warning (amber).

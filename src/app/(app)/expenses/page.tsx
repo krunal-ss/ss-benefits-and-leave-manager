@@ -1,5 +1,5 @@
 import { requireAccess } from "@/server/auth/current-user";
-import { getHrExpenseQueue, getHrExpenseStats } from "@/server/hr/expenses";
+import { getHrExpenseQueue, getHrExpenseSlaSummary, getHrExpenseStats } from "@/server/hr/expenses";
 import { pageParam } from "@/lib/page-param";
 import { Pager } from "@/components/ui/pager";
 import { ExpensesClient } from "./expenses-client";
@@ -13,10 +13,14 @@ export default async function ExpensesPage({
 }) {
   await requireAccess("/expenses");
   const page = pageParam((await searchParams).page);
-  const [queue, stats] = await Promise.all([getHrExpenseQueue({ page }), getHrExpenseStats()]);
+  const [queue, stats, slaSummary] = await Promise.all([
+    getHrExpenseQueue({ page }),
+    getHrExpenseStats(),
+    getHrExpenseSlaSummary(), // KAN-147
+  ]);
   return (
     <div className="flex flex-col gap-5">
-      <ExpensesClient claims={queue.items} stats={stats} />
+      <ExpensesClient claims={queue.items} stats={stats} slaSummary={slaSummary} />
       <Pager basePath="/expenses" page={queue.page} hasMore={queue.hasMore} />
     </div>
   );

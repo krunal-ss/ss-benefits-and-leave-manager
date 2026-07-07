@@ -119,6 +119,7 @@ export function DetailModal({ claim, onClose }: { claim: MyClaim; onClose: () =>
           <div className="flex gap-2.5 border-t border-border px-5 py-4">
             <Link
               href={`/submit?draft=${claim.id}`}
+              onClick={onClose}
               className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[9px] bg-primary px-4 text-[13.5px] font-medium text-primary-foreground shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Pencil className="size-4" />
@@ -135,6 +136,7 @@ export function DetailModal({ claim, onClose }: { claim: MyClaim; onClose: () =>
           <div className="flex gap-2.5 border-t border-border px-5 py-4">
             <Link
               href={`/submit?resubmit=${claim.id}`}
+              onClick={onClose}
               className="inline-flex h-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-[9px] bg-primary px-4 text-[13.5px] font-medium text-primary-foreground shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
             >
               <RotateCcw className="size-4" />

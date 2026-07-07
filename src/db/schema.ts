@@ -310,6 +310,30 @@ export const teamCapacitySnapshot = pgTable("team_capacity_snapshot", {
 
 // ---- end KAN-79 ----
 
+// ---- KAN-148: Remaining Benefit Reminder config (HR Head / Admin). One
+// single-row settings table (id defaults to "default", same "lazily default
+// if missing" pattern as approvalPolicy) driving both the employee dashboard
+// banner and the HR "Benefit reminders" settings screen. leadDaysBeforeFyEnd
+// holds which of the fixed 90/60/30/14/7-day checkpoints are enabled; the
+// actual per-employee scheduled email fan-out (a cron job reading this row)
+// is intentionally NOT part of this pass — see KAN-160.
+export const reminderFrequencyEnum = pgEnum("reminder_frequency", ["once", "weekly", "daily"]);
+
+export const benefitReminderSettings = pgTable("benefit_reminder_settings", {
+  id: text().primaryKey().default("default"),
+  leadDaysBeforeFyEnd: jsonb().$type<number[]>().notNull().default([90, 60, 30, 7]),
+  frequency: reminderFrequencyEnum().notNull().default("weekly"),
+  dashboardEnabled: boolean().notNull().default(true),
+  emailEnabled: boolean().notNull().default(true),
+  // Rupees in the design mock, but stored in PAISE per this repo's money convention.
+  thresholdPaise: integer().notNull().default(500000),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid().references(() => users.id),
+});
+
+export type BenefitReminderSettingsRow = typeof benefitReminderSettings.$inferSelect;
+// ---- end KAN-148 ----
+
 // ---- shared ----
 export const holidays = pgTable("holidays", {
   id: uuid().primaryKey().defaultRandom(),

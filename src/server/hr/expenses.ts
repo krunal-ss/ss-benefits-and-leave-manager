@@ -18,6 +18,7 @@ import {
 import { currentFy } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
 import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
+import { EXPENSE_SLA_HOURS, summarizeSla } from "@/server/sla"; // KAN-147
 import { assertCan } from "@/server/auth/rbac";
 import { getReceiptUrlForClaim } from "@/server/supabase/storage";
 import type { AiVerdict } from "@/server/verification";
@@ -102,6 +103,7 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
       expenseDate: benefitClaims.expenseDate,
       vendor: benefitClaims.vendor,
       verificationResult: benefitClaims.verificationResult,
+      createdAt: benefitClaims.createdAt, // KAN-147 — SLA clock start
       name: users.name,
       department: users.department,
       category: benefitCategories.name,
@@ -145,10 +147,26 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
       version: (versionCounts.get(r.id) ?? 0) + 1,
       aiScore: r.aiScore ?? 0,
       aiVerdict: r.aiVerdict ?? "review",
+      createdAt: r.createdAt.toISOString(),
     };
   });
 
   return buildPage(mapped, np);
+}
+
+/**
+ * KAN-147 — on-track/due-soon/overdue counts across ALL claims pending HR
+ * review (not just the current page), for the "Review SLA" summary bar.
+ * Mirrors `getApprovalSlaSummary`'s shape — a small aggregate query, not the
+ * paginated queue.
+ */
+export async function getHrExpenseSlaSummary(): Promise<{ ok: number; soon: number; over: number }> {
+  const db = getDb();
+  const rows = await db
+    .select({ createdAt: benefitClaims.createdAt })
+    .from(benefitClaims)
+    .where(eq(benefitClaims.status, "pending_hr"));
+  return summarizeSla(rows.map((r) => r.createdAt), EXPENSE_SLA_HOURS);
 }
 
 export type HrExpenseStats = {

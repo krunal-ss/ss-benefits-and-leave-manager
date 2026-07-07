@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getCategoryBalances } from "@/server/employee/balances";
 import { getDraftClaim, getRejectedClaim, listMyClaims } from "@/server/employee/claims";
+import { getWalletLedger } from "@/server/employee/ledger";
 import { currentFy } from "@/lib/fy";
 import { pageParam } from "@/lib/page-param";
 import { Pager } from "@/components/ui/pager";
@@ -18,13 +19,15 @@ export default async function SubmitPage({
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const balances = await getCategoryBalances(user.id, currentFy().label);
+  const fy = currentFy().label;
+  const balances = await getCategoryBalances(user.id, fy);
   const sports = balances.find((b) => b.key === "sports");
   const learning = balances.find((b) => b.key === "learning");
 
   const sp = await searchParams;
   const page = pageParam(sp.page);
   const claims = await listMyClaims(user.id, { page });
+  const ledger = await getWalletLedger(user.id, fy);
   // KAN-125 — resuming a draft via /submit?draft=<id>; silently ignored if not
   // found/not owned/no longer a draft (the form just starts blank instead).
   const draft = sp.draft ? await getDraftClaim(user.id, sp.draft) : null;
@@ -66,7 +69,7 @@ export default async function SubmitPage({
             : null
         }
       />
-      <MyClaims claims={claims.items} />
+      <MyClaims claims={claims.items} ledger={ledger} fy={fy} />
       <Pager basePath="/submit" page={claims.page} hasMore={claims.hasMore} />
     </div>
   );
