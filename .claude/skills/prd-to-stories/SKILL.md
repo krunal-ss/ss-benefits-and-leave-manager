@@ -32,3 +32,4 @@ PRDs live in `.claude/docs/`. The original backlog (epics E0–E6) is derived fr
 - `PRD-Smart-Team-Availability-Capacity-Planner.md` → epic KAN-73
 - `PRD-AI-Expense-Verification-Receipt-Intelligence.md` → epic KAN-110
 - `PRD-Productivity-Usability-Enhancements.md` → epic KAN-124 (Expense Draft Save, Claim Resubmission, Leave Cancellation Request)
+- `PRD-Employee-Experience-Enhancements.md` → epic KAN-145 (Wallet Transaction History, Approval SLA Timer, Remaining Benefit Reminder)

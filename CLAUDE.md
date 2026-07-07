@@ -48,7 +48,7 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 - `src/server/` — services + mock data: `auth/rbac.ts`, `supabase/`, `email/`, `verification.ts`
 - `src/db/` — Drizzle schema, lazy client, `migrations/`
 - `src/lib/` — `env.ts` (zod), `format.ts`, `working-days.ts`, `cn.ts`
-- `tests/e2e/` — Playwright · `design/source/` — imported Claude Design comp · `.claude/docs/` — PRDs (Benefit Wallet + Leave Manager, Smart Team Availability & Capacity Planner, AI Expense Verification & Receipt Intelligence, Productivity & Usability Enhancements)
+- `tests/e2e/` — Playwright · `design/source/` — imported Claude Design comp · `.claude/docs/` — PRDs (Benefit Wallet + Leave Manager, Smart Team Availability & Capacity Planner, AI Expense Verification & Receipt Intelligence, Productivity & Usability Enhancements, Employee Experience Enhancements)
 - `.claude/skills/` — project skills (see below)
 
 ## Architecture (big picture)
