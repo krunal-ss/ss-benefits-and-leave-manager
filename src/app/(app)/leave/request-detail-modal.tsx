@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { CalendarX, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -12,6 +12,7 @@ import { PENDING_STATUSES, STATUS_CLS } from "@/app/(app)/leave/leave-status";
 import { fmtRange, fmtTimestamp } from "@/app/(app)/leave/leave-format";
 import { Row } from "@/app/(app)/leave/detail-row";
 import { todayISO } from "@/lib/fy";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 
 export function DetailModal({ request, onClose }: { request: MyRequest; onClose: () => void }) {
   const { flash } = useToast();
@@ -24,13 +25,7 @@ export function DetailModal({ request, onClose }: { request: MyRequest; onClose:
   const canRequestCancellation = request.status === "approved" && request.from > todayISO();
   const cancellationPending = request.status === "cancellation_requested";
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   function cancelRequest() {
     startTransition(async () => {

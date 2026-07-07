@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Check, Pencil, RotateCcw, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useToast } from "@/components/providers";
 import { deleteClaimAction } from "@/server/actions/delete-claim";
 import { deleteDraftAction } from "@/server/actions/draft-expense";
 import { cn } from "@/lib/cn";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 import type { MyClaim } from "@/server/employee/claims";
 import { STATUS_CLS } from "@/app/(app)/submit/claim-status";
 import { fmtDate, fmtMoney, fmtTimestamp } from "@/app/(app)/submit/claim-format";
@@ -19,13 +20,7 @@ export function DetailModal({ claim, onClose }: { claim: MyClaim; onClose: () =>
   const [pending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   function deleteClaim() {
     startTransition(async () => {

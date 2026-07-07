@@ -1,17 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
 import { X } from "lucide-react";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 
 /** A right-hand drawer used by every create/edit form. */
 export function Drawer({ title, onClose, children, footer }: { title: string; onClose: () => void; children: React.ReactNode; footer: React.ReactNode }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   return (
     <>

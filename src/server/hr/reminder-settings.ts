@@ -54,7 +54,8 @@ export async function loadReminderSettings(): Promise<BenefitReminderSettingsRow
     .from(benefitReminderSettings)
     .where(eq(benefitReminderSettings.id, SETTINGS_ID))
     .limit(1);
-  return row!;
+  if (!row) throw new Error("Failed to load or create benefit reminder settings.");
+  return row;
 }
 
 export type UpsertReminderSettingsInput = {

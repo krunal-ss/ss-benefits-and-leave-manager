@@ -10,7 +10,7 @@ export function Switch({
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
-  ariaLabel?: string;
+  ariaLabel: string;
 }) {
   return (
     <button

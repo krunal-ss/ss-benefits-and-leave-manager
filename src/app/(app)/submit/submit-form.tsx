@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { Check, Dumbbell, FileText, GraduationCap, RotateCcw, Save, Upload, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { cn } from "@/lib/cn";
 import { Row } from "@/app/(app)/submit/balance-row";
 import { CategoryButton } from "@/app/(app)/submit/category-button";
 import { VerifyResultCard } from "@/app/(app)/submit/verify-result-card";
+import { useDraftAutosave } from "@/app/(app)/submit/use-draft-autosave";
 
 type Variant = "single" | "split";
 type CategoryKey = "sports" | "learning";
@@ -47,7 +48,6 @@ const EMPTY = { amount: "", date: "2026-06-20", vendor: "" };
 
 const ACCEPT = "application/pdf,image/jpeg,image/png";
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB — mirrors the server-side cap
-const AUTOSAVE_DEBOUNCE_MS = 1500;
 
 function fmtBytes(n: number): string {
   if (n < 1024) return `${n} B`;
@@ -89,28 +89,31 @@ export function SubmitForm({
   const [pending, startTransition] = useTransition();
   const [submitTried, setSubmitTried] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const amt = useMemo(
+    () => parseFloat(String(claim.amount).replace(/[^0-9.]/g, "")) || 0,
+    [claim.amount],
+  );
 
-  // KAN-125 — draft save/autosave/resume. `draftIdRef` is the source of truth read
-  // by every server call; `draftId` state only drives rendering. Autosave calls are
-  // serialized through `autosaveChain` and an explicit Save/Submit always cancels
-  // any pending timer and awaits the chain first — otherwise a slow autosave whose
-  // response hasn't landed yet (stale `draftId` closure) can create a SECOND draft
-  // row instead of updating the first one.
-  // None of this runs in resubmit mode (see `isResubmit` guards below) — a
-  // resubmission is never a draft, so `draftId` stays null for its whole life.
-  const [draftId, setDraftId] = useState<string | null>(draft?.id ?? null);
-  const draftIdRef = useRef<string | null>(draft?.id ?? null);
   const [hasExistingDocument, setHasExistingDocument] = useState(draft?.hasDocument ?? resubmit?.hasDocument ?? false);
-  const [autosavedAt, setAutosavedAt] = useState<string | null>(null);
-  const [savingDraft, setSavingDraft] = useState(false);
-  const skipNextAutosave = useRef(true); // don't autosave on initial mount
-  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autosaveChain = useRef<Promise<void>>(Promise.resolve());
 
-  function setDraftIdBoth(id: string | null) {
-    draftIdRef.current = id;
-    setDraftId(id);
-  }
+  // KAN-125 — draft save/autosave/resume, disabled entirely in resubmit mode
+  // (see `isResubmit` below) — a resubmission is never a draft.
+  const {
+    draftId,
+    draftIdRef,
+    autosavedAt,
+    savingDraft,
+    setSavingDraft,
+    setDraftIdBoth,
+    settleAutosave,
+    resetAutosave,
+  } = useDraftAutosave({
+    enabled: !isResubmit,
+    hasContent: !result && (amt > 0 || claim.vendor.trim().length > 0 || !!file),
+    buildFormData,
+    deps: [category, claim.amount, claim.date, claim.vendor, file, result],
+    initialDraftId: draft?.id ?? null,
+  });
 
   const descriptionMissing = claim.vendor.trim().length === 0;
   const fileMissing = !file && !hasExistingDocument;
@@ -118,10 +121,6 @@ export function SubmitForm({
   const avail = category === "sports" ? sportsAvail : learningAvail;
   const cap = category === "sports" ? sportsCap : learningCap;
   const label = category === "sports" ? "Sports" : "Learning";
-  const amt = useMemo(
-    () => parseFloat(String(claim.amount).replace(/[^0-9.]/g, "")) || 0,
-    [claim.amount],
-  );
   const after = avail - amt;
 
   const setField = (patch: Partial<typeof claim>) => {
@@ -183,53 +182,9 @@ export function SubmitForm({
     fd.set("date", claim.date);
     fd.set("vendor", claim.vendor);
     if (file) fd.set("receipt", file);
-    if (isResubmit) fd.set("claimId", resubmit!.id);
+    if (resubmit) fd.set("claimId", resubmit.id);
     else if (idOverride) fd.set("draftId", idOverride);
     return fd;
-  }
-
-  // Silent background autosave — debounced, and only once there's something worth
-  // keeping (an empty form autosaving on page load would just litter drafts).
-  // Runs are chained through `autosaveChain` so a slow save can never overlap with
-  // the next one and race on which row is "the" draft. Never runs in resubmit mode
-  // — a resubmit is never a draft, so it has nothing to autosave.
-  useEffect(() => {
-    if (isResubmit) return;
-    if (skipNextAutosave.current) {
-      skipNextAutosave.current = false;
-      return;
-    }
-    if (result) return; // just finalized — nothing left to autosave
-    const hasContent = amt > 0 || claim.vendor.trim().length > 0 || !!file;
-    if (!hasContent) return;
-
-    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
-    autosaveTimer.current = setTimeout(() => {
-      autosaveChain.current = autosaveChain.current.then(async () => {
-        try {
-          const res = await saveDraftAction(buildFormData(draftIdRef.current));
-          if (res.ok) {
-            if (res.draftId) setDraftIdBoth(res.draftId);
-            setAutosavedAt("just now");
-          }
-        } catch {
-          // best-effort — autosave failures shouldn't interrupt typing
-        }
-      });
-    }, AUTOSAVE_DEBOUNCE_MS);
-    return () => {
-      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, claim.amount, claim.date, claim.vendor, file, result]);
-
-  /** Cancel any pending debounce and wait for an in-flight autosave to finish, so an explicit Save/Submit always sees the true current draft id. */
-  async function settleAutosave() {
-    if (autosaveTimer.current) {
-      clearTimeout(autosaveTimer.current);
-      autosaveTimer.current = null;
-    }
-    await autosaveChain.current;
   }
 
   function submit() {
@@ -291,10 +246,8 @@ export function SubmitForm({
     removeFile();
     setResult(null);
     setSubmitTried(false);
-    setDraftIdBoth(null);
+    resetAutosave();
     setHasExistingDocument(false);
-    setAutosavedAt(null);
-    skipNextAutosave.current = true;
   }
 
   const maxW = variant === "split" ? "1000px" : "680px";
@@ -327,28 +280,28 @@ export function SubmitForm({
         </div>
       </div>
 
-      {isResubmit && (
+      {resubmit && (
         <div
           className="flex items-center gap-2.5 rounded-[11px] border border-blue-600/35 bg-blue-600/[0.08] px-[15px] py-3 text-[13px]"
           style={{ maxWidth: maxW }}
         >
           <RotateCcw className="size-[17px] shrink-0 text-blue-600" strokeWidth={2} />
           <div>
-            Resubmitting claim <span className="font-semibold">{resubmit!.id.slice(0, 8)}</span> · this
-            keeps the same claim ID as version {resubmit!.nextVersion}. Fix the flagged fields and replace
+            Resubmitting claim <span className="font-semibold">{resubmit.id.slice(0, 8)}</span> · this
+            keeps the same claim ID as version {resubmit.nextVersion}. Fix the flagged fields and replace
             the receipt, then run verification again.
           </div>
         </div>
       )}
 
-      {isEditingDraft && (
+      {draftId && !result && (
         <div
           className="flex items-center gap-2.5 rounded-[11px] border border-border bg-muted px-[15px] py-3 text-[13px]"
           style={{ maxWidth: maxW }}
         >
           <FileText className="size-[17px] shrink-0 text-muted-foreground" strokeWidth={2} />
           <div>
-            Editing draft <span className="font-semibold">{draftId!.slice(0, 8)}</span> · drafts don&apos;t
+            Editing draft <span className="font-semibold">{draftId.slice(0, 8)}</span> · drafts don&apos;t
             reserve balance until you submit.
           </div>
         </div>

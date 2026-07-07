@@ -5,12 +5,13 @@
 // export, and a click-through detail drawer. All filtering happens client-side
 // over the already-fetched, per-FY event list from getWalletLedger — small
 // and bounded (one employee, one FY), so no server round-trips per filter.
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Download, Search, Wallet, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Segmented } from "@/components/ui/segmented";
 import { cn } from "@/lib/cn";
 import { formatINR } from "@/lib/format";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 import type { CategoryKey } from "@/server/benefits";
 import type { LedgerEvent, LedgerEventType } from "@/server/employee/ledger";
 
@@ -271,13 +272,7 @@ export function WalletLedger({ events, fy }: { events: LedgerEvent[]; fy: string
 }
 
 function TxnDrawer({ event, onClose }: { event: LedgerEvent; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   const meta = TYPE_META[event.type];
 

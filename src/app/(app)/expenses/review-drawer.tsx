@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import { AiScoreBadge } from "@/components/ui/ai-score-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 import type { QueuedClaim } from "@/server/hr/queue-types";
 import { DetailRow } from "@/app/(app)/expenses/detail-row";
 
@@ -34,13 +34,7 @@ export function ReviewDrawer({
   onDecide: (approve: boolean) => void;
   pending: boolean;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   return (
     <>

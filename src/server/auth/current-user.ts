@@ -24,14 +24,15 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
   const existing = await db.select().from(users).where(eq(users.email, authUser.email)).limit(1);
   if (existing[0]) return existing[0];
 
+  const rawFullName = authUser.user_metadata?.full_name;
   const name =
-    (authUser.user_metadata?.full_name as string | undefined)?.trim() ||
-    authUser.email.split("@")[0];
+    (typeof rawFullName === "string" ? rawFullName.trim() : "") || authUser.email.split("@")[0];
 
   // Role is self-selected at signup (carried in user_metadata.app_role), but
   // user_metadata is client-editable — resolveSignupRole whitelists it so a
   // tampered value can never self-grant hr_head/admin.
-  const role = resolveSignupRole(authUser.user_metadata?.app_role as string | undefined);
+  const rawAppRole = authUser.user_metadata?.app_role;
+  const role = resolveSignupRole(typeof rawAppRole === "string" ? rawAppRole : undefined);
 
   const [created] = await db
     .insert(users)

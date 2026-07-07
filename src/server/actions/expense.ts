@@ -10,6 +10,7 @@ import { getCategoryBalanceByKey } from "@/server/employee/balances";
 import { isAllowedReceiptType } from "@/server/supabase/storage";
 import { verifyAndScoreClaim, type CheckOutcome } from "@/server/expense-pipeline";
 import { currentFy } from "@/lib/fy";
+import { formString } from "@/lib/form-data";
 
 const schema = z.object({
   category: z.enum(["sports", "learning"]),
@@ -38,7 +39,7 @@ export async function submitExpenseAction(formData: FormData): Promise<SubmitRes
     category: formData.get("category"),
     amountRupees: Number(formData.get("amountRupees")),
     date: formData.get("date"),
-    vendor: (formData.get("vendor") as string | null) ?? "",
+    vendor: formString(formData, "vendor") ?? "",
   };
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };

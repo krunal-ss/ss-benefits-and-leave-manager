@@ -10,6 +10,7 @@ import { assertCan } from "@/server/auth/rbac";
 import { getCategoryBalanceByKey } from "@/server/employee/balances";
 import { verifyAndScoreClaim } from "@/server/expense-pipeline";
 import { currentFy } from "@/lib/fy";
+import { formString } from "@/lib/form-data";
 import type { SubmitResult } from "@/server/actions/expense";
 
 // KAN-126 — Claim Resubmission. A `rejected` claim is edited and resubmitted
@@ -32,7 +33,7 @@ export async function resubmitClaimAction(formData: FormData): Promise<SubmitRes
     category: formData.get("category"),
     amountRupees: Number(formData.get("amountRupees")),
     date: formData.get("date"),
-    vendor: (formData.get("vendor") as string | null) ?? "",
+    vendor: formString(formData, "vendor") ?? "",
   };
   const parsed = resubmitSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };

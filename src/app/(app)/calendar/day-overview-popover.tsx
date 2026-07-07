@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { CalendarEvent } from "@/server/calendar";
 import { cn } from "@/lib/cn";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 
 export type DayOverview = {
   dayLabel: string;
@@ -22,13 +22,7 @@ export function DayOverviewPopover({
   onClose: () => void;
   onSelectEvent: (event: CalendarEvent) => void;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   return createPortal(
     <>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { X } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/cn";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 import type { CalendarEvent } from "@/server/calendar";
 import { LevelRow } from "@/app/(app)/calendar/level-row";
 
@@ -30,13 +30,7 @@ function initialsOf(name: string): string {
 }
 
 export function LeaveDetailModal({ event, onClose }: { event: CalendarEvent; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   const approvalByLevel = (level: 1 | 2) => event.approvals.find((a) => a.level === level);
 

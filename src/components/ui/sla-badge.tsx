@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { computeSla, type SlaState, type SlaView } from "@/server/sla";
@@ -10,6 +10,28 @@ const STATE_META: Record<SlaState, { color: string; bg: string }> = {
   soon: { color: "#b45309", bg: "bg-amber-500/[0.16]" },
   overdue: { color: "var(--destructive)", bg: "bg-red-500/[0.13]" },
 };
+
+// One shared 1s ticker for every mounted useSla, instead of one setInterval
+// per row — an HR/approval queue with many rows would otherwise accumulate
+// one independent timer per visible badge.
+const tickListeners = new Set<() => void>();
+let tickIntervalId: ReturnType<typeof setInterval> | null = null;
+
+function subscribeTick(listener: () => void): () => void {
+  tickListeners.add(listener);
+  if (tickIntervalId === null) {
+    tickIntervalId = setInterval(() => {
+      for (const l of tickListeners) l();
+    }, 1000);
+  }
+  return () => {
+    tickListeners.delete(listener);
+    if (tickListeners.size === 0 && tickIntervalId !== null) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
+    }
+  };
+}
 
 /**
  * Ticking SLA view for a single row — recomputes every second so a mounted
@@ -21,11 +43,18 @@ const STATE_META: Record<SlaState, { color: string; bg: string }> = {
  */
 export function useSla(createdAtIso: string, targetHours: number): SlaView {
   const [sla, setSla] = useState<SlaView>(() => computeSla(createdAtIso, targetHours));
+  const isFirstRun = useRef(true);
 
   useEffect(() => {
-    setSla(computeSla(createdAtIso, targetHours));
-    const id = setInterval(() => setSla(computeSla(createdAtIso, targetHours)), 1000);
-    return () => clearInterval(id);
+    // Skip the redundant recompute on mount — the useState initializer above
+    // already computed this. On a later createdAtIso/targetHours change,
+    // still recompute immediately rather than waiting up to 1s for the tick.
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+    } else {
+      setSla(computeSla(createdAtIso, targetHours));
+    }
+    return subscribeTick(() => setSla(computeSla(createdAtIso, targetHours)));
   }, [createdAtIso, targetHours]);
 
   return sla;

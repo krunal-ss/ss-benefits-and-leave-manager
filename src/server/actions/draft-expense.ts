@@ -11,6 +11,7 @@ import { getCategoryBalanceByKey } from "@/server/employee/balances";
 import { isAllowedReceiptType, uploadReceipt } from "@/server/supabase/storage";
 import { verifyAndScoreClaim } from "@/server/expense-pipeline";
 import { currentFy } from "@/lib/fy";
+import { formString } from "@/lib/form-data";
 import type { SubmitResult } from "@/server/actions/expense";
 
 // KAN-125 — Expense Draft Save. A draft is a `benefitClaims` row with
@@ -29,16 +30,16 @@ const draftFieldsSchema = z.object({
 export type SaveDraftResult = { ok: boolean; error?: string; draftId?: string };
 
 function readDraftFormData(formData: FormData) {
-  const draftId = (formData.get("draftId") as string | null) || undefined;
+  const draftId = formString(formData, "draftId") || undefined;
   const amountRaw = formData.get("amountRupees");
   const amountRupees =
     amountRaw !== null && amountRaw !== "" && !Number.isNaN(Number(amountRaw)) ? Number(amountRaw) : undefined;
   return draftFieldsSchema.parse({
     draftId,
-    category: (formData.get("category") as string | null) || undefined,
+    category: formString(formData, "category") || undefined,
     amountRupees,
-    date: (formData.get("date") as string | null) || undefined,
-    vendor: (formData.get("vendor") as string | null) || undefined,
+    date: formString(formData, "date") || undefined,
+    vendor: formString(formData, "vendor") || undefined,
   });
 }
 
@@ -195,7 +196,7 @@ export async function submitDraftAction(formData: FormData): Promise<SubmitResul
     category: formData.get("category"),
     amountRupees: Number(formData.get("amountRupees")),
     date: formData.get("date"),
-    vendor: (formData.get("vendor") as string | null) ?? "",
+    vendor: formString(formData, "vendor") ?? "",
   };
   const parsed = submitSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
