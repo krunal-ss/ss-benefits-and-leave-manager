@@ -77,6 +77,7 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 - `design-system` — tokens, shadcn usage, UI/UX rules
 - `e2e-testing` — how to write + what a Playwright test must satisfy
 - `prd-to-stories` — turn a PRD section into JIRA-ready epics/stories/sub-tasks
+- `pr-description` — draft a PR title/body from a branch's commits+diff in this repo's KAN-ticket convention
 
 ## Hard rules
 
