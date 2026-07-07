@@ -138,6 +138,7 @@
     <sc-if value="{{ isHr }}" hint-placeholder-val="{{ false }}">
       <div style="display: flex; flex-direction: column; gap: 2px;">
         <button className="sc-navbtn" onClick="{{ goHrQueue }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.hrqueue }}; color: {{ navFg.hrqueue }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>Expense queue<span style="margin-left: auto; font-size: 11px; font-weight: 600; background: var(--primary); color: var(--primary-foreground); border-radius: 9999px; padding: 1px 7px;">{{ hrCount }}</span></button>
+        <button className="sc-navbtn" onClick="{{ goReminders }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.reminders }}; color: {{ navFg.reminders }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Benefit reminders</button>
         <button className="sc-navbtn" onClick="{{ goCalendar }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.calendar }}; color: {{ navFg.calendar }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Org calendar</button>
       </div>
     </sc-if>
@@ -187,6 +188,24 @@
             </div>
             <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--border); border-radius: 9999px; font-size: 12.5px; color: var(--muted-foreground); background: var(--background);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>FY 2026–27 · Apr–Mar</span>
           </div>
+
+          <sc-if value="{{ showReminder }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; border: 1px solid color-mix(in oklab, var(--amber-500) 38%, var(--border)); border-radius: 14px; background: color-mix(in oklab, var(--amber-500) 8%, var(--card)); box-shadow: var(--shadow-xs);">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: color-mix(in oklab, var(--amber-500) 20%, transparent); color: #b45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"><span style="font-size: 14.5px; font-weight: 600;">You have {{ reminderUnusedF }} unused in your benefit wallet</span><span style="display: inline-flex; align-items: center; height: 20px; padding: 0 8px; font-size: 11px; font-weight: 600; border-radius: 6px; background: color-mix(in oklab, var(--amber-500) 20%, transparent); color: #b45309;">{{ reminderDays }} days left</span></div>
+                <p style="font-size: 13px; color: var(--muted-foreground); margin: 4px 0 0;">Unused balance does not carry over past <strong style="color: var(--foreground);">{{ reminderFyEnd }}</strong>. Submit your claims before FY-end to make the most of it.</p>
+                <div style="display: flex; gap: 8px; margin-top: 11px; flex-wrap: wrap;">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; border-radius: 7px; background: var(--card); border: 1px solid var(--border);"><span style="width: 7px; height: 7px; border-radius: 2px; background: var(--emerald-500);"></span>Sports {{ reminderSportsF }}</span>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; border-radius: 7px; background: var(--card); border: 1px solid var(--border);"><span style="width: 7px; height: 7px; border-radius: 2px; background: var(--blue-600);"></span>Learning {{ reminderLearningF }}</span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <button onClick="{{ goSubmit }}" style="height: 34px; padding: 0 14px; font-size: 13px; font-weight: 500; border: 0; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Submit a claim</button>
+                <button onClick="{{ dismissReminder }}" aria-label="Dismiss reminder" style="width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--muted-foreground); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+              </div>
+            </div>
+          </sc-if>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
             <!-- Sports -->
@@ -381,6 +400,7 @@
             </sc-for>
           </div>
 
+          <sc-if value="{{ showClaimsList }}" hint-placeholder-val="{{ true }}">
           <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
             <sc-if value="{{ myClaimsEmpty }}" hint-placeholder-val="{{ false }}">
               <div style="padding: 52px; display: flex; flex-direction: column; align-items: center; gap: 9px; color: var(--muted-foreground);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><div style="font-size: 13.5px; font-weight: 500; color: var(--foreground);">Nothing here</div><div style="font-size: 12.5px;">No claims in this status.</div></div>
@@ -423,13 +443,96 @@
               </div>
             </sc-for>
           </div>
+          </sc-if>
+
+          <sc-if value="{{ showLedger }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 15px 17px;"><div style="font-size: 12px; color: var(--muted-foreground);">Wallet balance</div><div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-top: 3px;">{{ walletBalanceF }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 2px;">Available across benefits</div></div>
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 15px 17px;"><div style="font-size: 12px; color: var(--muted-foreground);">Credited</div><div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-top: 3px; color: var(--emerald-500);">{{ totalCreditedF }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 2px;">Allocations &amp; releases</div></div>
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 15px 17px;"><div style="font-size: 12px; color: var(--muted-foreground);">Spent</div><div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-top: 3px;">{{ totalDebitedF }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 2px;">Approved claims</div></div>
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 15px 17px;"><div style="font-size: 12px; color: var(--muted-foreground);">Reserved</div><div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-top: 3px; color: #b45309;">{{ totalReservedF }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 2px;">Pending holds</div></div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <div style="font-size: 15px; font-weight: 600;">Transaction history</div>
+                <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 8px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: var(--muted); color: var(--muted-foreground);">{{ ledgerCount }} shown</span>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <div style="position: relative; display: inline-flex; align-items: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="position: absolute; left: 10px; pointer-events: none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input value="{{ ledgerQuery }}" onChange="{{ onLedgerQuery }}" placeholder="Search description or ref…" style="height: 34px; width: 210px; padding: 0 12px 0 32px; font-size: 13px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+                  <button onClick="{{ exportLedger }}" style="height: 34px; padding: 0 13px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 7px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV</button>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 16px; padding: 11px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 11.5px; color: var(--muted-foreground);">Benefit</span><div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 8px; gap: 3px;"><sc-for list="{{ ledgerCatOpts }}" as="op" hint-placeholder-count="3"><button onClick="{{ op.onPick }}" style="height: 26px; padding: 0 11px; font-size: 12px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ op.bg }}; color: {{ op.fg }}; box-shadow: {{ op.sh }};">{{ op.label }}</button></sc-for></div></div>
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 11.5px; color: var(--muted-foreground);">Type</span><div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 8px; gap: 3px;"><sc-for list="{{ ledgerTypeOpts }}" as="op" hint-placeholder-count="4"><button onClick="{{ op.onPick }}" style="height: 26px; padding: 0 11px; font-size: 12px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ op.bg }}; color: {{ op.fg }}; box-shadow: {{ op.sh }};">{{ op.label }}</button></sc-for></div></div>
+                <button onClick="{{ clearLedgerFilters }}" style="margin-left: auto; height: 28px; padding: 0 10px; font-size: 12px; font-weight: 500; border: 0; border-radius: 7px; background: transparent; color: var(--muted-foreground); cursor: pointer;">Clear filters</button>
+              </div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <thead><tr style="color: var(--muted-foreground); font-size: 12px;">
+                  <th style="text-align: left; font-weight: 500; padding: 10px 18px; border-bottom: 1px solid var(--border);">Date</th>
+                  <th style="text-align: left; font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--border);">Description</th>
+                  <th style="text-align: left; font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--border);">Benefit</th>
+                  <th style="text-align: left; font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--border);">Type</th>
+                  <th style="text-align: right; font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--border);">Amount</th>
+                  <th style="text-align: right; font-weight: 500; padding: 10px 18px; border-bottom: 1px solid var(--border);">Balance</th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ ledgerRows }}" as="t" hint-placeholder-count="7">
+                    <tr className="sc-row" onClick="{{ t.onOpen }}" style="border-bottom: 1px solid var(--border); cursor: pointer;">
+                      <td style="padding: 12px 18px; white-space: nowrap; color: var(--muted-foreground);">{{ t.date }}</td>
+                      <td style="padding: 12px;"><div style="font-weight: 500;">{{ t.desc }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); font-family: var(--font-mono);">{{ t.ref }}</div></td>
+                      <td style="padding: 12px;"><span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 7px; height: 7px; border-radius: 2px; background: {{ t.catColor }};"></span>{{ t.cat }}</span></td>
+                      <td style="padding: 12px;"><span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; font-size: 11px; font-weight: 500; border-radius: 6px; background: {{ t.typeBg }}; color: {{ t.typeColor }};">{{ t.typeLabel }}</span></td>
+                      <td style="padding: 12px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; color: {{ t.amountColor }}; white-space: nowrap;">{{ t.amountF }}</td>
+                      <td style="padding: 12px 18px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted-foreground); white-space: nowrap;">{{ t.balanceF }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <sc-if value="{{ ledgerEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 48px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted-foreground);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><div style="font-size: 13.5px; font-weight: 500; color: var(--foreground);">No matching transactions</div><div style="font-size: 12.5px;">Try changing the filters above.</div></div>
+              </sc-if>
+            </div>
+          </sc-if>
         </div>
+
+        <sc-if value="{{ showTxn }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ closeTxn }}" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 60;"></div>
+          <div style="position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 92vw; background: var(--card); border-left: 1px solid var(--border); box-shadow: var(--shadow-2xl); z-index: 70; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--border);"><div><div style="font-size: 16px; font-weight: 600;">Transaction detail</div><div style="font-size: 12.5px; color: var(--muted-foreground); font-family: var(--font-mono);">{{ txn.ref }}</div></div><button onClick="{{ closeTxn }}" style="margin-left: auto; width: 30px; height: 30px; border: 0; border-radius: 7px; background: var(--muted); color: var(--muted-foreground); cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+            <div style="flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 20px;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 4px;">
+                <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 10px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: {{ txn.typeBg }}; color: {{ txn.typeColor }};">{{ txn.typeLabel }}</span>
+                <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: {{ txn.amountColor }};">{{ txn.amountF }}</div>
+                <div style="font-size: 12.5px; color: var(--muted-foreground);">Balance after · {{ txn.balanceF }}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0;">
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13px;"><span style="color: var(--muted-foreground);">Description</span><span style="font-weight: 500; text-align: right;">{{ txn.desc }}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13px;"><span style="color: var(--muted-foreground);">Benefit</span><span style="font-weight: 500; display: inline-flex; align-items: center; gap: 6px;"><span style="width: 7px; height: 7px; border-radius: 2px; background: {{ txn.catColor }};"></span>{{ txn.cat }}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13px;"><span style="color: var(--muted-foreground);">Date</span><span style="font-weight: 500;">{{ txn.date }}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13px;"><span style="color: var(--muted-foreground);">Reference</span><span style="font-weight: 500; font-family: var(--font-mono); white-space: nowrap;">{{ txn.ref }}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 13px; gap: 20px;"><span style="color: var(--muted-foreground); flex-shrink: 0;">Source</span><span style="font-weight: 500; text-align: right;">{{ txn.method }}</span></div>
+              </div>
+              <sc-if value="{{ txn.isClaim }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: center; gap: 9px; padding: 11px 13px; border-radius: 9px; background: var(--muted); font-size: 12.5px; color: var(--muted-foreground);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Linked to expense claim {{ txn.ref }} · receipt on file.</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
       </sc-if>
 
       <!-- ===================== HR EXPENSE QUEUE ===================== -->
       <sc-if value="{{ showHrQueue }}" hint-placeholder-val="{{ false }}">
         <div style="display: flex; flex-direction: column; gap: 20px;">
-          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Expense approval queue</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Claims that failed automated verification, with extracted fields and flags.</p></div>
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Expense approval queue</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Claims that failed automated verification, with extracted fields and flags. Each carries a 48-hour review SLA.</p></div>
+
+          <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); flex-wrap: wrap;">
+            <span style="font-size: 12.5px; font-weight: 600; color: var(--muted-foreground);">Review SLA</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--emerald-500) 13%, transparent); color: var(--emerald-500);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--emerald-500);"></span>{{ hrSlaOk }} on track</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--amber-500) 16%, transparent); color: #b45309;"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--amber-500);"></span>{{ hrSlaSoon }} due soon</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--red-500) 13%, transparent); color: var(--destructive);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--destructive);"></span>{{ hrSlaOver }} overdue</span>
+            <sc-if value="{{ hrHasOverdue }}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--destructive);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Overdue claims escalate to HR Head</span></sc-if>
+          </div>
 
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
             <sc-for list="{{ hrStats }}" as="hs" hint-placeholder-count="4">
@@ -454,6 +557,7 @@
                   <th style="text-align: right; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">Claimed</th>
                   <th style="text-align: right; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">OCR amount</th>
                   <th style="text-align: center; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">AI score</th>
+                  <th style="text-align: left; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">SLA</th>
                   <th style="text-align: left; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">Flags</th>
                   <th style="border-bottom: 1px solid var(--border);"></th>
                 </tr></thead>
@@ -465,6 +569,7 @@
                       <td style="padding: 12px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums;">{{ q.claimedF }}</td>
                       <td style="padding: 12px; text-align: right; font-variant-numeric: tabular-nums; color: {{ q.ocrColor }};">{{ q.extractedF }}</td>
                       <td style="padding: 12px; text-align: center;"><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; padding: 0 7px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; border-radius: 6px; color: {{ q.aiScoreColor }}; background: color-mix(in oklab, {{ q.aiScoreColor }} 12%, transparent);">{{ q.aiScore }}</span></td>
+                      <td style="padding: 12px; white-space: nowrap;"><span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: {{ q.slaBg }}; color: {{ q.slaColor }}; font-variant-numeric: tabular-nums;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>{{ q.slaLabel }}</span></td>
                       <td style="padding: 12px;"><div style="display: flex; flex-wrap: wrap; gap: 5px;"><sc-for list="{{ q.flags }}" as="fl" hint-placeholder-count="2"><span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; font-size: 11px; font-weight: 500; border-radius: 6px; background: {{ fl.bg }}; color: {{ fl.fg }};">{{ fl.text }}</span></sc-for></div></td>
                       <td style="padding: 12px 20px; text-align: right;"><div style="display: inline-flex; gap: 7px;"><button onClick="{{ q.onIntel }}" style="height: 30px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/></svg>Analyze</button><button onClick="{{ q.onReview }}" style="height: 30px; padding: 0 12px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Review</button></div></td>
                     </tr>
@@ -674,7 +779,15 @@
       <!-- ===================== MANAGER APPROVALS ===================== -->
       <sc-if value="{{ showApprovals }}" hint-placeholder-val="{{ false }}">
         <div style="display: flex; flex-direction: column; gap: 20px;">
-          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Leave &amp; WFH approvals</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Requests from your direct reports awaiting your decision.</p></div>
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Leave &amp; WFH approvals</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Requests from your direct reports awaiting your decision, each on a 24-hour approval SLA.</p></div>
+
+          <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); flex-wrap: wrap;">
+            <span style="font-size: 12.5px; font-weight: 600; color: var(--muted-foreground);">SLA status</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--emerald-500) 13%, transparent); color: var(--emerald-500);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--emerald-500);"></span>{{ apprSlaOk }} on track</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--amber-500) 16%, transparent); color: #b45309;"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--amber-500);"></span>{{ apprSlaSoon }} due soon</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--red-500) 13%, transparent); color: var(--destructive);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--destructive);"></span>{{ apprSlaOver }} overdue</span>
+            <sc-if value="{{ apprHasOverdue }}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--destructive);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Overdue items auto-escalate to the next approver</span></sc-if>
+          </div>
 
           <div style="display: grid; grid-template-columns: 1.7fr 1fr; gap: 18px; align-items: start;">
             <div style="display: flex; flex-direction: column; gap: 14px;">
@@ -688,6 +801,15 @@
                     <div style="min-width: 0;"><div style="font-size: 14px; font-weight: 600;">{{ a.name }}</div><div style="font-size: 12.5px; color: var(--muted-foreground);">{{ a.role }}</div></div>
                     <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; border-radius: 7px; background: {{ a.typeBg }}; color: {{ a.typeFg }};"><span style="width: 7px; height: 7px; border-radius: 9999px; background: {{ a.typeFg }};"></span>{{ a.cancelType }}</span>
                   </div>
+                  <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px; background: {{ a.slaBg }};">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{ a.slaColor }}" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <span style="font-size: 12.5px; font-weight: 600; color: {{ a.slaColor }}; font-variant-numeric: tabular-nums;">{{ a.slaLabel }}</span>
+                    <span style="font-size: 11.5px; color: var(--muted-foreground);">· {{ a.slaTargetLabel }}</span>
+                    <span style="margin-left: auto; width: 110px; height: 6px; border-radius: 9999px; background: color-mix(in oklab, var(--muted-foreground) 16%, transparent); overflow: hidden; flex-shrink: 0;"><span style="display: block; height: 100%; width: {{ a.slaBarPct }}; background: {{ a.slaColor }};"></span></span>
+                  </div>
+                  <sc-if value="{{ a.slaOverdue }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; background: color-mix(in oklab, var(--red-500) 9%, transparent); color: var(--destructive); font-size: 12.5px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>SLA breached · auto-escalated to <strong>{{ a.escalateTo }}</strong></span></div>
+                  </sc-if>
                   <div style="display: flex; gap: 22px; flex-wrap: wrap;">
                     <div><div style="font-size: 11.5px; color: var(--muted-foreground);">Dates</div><div style="font-size: 13.5px; font-weight: 500;">{{ a.dates }}</div></div>
                     <div><div style="font-size: 11.5px; color: var(--muted-foreground);">Working days</div><div style="font-size: 13.5px; font-weight: 500;">{{ a.days }}</div></div>
@@ -804,6 +926,96 @@
         </div>
       </sc-if>
 
+      <!-- ===================== BENEFIT REMINDERS (HR) ===================== -->
+      <sc-if value="{{ showReminders }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Benefit reminders</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Nudge employees to use their benefit wallet before the financial year closes on 31 Mar 2027.</p></div>
+
+          <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; max-width: 1120px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 18px;">
+                <div style="font-size: 15px; font-weight: 600;">Reminder schedule</div>
+                <div>
+                  <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 9px;">Send reminders these many days before FY-end</label>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <sc-for list="{{ leadOpts }}" as="ld" hint-placeholder-count="5">
+                      <button onClick="{{ ld.onToggle }}" style="height: 36px; min-width: 52px; padding: 0 13px; font-size: 13px; font-weight: 600; border: 1px solid {{ ld.border }}; border-radius: 9px; background: {{ ld.bg }}; color: {{ ld.fg }}; cursor: pointer; font-variant-numeric: tabular-nums;">{{ ld.label }}</button>
+                    </sc-for>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 8px;">Tap to toggle each checkpoint. Reminders stop once the balance reaches zero.</div>
+                </div>
+                <div style="height: 1px; background: var(--border);"></div>
+                <div>
+                  <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 9px;">Cadence between checkpoints</label>
+                  <div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 9px; gap: 3px;">
+                    <sc-for list="{{ freqOpts }}" as="fq" hint-placeholder-count="3">
+                      <button onClick="{{ fq.onPick }}" style="height: 32px; padding: 0 14px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 7px; cursor: pointer; background: {{ fq.bg }}; color: {{ fq.fg }}; box-shadow: {{ fq.sh }};">{{ fq.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 16px;">
+                <div style="font-size: 15px; font-weight: 600;">Delivery channels</div>
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                  <span style="width: 34px; height: 34px; border-radius: 9px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>
+                  <span style="flex: 1;"><span style="display: block; font-size: 13.5px; font-weight: 500;">Dashboard banner</span><span style="display: block; font-size: 12px; color: var(--muted-foreground);">Shows on the employee home until dismissed or spent.</span></span>
+                  <span onClick="{{ toggleCfgDashboard }}" style="width: 36px; height: 20px; border-radius: 9999px; background: {{ cfgDashTrack }}; position: relative; flex-shrink: 0; transition: background-color 150ms;"><span style="position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 9999px; background: #fff; box-shadow: var(--shadow-xs); transform: {{ cfgDashKnob }}; transition: transform 150ms;"></span></span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                  <span style="width: 34px; height: 34px; border-radius: 9px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+                  <span style="flex: 1;"><span style="display: block; font-size: 13.5px; font-weight: 500;">Email reminder</span><span style="display: block; font-size: 12px; color: var(--muted-foreground);">Personalised email with the employee's unused balance.</span></span>
+                  <span onClick="{{ toggleCfgEmail }}" style="width: 36px; height: 20px; border-radius: 9999px; background: {{ cfgEmailTrack }}; position: relative; flex-shrink: 0; transition: background-color 150ms;"><span style="position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 9999px; background: #fff; box-shadow: var(--shadow-xs); transform: {{ cfgEmailKnob }}; transition: transform 150ms;"></span></span>
+                </label>
+              </div>
+
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 15px; font-weight: 600;">Who gets reminded</div>
+                <label style="font-size: 13px; font-weight: 500;">Only remind employees with unused balance above</label>
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <div style="position: relative; display: inline-flex; align-items: center;"><span style="position: absolute; left: 12px; font-size: 14px; color: var(--muted-foreground); pointer-events: none;">₹</span><input value="{{ cfgThreshold }}" onChange="{{ onCfgThreshold }}" inputMode="numeric" style="height: 38px; width: 160px; padding: 0 12px 0 26px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none; font-variant-numeric: tabular-nums;" /></div>
+                  <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted-foreground);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><strong style="color: var(--foreground); font-weight: 600;">{{ audienceCount }}</strong> employees currently qualify</span>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button onClick="{{ saveReminderConfig }}" style="height: 40px; padding: 0 18px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Save schedule</button>
+                <button onClick="{{ sendReminderTest }}" style="height: 40px; padding: 0 15px; font-size: 13.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>Send test to me</button>
+                <sc-if value="{{ reminderSaved }}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--emerald-500);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Saved</span></sc-if>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; position: sticky; top: 78px;">
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 14px; font-weight: 600;">Schedule summary</div>
+                <div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 12.5px; color: var(--muted-foreground);">Next send</span><span style="font-size: 15px; font-weight: 600; margin-left: auto;">{{ nextSendLabel }}</span></div>
+                <div style="height: 1px; background: var(--border);"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: var(--muted-foreground);">Checkpoints</span><span style="font-weight: 500; text-align: right;">{{ leadSummary }}</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: var(--muted-foreground);">Threshold</span><span style="font-weight: 500;">{{ cfgThresholdF }}</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: var(--muted-foreground);">Audience</span><span style="font-weight: 500;">{{ audienceCount }} employees</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: var(--muted-foreground);">FY closes</span><span style="font-weight: 500;">{{ reminderFyEnd }}</span></div>
+              </div>
+
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 13px 16px; border-bottom: 1px solid var(--border);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg><span style="font-size: 13.5px; font-weight: 600;">Email preview</span></div>
+                <div style="padding: 16px; background: color-mix(in oklab, var(--muted) 45%, transparent);">
+                  <div style="background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-xs);">
+                    <div style="padding: 13px 16px; border-bottom: 1px solid var(--border);"><div style="font-size: 11px; color: var(--muted-foreground);">From · benefits@smartsense.com</div><div style="font-size: 14px; font-weight: 600; margin-top: 3px;">You have ₹18,000 in unused benefits</div></div>
+                    <div style="padding: 16px; display: flex; flex-direction: column; gap: 11px;">
+                      <div style="font-size: 12.5px; line-height: 1.55; color: var(--foreground);">Hi Aarav,</div>
+                      <div style="font-size: 12.5px; line-height: 1.55; color: var(--muted-foreground);">Your benefit wallet still has <strong style="color: var(--foreground);">₹18,000</strong> unused across Sports and Learning. This balance does not carry over past <strong style="color: var(--foreground);">31 Mar 2027</strong> — submit your claims before then to make full use of it.</div>
+                      <div style="display: flex; gap: 8px; margin: 2px 0;"><span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 11.5px; font-weight: 500; border-radius: 7px; border: 1px solid var(--border);"><span style="width: 7px; height: 7px; border-radius: 2px; background: var(--emerald-500);"></span>Sports ₹9,000</span><span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 11.5px; font-weight: 500; border-radius: 7px; border: 1px solid var(--border);"><span style="width: 7px; height: 7px; border-radius: 2px; background: var(--blue-600);"></span>Learning ₹9,000</span></div>
+                      <div style="height: 36px; display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; padding: 0 16px; font-size: 12.5px; font-weight: 600; border-radius: 8px; background: var(--primary); color: var(--primary-foreground);">Submit a claim</div>
+                      <div style="font-size: 11px; color: var(--muted-foreground); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 2px;">Sent by SmartSense People Ops · you can manage reminder settings in the portal.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
     </main>
   </div>
   </div>
@@ -857,6 +1069,11 @@ class Component extends DCLogic {
       claimsTab: 'all',
       versionClaimId: null,
       cancelTarget: null,
+      ledger: this.seedLedger(),
+      ledgerCat: 'all', ledgerType: 'all', ledgerQuery: '', ledgerTxnId: null,
+      reminderDismissed: false,
+      reminderConfig: { leadDays: [90, 60, 30, 7], dashboard: true, email: true, threshold: 5000, frequency: 'weekly' },
+      reminderSavedAt: null,
       hrQueue: this.seedHrQueue(),
       approvalQueue: this.seedApprovals(),
       selectedClaimId: null,
@@ -868,6 +1085,35 @@ class Component extends DCLogic {
       toast: null,
     };
     this._toastTimer = null;
+    this._mountTime = Date.now();
+    // SLA remaining time at mount (ms). Negative = already overdue. Ticks down live.
+    this._sla = {
+      'LR-558': 5.35 * 3600e3, 'LR-554': 42 * 60e3, 'LR-522C': 8.2 * 3600e3, 'LR-549': -1.5 * 3600e3, 'LR-547': 2.25 * 3600e3,
+      'BC-2041': -3.1 * 3600e3, 'BC-2038': 55 * 60e3, 'BC-2035': 6.4 * 3600e3, 'BC-2030': 1.7 * 3600e3, 'BC-2028': 20 * 3600e3,
+    };
+  }
+
+  componentDidMount() { this._slaTick = setInterval(() => this.forceUpdate(), 1000); }
+  componentWillUnmount() { if (this._slaTick) clearInterval(this._slaTick); if (this._toastTimer) clearTimeout(this._toastTimer); }
+
+  // SLA policy target in hours by queue kind
+  slaTarget(kind) { return kind === 'expense' ? 48 : 24; }
+  slaRemaining(id) {
+    const base = this._sla[id];
+    const b = (base === undefined) ? 24 * 3600e3 : base;
+    return b - (Date.now() - this._mountTime);
+  }
+  slaView(id, kind) {
+    const ms = this.slaRemaining(id);
+    const abs = Math.abs(ms);
+    const h = Math.floor(abs / 3600e3);
+    const m = Math.floor((abs % 3600e3) / 60e3);
+    const sec = Math.floor((abs % 60e3) / 1000);
+    const pad = n => String(n).padStart(2, '0');
+    const clock = h + 'h ' + pad(m) + 'm ' + pad(sec) + 's';
+    if (ms <= 0) return { state: 'overdue', clock, label: 'Overdue by ' + clock, color: 'var(--destructive)', bg: 'color-mix(in oklab, var(--red-500) 13%, transparent)', pct: 100 };
+    if (ms <= 60 * 60e3) return { state: 'soon', clock, label: clock + ' left', color: '#b45309', bg: 'color-mix(in oklab, var(--amber-500) 16%, transparent)', pct: Math.round((1 - ms / (this.slaTarget(kind) * 3600e3)) * 100) };
+    return { state: 'ok', clock, label: clock + ' left', color: 'var(--emerald-500)', bg: 'color-mix(in oklab, var(--emerald-500) 13%, transparent)', pct: Math.round((1 - ms / (this.slaTarget(kind) * 3600e3)) * 100) };
   }
 
   homeFor(role) { return role === 'manager' ? 'approvals' : role === 'hr' ? 'hrqueue' : 'dashboard'; }
@@ -926,6 +1172,23 @@ class Component extends DCLogic {
     ];
   }
 
+  seedLedger() {
+    // Chronological wallet events for FY 2026–27. Running balance computed below.
+    const raw = [
+      { d: '2026-04-01', iso: '01 Apr 2026', type: 'credit', cat: 'Sports', desc: 'Annual benefit allocation', ref: 'ALLOC-SP-27', amount: 15000, method: 'System · FY roll-over' },
+      { d: '2026-04-01', iso: '01 Apr 2026', type: 'credit', cat: 'Learning', desc: 'Annual benefit allocation', ref: 'ALLOC-LN-27', amount: 45000, method: 'System · FY roll-over' },
+      { d: '2026-05-20', iso: '20 May 2026', type: 'reserved', cat: 'Learning', desc: 'Coursera · ML Specialization', ref: 'BC-2040', amount: -14000, method: 'Claim submitted · hold placed' },
+      { d: '2026-05-24', iso: '24 May 2026', type: 'released', cat: 'Learning', desc: 'Hold released · claim rejected', ref: 'BC-2040', amount: 14000, method: 'HR rejected · amount mismatch' },
+      { d: '2026-06-04', iso: '04 Jun 2026', type: 'debit', cat: 'Learning', desc: 'Coursera Plus · annual', ref: 'BC-2043', amount: -22000, method: 'Auto-approved · OCR 94%' },
+      { d: '2026-06-08', iso: '08 Jun 2026', type: 'reserved', cat: 'Learning', desc: 'Pluralsight · annual (pending)', ref: 'BC-2045', amount: -5000, method: 'Awaiting HR review · hold placed' },
+      { d: '2026-06-12', iso: '12 Jun 2026', type: 'debit', cat: 'Sports', desc: 'Cult.fit · membership', ref: 'BC-2044', amount: -6000, method: 'Auto-approved · OCR 96%' },
+    ];
+    let bal = 0;
+    raw.forEach(t => { bal += t.amount; t.balance = bal; });
+    // present newest first, with sequential index preserved
+    return raw.map((t, i) => ({ ...t, seq: i + 1 })).reverse();
+  }
+
   // ---- holidays / weekend helpers ----
   holidays() { return { '2026-07-17': 'Holiday' }; }
   parseD(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
@@ -957,6 +1220,28 @@ class Component extends DCLogic {
     this.setState({ toast: { msg, kind } });
     this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2800);
   }
+
+  // ---- wallet ledger ----
+  setLedgerCat(v) { this.setState({ ledgerCat: v }); }
+  setLedgerType(v) { this.setState({ ledgerType: v }); }
+  setLedgerQuery(v) { this.setState({ ledgerQuery: v }); }
+  clearLedgerFilters() { this.setState({ ledgerCat: 'all', ledgerType: 'all', ledgerQuery: '' }); }
+  openTxn(id) { this.setState({ ledgerTxnId: id }); }
+  closeTxn() { this.setState({ ledgerTxnId: null }); }
+  exportLedger(n) { this.flash('Exported ' + n + ' transaction' + (n === 1 ? '' : 's') + ' to CSV', 'ok'); }
+
+  // ---- benefit reminders ----
+  dismissReminder() { this.setState({ reminderDismissed: true }); }
+  toggleLeadDay(d) {
+    this.setState(s => {
+      const has = s.reminderConfig.leadDays.includes(d);
+      const leadDays = (has ? s.reminderConfig.leadDays.filter(x => x !== d) : [...s.reminderConfig.leadDays, d]).sort((a, b) => b - a);
+      return { reminderConfig: { ...s.reminderConfig, leadDays }, reminderSavedAt: null };
+    });
+  }
+  setReminderCfg(obj) { this.setState(s => ({ reminderConfig: { ...s.reminderConfig, ...obj }, reminderSavedAt: null })); }
+  saveReminderConfig() { this.setState({ reminderSavedAt: 'just now' }); this.flash('Reminder schedule saved', 'ok'); }
+  sendReminderTest() { this.flash('Test reminder emailed to you', 'ok'); }
 
   // ---- claim handlers ----
   setField(obj) { this.setState(s => ({ claim: { ...s.claim, ...obj }, verifyResult: null, autosavedAt: (obj.amount !== undefined || obj.vendor !== undefined) ? 'just now' : s.autosavedAt })); }
@@ -1219,10 +1504,10 @@ class Component extends DCLogic {
     const navKey = s.route;
     const navBg = k => navKey === k ? 'var(--accent)' : 'transparent';
     const navColor = k => navKey === k ? 'var(--foreground)' : 'var(--muted-foreground)';
-    const nav = { dashboard: navBg('dashboard'), submit: navBg('submit'), leave: navBg('leave'), claims: navBg('claims'), approvals: navBg('approvals'), calendar: navBg('calendar'), hrqueue: navBg('hrqueue') };
-    const navFg = { dashboard: navColor('dashboard'), submit: navColor('submit'), leave: navColor('leave'), claims: navColor('claims'), approvals: navColor('approvals'), calendar: navColor('calendar'), hrqueue: navColor('hrqueue') };
+    const nav = { dashboard: navBg('dashboard'), submit: navBg('submit'), leave: navBg('leave'), claims: navBg('claims'), approvals: navBg('approvals'), calendar: navBg('calendar'), hrqueue: navBg('hrqueue'), reminders: navBg('reminders') };
+    const navFg = { dashboard: navColor('dashboard'), submit: navColor('submit'), leave: navColor('leave'), claims: navColor('claims'), approvals: navColor('approvals'), calendar: navColor('calendar'), hrqueue: navColor('hrqueue'), reminders: navColor('reminders') };
 
-    const crumbMap = { dashboard: 'Dashboard', submit: 'Submit expense', leave: 'Apply leave / WFH', claims: 'My claims', approvals: 'Approvals', calendar: 'Team calendar', hrqueue: 'Expense queue', intel: 'Receipt intelligence' };
+    const crumbMap = { dashboard: 'Dashboard', submit: 'Submit expense', leave: 'Apply leave / WFH', claims: 'My claims', approvals: 'Approvals', calendar: 'Team calendar', hrqueue: 'Expense queue', intel: 'Receipt intelligence', reminders: 'Benefit reminders' };
 
     const intelAll = this.intelData();
     const verdictMeta = { approve: ['Recommend approve', 'var(--emerald-500)'], review: ['Needs human review', 'var(--amber-500)'], reject: ['Recommend reject', 'var(--destructive)'] };
@@ -1257,8 +1542,8 @@ class Component extends DCLogic {
       approved: ['Approved', 'color-mix(in oklab, var(--emerald-500) 15%, transparent)', 'var(--emerald-500)'],
       rejected: ['Rejected', 'color-mix(in oklab, var(--red-500) 14%, transparent)', 'var(--destructive)'],
     };
-    const claimTabs = [['all', 'All'], ['draft', 'Drafts'], ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected']];
-    const tabCounts = { all: s.myClaims.length };
+    const claimTabs = [['all', 'All'], ['draft', 'Drafts'], ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['ledger', 'Ledger']];
+    const tabCounts = { all: s.myClaims.length, ledger: s.ledger.length };
     ['draft', 'pending', 'approved', 'rejected'].forEach(k => tabCounts[k] = s.myClaims.filter(x => x.status === k).length);
     const claimTabsView = claimTabs.map(([k, label]) => ({ key: k, label, count: String(tabCounts[k] || 0),
       bg: s.claimsTab === k ? 'var(--background)' : 'transparent', fg: s.claimsTab === k ? 'var(--foreground)' : 'var(--muted-foreground)', sh: s.claimsTab === k ? 'var(--shadow-xs)' : 'none',
@@ -1317,22 +1602,32 @@ class Component extends DCLogic {
     }
 
     // HR queue
+    const slaCount = (arr, kind) => {
+      let ok = 0, soon = 0, over = 0;
+      arr.forEach(x => { const v = this.slaView(x.id, kind); if (v.state === 'overdue') over++; else if (v.state === 'soon') soon++; else ok++; });
+      return { ok, soon, over };
+    };
     const ocrColor = (q) => q.claimed !== q.extracted ? 'var(--destructive)' : 'var(--muted-foreground)';
     const flagStyle = (t) => {
       const warn = ['color-mix(in oklab, var(--amber-500) 16%, transparent)', '#b45309'];
       const bad = ['color-mix(in oklab, var(--red-500) 13%, transparent)', 'var(--destructive)'];
       return (t === 'Over balance' || t === 'Duplicate suspected' || t === 'Amount mismatch') ? bad : warn;
     };
-    const hrQueue = s.hrQueue.map(q => ({
+    const hrQueue = s.hrQueue.map(q => {
+      const sla = this.slaView(q.id, 'expense');
+      return {
       id: q.id, name: q.name, dept: q.dept, initials: q.initials, cat: q.cat,
       isResubmission: !!q.versions, versionBadge: q.version ? ('v' + q.version) : '',
       claimedF: fmt(q.claimed), extractedF: fmt(q.extracted), ocrColor: ocrColor(q),
       flags: q.flags.map(f => { const [bg, fg] = flagStyle(f.text); return { text: f.text, bg, fg }; }),
       aiScore: intelAll[q.id] ? String(intelAll[q.id].aiScore) : '—',
       aiScoreColor: intelAll[q.id] ? scoreColorFor(intelAll[q.id].aiScore) : 'var(--muted-foreground)',
+      slaLabel: sla.label, slaColor: sla.color, slaBg: sla.bg, slaOverdue: sla.state === 'overdue', slaSoon: sla.state === 'soon',
       onReview: () => this.setState({ selectedClaimId: q.id, rejectReason: '' }),
       onIntel: () => this.openIntel(q.id),
-    }));
+      };
+    });
+    const hrSla = slaCount(s.hrQueue, 'expense');
     const hrStats = [
       { label: 'Pending review', value: String(s.hrQueue.length), sub: 'Awaiting your decision', color: 'var(--foreground)' },
       { label: 'Auto-approved today', value: '23', sub: '88% straight-through', color: 'var(--emerald-500)' },
@@ -1408,8 +1703,15 @@ class Component extends DCLogic {
       const [tb, tf] = typeColor(a.type2);
       const l1done = a.level >= 2;
       const isCancel = a.kind === 'cancel';
+      const sla = this.slaView(a.id, 'leave');
+      const escTo = l1done ? 'HR Head (skip-level)' : 'Project Manager (L2)';
       return {
         id: a.id, name: a.name, initials: a.initials, role: a.role, type: a.type, dates: a.dates, days: a.days, reason: a.reason,
+        slaLabel: sla.label, slaColor: sla.color, slaBg: sla.bg, slaState: sla.state,
+        slaTargetLabel: l1done ? 'L2 · 24h SLA' : 'L1 · 24h SLA',
+        slaOverdue: sla.state === 'overdue', slaSoon: sla.state === 'soon',
+        slaBarPct: Math.max(4, Math.min(100, sla.pct)) + '%',
+        escalateTo: escTo,
         isCancel, notCancel: !isCancel, cancelType: isCancel ? ('Cancel · ' + a.type) : a.type, restores: a.restores || '',
         typeBg: isCancel ? 'color-mix(in oklab, var(--violet-600) 13%, transparent)' : tb, typeFg: isCancel ? 'var(--violet-600)' : tf,
         l1Bg: 'var(--emerald-500)', l1Mark: l1done ? '\u2713' : '\u2022', l1Color: l1done ? 'var(--emerald-500)' : 'var(--foreground)',
@@ -1422,6 +1724,7 @@ class Component extends DCLogic {
         onReject: () => this.decideApproval(a.id, false),
       };
     });
+    const apprSla = slaCount(s.approvalQueue, 'leave');
     const outToday = [
       { name: 'Ananya Krishnan', role: 'Backend Engineer', initials: 'AK', type: 'Casual Leave', fg: 'var(--blue-600)' },
       { name: 'Sneha Patil', role: 'Engineering', initials: 'SP', type: 'WFH', fg: 'var(--violet-600)' },
@@ -1453,6 +1756,77 @@ class Component extends DCLogic {
 
     // calendar
     const calWeeks = this.buildCalendar();
+
+    // ---- wallet ledger ----
+    const txTypeMeta = {
+      credit: ['Credit', 'var(--emerald-500)', 'color-mix(in oklab, var(--emerald-500) 13%, transparent)'],
+      debit: ['Debit', 'var(--foreground)', 'var(--muted)'],
+      reserved: ['Reserved', '#b45309', 'color-mix(in oklab, var(--amber-500) 15%, transparent)'],
+      released: ['Released', 'var(--emerald-500)', 'color-mix(in oklab, var(--emerald-500) 12%, transparent)'],
+    };
+    const catAccent = c => c === 'Sports' ? 'var(--emerald-500)' : 'var(--blue-600)';
+    const lq = s.ledgerQuery.trim().toLowerCase();
+    const ledgerFiltered = s.ledger.filter(t => {
+      if (s.ledgerCat !== 'all' && t.cat.toLowerCase() !== s.ledgerCat) return false;
+      if (s.ledgerType === 'credit' && !(t.type === 'credit' || t.type === 'released')) return false;
+      if (s.ledgerType === 'debit' && t.type !== 'debit') return false;
+      if (s.ledgerType === 'reserved' && t.type !== 'reserved') return false;
+      if (lq && !(t.desc.toLowerCase().includes(lq) || t.ref.toLowerCase().includes(lq))) return false;
+      return true;
+    });
+    const txId = t => t.ref + '-' + t.seq;
+    const ledgerRows = ledgerFiltered.map(t => {
+      const [tl, tc, tbg] = txTypeMeta[t.type];
+      const pos = t.amount >= 0;
+      return {
+        id: txId(t), ref: t.ref, date: t.iso, cat: t.cat, catColor: catAccent(t.cat),
+        desc: t.desc, typeLabel: tl, typeColor: tc, typeBg: tbg,
+        amountF: (pos ? '+ ' : '\u2212 ') + fmt(Math.abs(t.amount)), amountColor: pos ? 'var(--emerald-500)' : 'var(--foreground)',
+        balanceF: fmt(t.balance),
+        selected: s.ledgerTxnId === txId(t),
+        onOpen: () => this.openTxn(txId(t)),
+      };
+    });
+    const ledgerCatSeg = k => ({ bg: seg(s.ledgerCat === k), fg: segFg(s.ledgerCat === k), sh: segSh(s.ledgerCat === k), onPick: () => this.setLedgerCat(k) });
+    const ledgerTypeSeg = k => ({ bg: seg(s.ledgerType === k), fg: segFg(s.ledgerType === k), sh: segSh(s.ledgerType === k), onPick: () => this.setLedgerType(k) });
+    const ledgerCatOpts = [['all', 'All'], ['sports', 'Sports'], ['learning', 'Learning']].map(([k, label]) => ({ key: k, label, ...ledgerCatSeg(k) }));
+    const ledgerTypeOpts = [['all', 'All'], ['credit', 'Credit'], ['debit', 'Debit'], ['reserved', 'Reserved']].map(([k, label]) => ({ key: k, label, ...ledgerTypeSeg(k) }));
+    const walletBalance = s.ledger.length ? s.ledger[0].balance : 0;
+    const totalCredited = s.ledger.filter(t => t.amount > 0).reduce((a, t) => a + t.amount, 0);
+    const totalDebited = s.ledger.filter(t => t.type === 'debit').reduce((a, t) => a + Math.abs(t.amount), 0);
+    const totalReleased = s.ledger.filter(t => t.type === 'released').reduce((a, t) => a + Math.abs(t.amount), 0);
+    const totalReserved = s.ledger.filter(t => t.type === 'reserved').reduce((a, t) => a + Math.abs(t.amount), 0) - totalReleased;
+    const selTxnRaw = s.ledgerTxnId ? s.ledger.find(t => txId(t) === s.ledgerTxnId) : null;
+    let txnDetail = {};
+    if (selTxnRaw) {
+      const [tl, tc, tbg] = txTypeMeta[selTxnRaw.type];
+      const pos = selTxnRaw.amount >= 0;
+      txnDetail = {
+        ref: selTxnRaw.ref, date: selTxnRaw.iso, cat: selTxnRaw.cat, catColor: catAccent(selTxnRaw.cat),
+        desc: selTxnRaw.desc, typeLabel: tl, typeColor: tc, typeBg: tbg, method: selTxnRaw.method,
+        amountF: (pos ? '+ ' : '\u2212 ') + fmt(Math.abs(selTxnRaw.amount)), amountColor: pos ? 'var(--emerald-500)' : 'var(--foreground)',
+        balanceF: fmt(selTxnRaw.balance),
+        isClaim: /^BC-/.test(selTxnRaw.ref),
+      };
+    }
+
+    // ---- benefit reminder ----
+    const availSports = sp.cap - sp.approved - sp.pending;
+    const availLearning = ln.cap - ln.approved - ln.pending;
+    const unusedTotal = availSports + availLearning;
+    const fyEndD = new Date(2027, 2, 31), todayD = new Date(2026, 6, 6);
+    const daysToFy = Math.round((fyEndD - todayD) / 86400e3);
+    const rc = s.reminderConfig;
+    const audienceCount = rc.threshold <= 2000 ? 196 : rc.threshold <= 5000 ? 142 : rc.threshold <= 10000 ? 88 : 41;
+    const maxLead = rc.leadDays.length ? Math.max(...rc.leadDays) : 30;
+    const nextSendD = new Date(fyEndD.getTime() - maxLead * 86400e3);
+    const nextSendLabel = nextSendD.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const leadOpts = [90, 60, 30, 14, 7].map(d => ({ d, label: d + 'd', active: rc.leadDays.includes(d),
+      bg: rc.leadDays.includes(d) ? 'var(--primary)' : 'var(--background)', fg: rc.leadDays.includes(d) ? 'var(--primary-foreground)' : 'var(--foreground)',
+      border: rc.leadDays.includes(d) ? 'var(--primary)' : 'var(--border)', onToggle: () => this.toggleLeadDay(d) }));
+    const freqOpts = [['once', 'Once'], ['weekly', 'Weekly'], ['daily', 'Daily · final week']].map(([k, label]) => ({ key: k, label,
+      bg: rc.frequency === k ? 'var(--background)' : 'transparent', fg: rc.frequency === k ? 'var(--foreground)' : 'var(--muted-foreground)',
+      sh: rc.frequency === k ? 'var(--shadow-xs)' : 'none', onPick: () => this.setReminderCfg({ frequency: k }) }));
 
     const toast = s.toast;
 
@@ -1492,7 +1866,37 @@ class Component extends DCLogic {
 
       sports, learning, leaveCards, recentClaims, upcoming,
 
-      showClaims: s.route === 'claims', claimTabs: claimTabsView, myClaims: filteredClaims, myClaimsEmpty: filteredClaims.length === 0,
+      showClaims: s.route === 'claims', claimTabs: claimTabsView, myClaims: filteredClaims,
+      myClaimsEmpty: filteredClaims.length === 0 && s.claimsTab !== 'ledger',
+      showLedger: s.claimsTab === 'ledger', showClaimsList: s.claimsTab !== 'ledger',
+
+      // wallet ledger
+      ledgerRows, ledgerEmpty: ledgerRows.length === 0, ledgerCount: String(ledgerFiltered.length),
+      ledgerCatOpts, ledgerTypeOpts, ledgerQuery: s.ledgerQuery,
+      onLedgerQuery: e => this.setLedgerQuery(e.target.value),
+      clearLedgerFilters: () => this.clearLedgerFilters(),
+      exportLedger: () => this.exportLedger(ledgerFiltered.length),
+      walletBalanceF: fmt(walletBalance), totalCreditedF: fmt(totalCredited), totalDebitedF: fmt(totalDebited), totalReservedF: fmt(totalReserved),
+      showTxn: !!selTxnRaw, closeTxn: () => this.closeTxn(), txn: txnDetail,
+
+      // benefit reminder (dashboard)
+      showReminder: !s.reminderDismissed, dismissReminder: () => this.dismissReminder(),
+      reminderUnusedF: fmt(unusedTotal), reminderSportsF: fmt(availSports), reminderLearningF: fmt(availLearning),
+      reminderDays: String(daysToFy), reminderFyEnd: '31 Mar 2027',
+
+      // reminders config (HR)
+      showReminders: s.route === 'reminders', goReminders: () => this.go('reminders'),
+      leadOpts, freqOpts,
+      cfgDashboard: rc.dashboard, cfgEmail: rc.email,
+      cfgDashTrack: rc.dashboard ? 'var(--primary)' : 'var(--input)', cfgDashKnob: rc.dashboard ? 'translateX(16px)' : 'translateX(0)',
+      cfgEmailTrack: rc.email ? 'var(--primary)' : 'var(--input)', cfgEmailKnob: rc.email ? 'translateX(16px)' : 'translateX(0)',
+      toggleCfgDashboard: () => this.setReminderCfg({ dashboard: !rc.dashboard }),
+      toggleCfgEmail: () => this.setReminderCfg({ email: !rc.email }),
+      cfgThreshold: String(rc.threshold), onCfgThreshold: e => this.setReminderCfg({ threshold: Math.max(0, parseInt(e.target.value.replace(/[^0-9]/g, ''), 10) || 0) }),
+      cfgThresholdF: fmt(rc.threshold),
+      audienceCount: String(audienceCount), nextSendLabel,
+      reminderSaved: !!s.reminderSavedAt, saveReminderConfig: () => this.saveReminderConfig(), sendReminderTest: () => this.sendReminderTest(),
+      leadSummary: rc.leadDays.length ? rc.leadDays.join(', ') + ' days before' : 'No reminders scheduled',
 
       autosaveLabel: s.autosavedAt ? ('Autosaved · ' + s.autosavedAt) : 'Not saved yet',
       isResubmitForm: !!s.claim.resubmitOf, isDraftForm: !!s.claim.draftId,
@@ -1532,6 +1936,8 @@ class Component extends DCLogic {
       submitOverride: () => this.submitOverride(),
 
       approvalQueue, approvalsEmpty: s.approvalQueue.length === 0, outToday, todayLabel: 'Monday, 6 Jul 2026',
+      apprSlaOk: String(apprSla.ok), apprSlaSoon: String(apprSla.soon), apprSlaOver: String(apprSla.over), apprHasOverdue: apprSla.over > 0,
+      hrSlaOk: String(hrSla.ok), hrSlaSoon: String(hrSla.soon), hrSlaOver: String(hrSla.over), hrHasOverdue: hrSla.over > 0,
 
       showCancel: !!s.cancelTarget,
       cancelTitle: s.cancelTarget ? s.cancelTarget.title : '', cancelDates: s.cancelTarget ? s.cancelTarget.dates : '',
@@ -1564,3 +1970,4 @@ class Component extends DCLogic {
 </script>
 </body>
 </html>
+

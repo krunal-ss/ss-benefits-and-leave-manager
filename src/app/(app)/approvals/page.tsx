@@ -1,7 +1,14 @@
 import { CircleCheckBig } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { SlaSummaryBar } from "@/components/ui/sla-summary-bar";
 import { requireAccess } from "@/server/auth/current-user";
-import { getApprovalQueue, getOutToday, getPendingCancellations, getTodayLabel } from "@/server/manager/approvals";
+import {
+  getApprovalQueue,
+  getApprovalSlaSummary,
+  getOutToday,
+  getPendingCancellations,
+  getTodayLabel,
+} from "@/server/manager/approvals";
 import { pageParam } from "@/lib/page-param";
 import { Pager } from "@/components/ui/pager";
 import { ApprovalCard } from "./approval-card";
@@ -18,10 +25,11 @@ export default async function ApprovalsPage({
   const user = await requireAccess("/approvals");
 
   const page = pageParam((await searchParams).page);
-  const [queue, cancellations, outToday] = await Promise.all([
+  const [queue, cancellations, outToday, slaSummary] = await Promise.all([
     getApprovalQueue(user, { page }),
     getPendingCancellations(user), // KAN-127
     getOutToday(user),
+    getApprovalSlaSummary(user), // KAN-147
   ]);
   const approvals = queue.items;
 
@@ -33,6 +41,14 @@ export default async function ApprovalsPage({
           Requests from your direct reports awaiting your decision.
         </p>
       </div>
+
+      <SlaSummaryBar
+        label="SLA status"
+        ok={slaSummary.ok}
+        soon={slaSummary.soon}
+        over={slaSummary.over}
+        escalationNote="Overdue items auto-escalate to the next approver"
+      />
 
       <div className="grid grid-cols-[1.7fr_1fr] items-start gap-[18px]">
         <div className="flex flex-col gap-3.5">

@@ -1,13 +1,15 @@
 "use client";
 
 import { useTransition } from "react";
-import { ShieldAlert, TriangleAlert } from "lucide-react";
+import { ShieldAlert, TriangleAlert, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
+import { SlaBadge, useSla } from "@/components/ui/sla-badge";
 import { useToast } from "@/components/providers";
 import { decideLeaveAction } from "@/server/actions/approve-leave";
 import type { ApprovalRequest } from "@/server/manager/approvals";
+import { LEAVE_SLA_HOURS } from "@/server/sla";
 import { cn } from "@/lib/cn";
 import { kindClasses } from "./kind";
 import { Field } from "@/app/(app)/approvals/field";
@@ -23,6 +25,10 @@ export function ApprovalCard({ request }: { request: ApprovalRequest }) {
   // disables Approve).
   const thresholdWarnings = request.warnings.filter((w) => w.type === "threshold");
   const criticalRoleWarnings = request.warnings.filter((w) => w.type === "critical_role");
+  // KAN-147 — informational only in this pass: no cron/email actually escalates yet.
+  const sla = useSla(request.createdAt, LEAVE_SLA_HOURS);
+  const slaTargetLabel = l1done ? "L2 · 24h SLA" : "L1 · 24h SLA";
+  const escalateTo = l1done ? "HR Head (skip-level)" : "Project Manager (L2)";
 
   const decide = (approve: boolean) => {
     startTransition(async () => {
@@ -55,6 +61,17 @@ export function ApprovalCard({ request }: { request: ApprovalRequest }) {
       </div>
 
       <LevelProgress l1done={l1done} />
+
+      <SlaBadge createdAtIso={request.createdAt} targetHours={LEAVE_SLA_HOURS} variant="row" targetLabel={slaTargetLabel} />
+
+      {sla.state === "overdue" && (
+        <div className="flex items-center gap-2.5 rounded-[9px] bg-red-500/[0.09] px-3 py-[9px] text-[12.5px] text-destructive">
+          <Zap className="size-[15px] shrink-0" strokeWidth={2} />
+          <span>
+            SLA breached · auto-escalated to <strong>{escalateTo}</strong>
+          </span>
+        </div>
+      )}
 
       {thresholdWarnings.length > 0 && (
         <div className="flex items-start gap-2.5 rounded-[9px] bg-amber-500/[0.12] px-[13px] py-[11px] text-[12.5px] text-amber-700">

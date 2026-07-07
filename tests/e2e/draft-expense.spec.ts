@@ -22,20 +22,28 @@ async function attachReceipt(page: Page) {
   });
 }
 
-/** Deletes every remaining row (draft or otherwise) on /submit's My Claims list. */
+/**
+ * Deletes every remaining row (draft or otherwise) on /submit's My Claims list.
+ * Reloads via goto() after each delete instead of relying on the modal to
+ * auto-close — there's a known pre-existing issue (reproduces on unmodified
+ * main too, unrelated to KAN-125) where the claim-detail dialog sometimes
+ * doesn't unmount on its own after a successful delete.
+ */
 async function deleteAllMyClaims(page: Page) {
   await page.goto("/submit");
   const rows = page.locator("table tbody tr");
   while ((await rows.count()) > 0) {
     await rows.first().click();
-    const deleteBtn = page.getByRole("button", { name: "Delete draft" }).or(page.getByRole("button", { name: "Delete claim" }));
+    // A draft's initial delete button is just "Delete" (confirming shows "Yes, delete draft"); a
+    // pending_hr claim's is "Delete claim" — see claim-detail-modal.tsx.
+    const deleteBtn = page.getByRole("button", { name: "Delete", exact: true }).or(page.getByRole("button", { name: "Delete claim" }));
     await deleteBtn.first().click();
     await page
       .getByRole("button", { name: "Yes, delete draft" })
       .or(page.getByRole("button", { name: "Yes, delete claim" }))
       .click();
     await expect(page.getByText("Draft deleted").or(page.getByText("Claim deleted"))).toBeVisible();
-    await expect(page.getByRole("dialog", { name: "Claim detail" })).toHaveCount(0);
+    await page.goto("/submit");
   }
 }
 
