@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Bell, // KAN-148: benefit reminders icon
+  BellRing, // KAN-168: notification preferences icon
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
@@ -30,6 +31,7 @@ const ICONS: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
   submit: Plus,
   leave: CalendarDays,
+  "settings-notifications": BellRing, // KAN-168
   approvals: ClipboardCheck,
   calendar: CalendarCheck,
   "calendar-hr": CalendarDays,

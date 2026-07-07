@@ -66,6 +66,12 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   // --- KAN-148 (benefit reminder settings) START ---
   { prefix: "/reminders", roles: ["hr_head", "admin"] },
   // --- KAN-148 END ---
+  // --- KAN-168 (notification preferences) START ---
+  // Personal settings screen — every role may configure their own, unlike the
+  // HR/Admin-only settings/* screens above. Listed explicitly for clarity
+  // even though canAccessPath already defaults an unlisted prefix to "everyone".
+  { prefix: "/settings/notifications", roles: ALL_ROLES },
+  // --- KAN-168 END ---
 ];
 
 /** May `role` access `path`? Unknown paths (e.g. "/") are allowed. */
@@ -92,6 +98,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       { href: "/dashboard", label: "Dashboard", key: "dashboard" },
       { href: "/submit", label: "Submit expense", key: "submit" },
       { href: "/leave", label: "Apply leave / WFH", key: "leave" },
+      // --- KAN-168 (notification preferences) START ---
+      { href: "/settings/notifications", label: "Notification preferences", key: "settings-notifications" },
+      // --- KAN-168 END ---
     ],
   },
   {

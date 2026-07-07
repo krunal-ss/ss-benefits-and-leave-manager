@@ -23,10 +23,17 @@ import { and, eq, inArray } from "drizzle-orm";
 import { getDb } from "@/db";
 import { emailLog, users } from "@/db/schema";
 import { sendEmail } from "@/server/email";
+import { isNotificationAllowed } from "@/server/notifications/preferences";
 import { listThresholds } from "@/server/hr/staffing-thresholds";
 import type { TeamCapacitySnapshotResult } from "./capacity-forecast";
 
 const LOW_STAFFING_TEMPLATE = "low_staffing_alert";
+
+/** KAN-168 — keep only the recipients who currently allow email (preference + quiet hours). */
+async function filterAllowed<T extends { id: string }>(rows: T[]): Promise<T[]> {
+  const flags = await Promise.all(rows.map((r) => isNotificationAllowed(r.id, { channel: "email" })));
+  return rows.filter((_, i) => flags[i]);
+}
 
 function scopeLabel(snapshot: TeamCapacitySnapshotResult): string {
   return snapshot.scopeType === "org" ? "Organization" : (snapshot.scopeId ?? "Unknown department");
@@ -62,17 +69,23 @@ export async function checkLowStaffingAndNotify(snapshot: TeamCapacitySnapshotRe
     .limit(1);
   if (existing) return; // already alerted for this exact scope+date — no duplicate spam
 
-  const hrHeads = await db.select({ email: users.email }).from(users).where(eq(users.role, "hr_head"));
-  const to = hrHeads.map((u) => u.email);
-  if (to.length === 0) return; // no HR Head configured to notify
+  // KAN-168 — filter each recipient list down to those with email notifications
+  // on right now (preference + quiet hours). A multi-recipient send like this
+  // one can't gate at a single point the way a 1:1 notify() call does, so each
+  // list is filtered independently before the send.
+  const hrHeadRows = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.role, "hr_head"));
+  const allowedHrHeads = await filterAllowed(hrHeadRows);
+  const to = allowedHrHeads.map((u) => u.email);
+  if (to.length === 0) return; // no HR Head configured/opted-in to notify
 
   let cc: string[] | undefined;
   if (snapshot.scopeType === "department" && snapshot.scopeId) {
-    const managers = await db
-      .select({ email: users.email })
+    const managerRows = await db
+      .select({ id: users.id, email: users.email })
       .from(users)
       .where(and(eq(users.department, snapshot.scopeId), inArray(users.role, ["team_lead", "project_manager"])));
-    cc = managers.map((u) => u.email);
+    const allowedManagers = await filterAllowed(managerRows);
+    cc = allowedManagers.length ? allowedManagers.map((u) => u.email) : undefined;
   }
 
   const html = `<p>Team capacity for <strong>${label}</strong> dropped to ${snapshot.capacityPercent}% on ${snapshot.date}, below the configured minimum of ${applicable.minAvailablePercent}%.</p>`;
