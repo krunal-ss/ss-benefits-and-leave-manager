@@ -18,7 +18,7 @@ import {
 import { currentFy } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
 import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
-import { EXPENSE_SLA_HOURS, summarizeSla } from "@/server/sla"; // KAN-147
+import { computeSla, EXPENSE_SLA_HOURS, summarizeSla } from "@/server/sla"; // KAN-147
 import { assertCan } from "@/server/auth/rbac";
 import { getReceiptUrlForClaim } from "@/server/supabase/storage";
 import type { AiVerdict } from "@/server/verification";
@@ -148,6 +148,8 @@ export async function getHrExpenseQueue(params: PageParams = {}): Promise<Pagina
       aiScore: r.aiScore ?? 0,
       aiVerdict: r.aiVerdict ?? "review",
       createdAt: r.createdAt.toISOString(),
+      elapsedMs: Date.now() - r.createdAt.getTime(),
+      isOverdue: computeSla(r.createdAt, EXPENSE_SLA_HOURS).state === "overdue",
     };
   });
 

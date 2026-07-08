@@ -6,7 +6,7 @@ import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { checkStaffingWarnings, type StaffingWarning } from "@/server/manager/staffing-guard"; // KAN-77
 import { todayISO } from "@/lib/fy";
 import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
-import { LEAVE_SLA_HOURS, summarizeSla } from "@/server/sla"; // KAN-147
+import { computeSla, LEAVE_SLA_HOURS, summarizeSla } from "@/server/sla"; // KAN-147
 
 // Leave/WFH approval queue (manager view) + "out today" panel — real DB data,
 // scoped to the signed-in manager's direct reports (reporting lines are DATA).
@@ -28,6 +28,10 @@ export type ApprovalRequest = {
   warnings: StaffingWarning[];
   /** KAN-147 — ISO timestamp; the SLA clock's start. Raw, not pre-computed, so `<SlaBadge>` can tick it live client-side. */
   createdAt: string;
+  /** KAN-155 — milliseconds since createdAt, computed at read time (not live-ticking). */
+  elapsedMs: number;
+  /** KAN-155 — true once the SLA target has passed; drives the overdue-escalation cron's row selection too. */
+  isOverdue: boolean;
 };
 
 export type OutTodayItem = {
@@ -149,6 +153,8 @@ export async function getApprovalQueue(
       level: scope.level,
       reason: r.reason ?? "—",
       createdAt: r.createdAt.toISOString(),
+      elapsedMs: Date.now() - r.createdAt.getTime(),
+      isOverdue: computeSla(r.createdAt, LEAVE_SLA_HOURS).state === "overdue",
       warnings: await checkStaffingWarnings({
         requesterId: r.userId,
         teamLeadId: r.applicantTeamLeadId,
