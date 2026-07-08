@@ -2,15 +2,22 @@
 // allocation credits always present for a brand-new employee, a claim under
 // HR review shows up as a "Reserved" hold, category/type filtering narrows
 // the table, "Clear filters" restores it, and a row's detail drawer opens
-// with the linked-claim note. Every claim here is submitted WITHOUT a
-// receipt file (mirrors submit-expense.spec.ts) so it deterministically
-// lands in pending_hr — a real DB-backed "reserved" ledger row — rather than
-// depending on OCR/ANTHROPIC_API_KEY being configured in this environment.
+// with the linked-claim note. A real receipt is attached (see
+// expense-upload.spec.ts) — /submit's client-side validation (71ef11e)
+// requires a supporting document before it will submit at all, so the
+// no-receipt path this test used to rely on no longer reaches the server.
+// With no ANTHROPIC_API_KEY configured, OCR confidence is zero even with a
+// real file attached, so the claim still deterministically lands in
+// pending_hr — a real DB-backed "reserved" ledger row.
 import { test, expect, type Page } from "@playwright/test";
 import { signup, uniqueEmail } from "./utils/auth-ui";
+import { ensureReceiptsBucket } from "./utils/fixtures";
 
 const PASSWORD = "Ledger-Pass1";
 const today = new Date().toISOString().slice(0, 10);
+const PNG_1PX_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+const receiptBytes = () => Buffer.from(PNG_1PX_BASE64, "base64");
 
 async function submitClaim(page: Page, opts: { category: "Sports" | "Learning"; amountRupees: number; vendor: string }) {
   await page.goto("/submit");
@@ -18,9 +25,16 @@ async function submitClaim(page: Page, opts: { category: "Sports" | "Learning"; 
   await page.locator("input[inputmode='numeric']").fill(String(opts.amountRupees));
   await page.locator("input[type='date']").fill(today);
   await page.getByPlaceholder("e.g. Cult.fit annual membership").fill(opts.vendor);
+  await page.locator("input[type='file']").setInputFiles({ name: "receipt.png", mimeType: "image/png", buffer: receiptBytes() });
+  await expect(page.getByText("ready to verify")).toBeVisible();
   await page.getByRole("button", { name: "Run verification & submit" }).click();
   await expect(page.getByText("Auto-approved").or(page.getByText("Routed to HR Head")).first()).toBeVisible();
 }
+
+let storageReady = false;
+test.beforeAll(async () => {
+  storageReady = await ensureReceiptsBucket();
+});
 
 async function openLedgerTab(page: Page) {
   await page.goto("/submit");
@@ -39,6 +53,7 @@ function typeFilter(page: Page) {
 }
 
 test("Ledger tab shows FY allocation credits, a pending claim's hold, category/type filters, and the detail drawer", async ({ page }) => {
+  test.skip(!storageReady, "Supabase Storage unreachable in this environment.");
   await signup(page, { name: "Ledger Tester", email: uniqueEmail("wallet-ledger"), password: PASSWORD });
 
   // A brand-new employee already has both categories' FY allocation credits —
