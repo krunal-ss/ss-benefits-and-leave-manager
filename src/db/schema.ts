@@ -188,6 +188,20 @@ export const leaveTypes = pgTable("leave_types", {
   maxBalanceDays: numeric({ precision: 5, scale: 1 }),
   carryForward: boolean().notNull().default(false),
   deductsBalance: boolean().notNull().default(true),
+  // ---- KAN-187 (Leave Policy Viewer) content, editable by HR Head/Admin at
+  // /settings/leave-policy. All nullable/defaulted so existing rows keep
+  // working with no backfill; the viewer shows an empty section until HR
+  // fills it in. See src/server/policy.ts.
+  summary: text(),
+  eligibility: jsonb().$type<string[]>().notNull().default([]),
+  approver: text(),
+  noticeText: text(),
+  encashText: text(),
+  carryHeadline: text(),
+  carryText: text(),
+  processSteps: jsonb().$type<string[]>().notNull().default([]),
+  faqs: jsonb().$type<{ q: string; a: string }[]>().notNull().default([]),
+  // ---- end KAN-187 ----
 });
 
 export const leaveBalances = pgTable("leave_balances", {
@@ -333,6 +347,20 @@ export const benefitReminderSettings = pgTable("benefit_reminder_settings", {
 
 export type BenefitReminderSettingsRow = typeof benefitReminderSettings.$inferSelect;
 // ---- end KAN-148 ----
+
+// ---- KAN-187: Leave Policy Viewer — the company-wide policy PDF. One
+// single-row settings table (same lazily-defaulted pattern as approvalPolicy),
+// storing only the PRIVATE-bucket object path (never a public URL — see
+// getPolicyDocumentSignedUrl in src/server/supabase/storage.ts).
+export const leavePolicyDocument = pgTable("leave_policy_document", {
+  id: text().primaryKey().default("default"),
+  documentPath: text(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid().references(() => users.id),
+});
+
+export type LeavePolicyDocumentRow = typeof leavePolicyDocument.$inferSelect;
+// ---- end KAN-187 ----
 
 // ---- shared ----
 export const holidays = pgTable("holidays", {
