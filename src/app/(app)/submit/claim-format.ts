@@ -2,7 +2,8 @@ export function fmtMoney(rupees: number): string {
   return `₹${rupees.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
-export function fmtDate(iso: string): string {
+export function fmtDate(iso: string | null): string {
+  if (!iso) return "—"; // incomplete draft
   return new Date(`${iso}T00:00:00`).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",

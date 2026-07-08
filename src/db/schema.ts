@@ -43,6 +43,10 @@ export const leaveRequestStatusEnum = pgEnum("leave_request_status", [
   "approved",
   "rejected",
   "cancelled",
+  // KAN-127 — a cancellation request against an already-`approved` leave,
+  // awaiting the approver's sign-off (only used when the policy requires it;
+  // an immediate cancellation goes straight to "cancelled").
+  "cancellation_requested",
 ]);
 
 export const requestKindEnum = pgEnum("request_kind", ["leave", "wfh"]);
@@ -96,11 +100,12 @@ export const benefitClaims = pgTable("benefit_claims", {
   userId: uuid()
     .notNull()
     .references(() => users.id),
-  categoryId: uuid()
-    .notNull()
-    .references(() => benefitCategories.id),
-  amountPaise: integer().notNull(),
-  expenseDate: date().notNull(),
+  // Nullable so a `draft` claim (KAN-125) can exist with only some fields
+  // filled in — required-ness of these three is enforced at the application
+  // layer only when a draft transitions to `submitted`.
+  categoryId: uuid().references(() => benefitCategories.id),
+  amountPaise: integer(),
+  expenseDate: date(),
   vendor: text(),
   documentUrl: text(),
   documentHash: text(), // dedupe via hash (AC2)
@@ -143,6 +148,30 @@ export const receiptVerifications = pgTable("receipt_verifications", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 // ---- end KAN-111 ----
+
+// ---- KAN-126: Claim Resubmission. A `rejected` claim can be edited and
+// resubmitted under the SAME `benefitClaims` row (no new claim). Each
+// resubmission snapshots the PRE-EDIT state here before applying the edit, so
+// `rejected` is no longer a terminal/dead-end status — see resubmit-claim.ts.
+// The claim's current "version number" is derived as (row count for this
+// claimId here) + 1, never stored redundantly on `benefitClaims` itself.
+export const benefitClaimVersions = pgTable("benefit_claim_versions", {
+  id: uuid().primaryKey().defaultRandom(),
+  claimId: uuid()
+    .notNull()
+    .references(() => benefitClaims.id, { onDelete: "cascade" }),
+  versionNumber: integer().notNull(),
+  amountPaise: integer(),
+  categoryId: uuid().references(() => benefitCategories.id),
+  expenseDate: date(),
+  vendor: text(),
+  documentUrl: text(),
+  documentHash: text(),
+  status: claimStatusEnum().notNull(),
+  decisionReason: text(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+// ---- end KAN-126 ----
 
 // ---- Module B: Leave & WFH ----
 export const leaveTypes = pgTable("leave_types", {
@@ -193,6 +222,9 @@ export const leaveRequests = pgTable("leave_requests", {
   teamLeadId: uuid().references((): AnyPgColumn => users.id),
   projectManagerId: uuid().references((): AnyPgColumn => users.id),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  // KAN-127 — set when a cancellation request/decision has happened; null otherwise.
+  cancellationReason: text(),
+  cancelledAt: timestamp({ withTimezone: true }),
 });
 
 export const approvals = pgTable("approvals", {
@@ -224,6 +256,9 @@ export const approvalPolicy = pgTable("approval_policy", {
   wfhAutoApproveMaxDays: numeric({ precision: 5, scale: 1 }).notNull().default("0"),
   // Extra recipients CC'd on every routing/decision notification email.
   ccEmails: jsonb().$type<string[]>().notNull().default([]),
+  // KAN-127 — whether cancelling an already-approved leave needs the original
+  // approver's sign-off. When false, cancellation is immediate.
+  requireLeaveCancellationApproval: boolean().notNull().default(true),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedBy: uuid().references(() => users.id),
 });
@@ -274,6 +309,30 @@ export const teamCapacitySnapshot = pgTable("team_capacity_snapshot", {
 });
 
 // ---- end KAN-79 ----
+
+// ---- KAN-148: Remaining Benefit Reminder config (HR Head / Admin). One
+// single-row settings table (id defaults to "default", same "lazily default
+// if missing" pattern as approvalPolicy) driving both the employee dashboard
+// banner and the HR "Benefit reminders" settings screen. leadDaysBeforeFyEnd
+// holds which of the fixed 90/60/30/14/7-day checkpoints are enabled; the
+// actual per-employee scheduled email fan-out (a cron job reading this row)
+// is intentionally NOT part of this pass — see KAN-160.
+export const reminderFrequencyEnum = pgEnum("reminder_frequency", ["once", "weekly", "daily"]);
+
+export const benefitReminderSettings = pgTable("benefit_reminder_settings", {
+  id: text().primaryKey().default("default"),
+  leadDaysBeforeFyEnd: jsonb().$type<number[]>().notNull().default([90, 60, 30, 7]),
+  frequency: reminderFrequencyEnum().notNull().default("weekly"),
+  dashboardEnabled: boolean().notNull().default(true),
+  emailEnabled: boolean().notNull().default(true),
+  // Rupees in the design mock, but stored in PAISE per this repo's money convention.
+  thresholdPaise: integer().notNull().default(500000),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedBy: uuid().references(() => users.id),
+});
+
+export type BenefitReminderSettingsRow = typeof benefitReminderSettings.$inferSelect;
+// ---- end KAN-148 ----
 
 // ---- shared ----
 export const holidays = pgTable("holidays", {

@@ -1,4 +1,5 @@
-// Benefit Wallet mock data. Annual caps per FY (Sports ₹15,000, Learning ₹45,000).
+// Benefit Wallet shared types + pure helpers. Real data comes from the DB
+// (see src/server/employee/dashboard.ts, src/server/employee/balances.ts).
 // "Used" reserves approved + pending so an employee can't over-commit.
 
 export type CategoryKey = "sports" | "learning";

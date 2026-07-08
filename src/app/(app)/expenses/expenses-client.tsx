@@ -7,14 +7,20 @@ import { CircleCheckBig } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
+import { VersionBadge } from "@/components/ui/version-badge";
+import { AiScoreBadge } from "@/components/ui/ai-score-badge";
+import { SlaBadge } from "@/components/ui/sla-badge";
+import { SlaSummaryBar } from "@/components/ui/sla-summary-bar";
 import { useToast } from "@/components/providers";
 import { HARD_FLAGS, type QueuedClaim } from "@/server/hr/queue-types";
+import { EXPENSE_SLA_HOURS } from "@/server/sla";
 import { decideExpenseAction } from "@/server/actions/decide-expense";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { ReviewDrawer } from "@/app/(app)/expenses/review-drawer";
 
 type Stats = { pending: number; reservedPaise: number; approvedCount: number; approvedPaise: number; rejectedCount: number };
+type SlaSummary = { ok: number; soon: number; over: number };
 
 function flagClasses(flag: string) {
   return HARD_FLAGS.has(flag)
@@ -22,7 +28,15 @@ function flagClasses(flag: string) {
     : "bg-amber-500/[0.16] text-amber-700";
 }
 
-export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedClaim[]; stats: Stats }) {
+export function ExpensesClient({
+  claims,
+  stats: liveStats,
+  slaSummary,
+}: {
+  claims: QueuedClaim[];
+  stats: Stats;
+  slaSummary: SlaSummary;
+}) {
   const { flash } = useToast();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -78,6 +92,14 @@ export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedCla
         </Link>
       </div>
 
+      <SlaSummaryBar
+        label="Review SLA"
+        ok={slaSummary.ok}
+        soon={slaSummary.soon}
+        over={slaSummary.over}
+        escalationNote="Overdue claims escalate to HR Head"
+      />
+
       <div className="grid grid-cols-4 gap-3.5">
         {stats.map((s) => (
           <Card key={s.label} className="flex flex-col gap-1 rounded-xl px-[18px] py-4">
@@ -111,6 +133,8 @@ export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedCla
                 <th className="border-b px-3 py-[11px] text-right font-medium">Claimed</th>
                 <th className="border-b px-3 py-[11px] text-right font-medium">OCR amount</th>
                 <th className="border-b px-3 py-[11px] text-left font-medium">Flags</th>
+                <th className="border-b px-3 py-[11px] text-left font-medium">AI score</th>
+                <th className="border-b px-3 py-[11px] text-left font-medium">SLA</th>
                 <th className="border-b" />
               </tr>
             </thead>
@@ -121,7 +145,10 @@ export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedCla
                     <div className="flex items-center gap-2.5">
                       <Avatar initials={q.initials} className="size-[30px] text-[11.5px]" />
                       <div>
-                        <div className="font-medium">{q.name}</div>
+                        <div className="flex items-center gap-1.5 font-medium">
+                          {q.name}
+                          {q.version > 1 && <VersionBadge version={q.version} />}
+                        </div>
                         <div className="text-[11.5px] text-muted-foreground">{q.dept}</div>
                       </div>
                     </div>
@@ -140,10 +167,26 @@ export function ExpensesClient({ claims, stats: liveStats }: { claims: QueuedCla
                       ))}
                     </div>
                   </td>
+                  <td className="px-3 py-3">
+                    <Link href={`/expenses/${q.id}/intelligence`} className="inline-flex items-center gap-1.5 hover:opacity-80">
+                      <AiScoreBadge score={q.aiScore} verdict={q.aiVerdict} />
+                    </Link>
+                  </td>
+                  <td className="px-3 py-3">
+                    <SlaBadge createdAtIso={q.createdAt} targetHours={EXPENSE_SLA_HOURS} />
+                  </td>
                   <td className="px-5 py-3 text-right">
-                    <Button variant="outline" size="sm" onClick={() => { setSelectedId(q.id); setReason(""); }}>
-                      Review
-                    </Button>
+                    <div className="inline-flex items-center gap-2">
+                      <Link
+                        href={`/expenses/${q.id}/intelligence`}
+                        className="text-[12.5px] font-medium text-muted-foreground hover:text-foreground"
+                      >
+                        Analyze
+                      </Link>
+                      <Button variant="outline" size="sm" onClick={() => { setSelectedId(q.id); setReason(""); }}>
+                        Review
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

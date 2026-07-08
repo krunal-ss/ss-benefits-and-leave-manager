@@ -1,11 +1,12 @@
 import "server-only";
-import { and, count, eq, gte, lte, or } from "drizzle-orm";
+import { and, count, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { getDb } from "@/db";
 import { leaveRequests, leaveTypes, users, type User } from "@/db/schema";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { checkStaffingWarnings, type StaffingWarning } from "@/server/manager/staffing-guard"; // KAN-77
 import { todayISO } from "@/lib/fy";
 import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
+import { computeSla, LEAVE_SLA_HOURS, summarizeSla } from "@/server/sla"; // KAN-147
 
 // Leave/WFH approval queue (manager view) + "out today" panel — real DB data,
 // scoped to the signed-in manager's direct reports (reporting lines are DATA).
@@ -25,6 +26,12 @@ export type ApprovalRequest = {
   reason: string;
   /** KAN-77 — advisory only; empty when nothing is flagged for this request's date range. */
   warnings: StaffingWarning[];
+  /** KAN-147 — ISO timestamp; the SLA clock's start. Raw, not pre-computed, so `<SlaBadge>` can tick it live client-side. */
+  createdAt: string;
+  /** KAN-155 — milliseconds since createdAt, computed at read time (not live-ticking). */
+  elapsedMs: number;
+  /** KAN-155 — true once the SLA target has passed; drives the overdue-escalation cron's row selection too. */
+  isOverdue: boolean;
 };
 
 export type OutTodayItem = {
@@ -113,6 +120,7 @@ export async function getApprovalQueue(
       halfDay: leaveRequests.halfDay,
       days: leaveRequests.workingDays,
       reason: leaveRequests.reason,
+      createdAt: leaveRequests.createdAt, // KAN-147 — SLA clock start
       // KAN-77 — the applicant's own reporting line/critical-role flag, used
       // to compute the staffing guard warnings for this row (see "team"
       // definition in staffing-guard.ts — the applicant's real reports-to-TL
@@ -144,6 +152,9 @@ export async function getApprovalQueue(
       days: fmtDays(Number(r.days)),
       level: scope.level,
       reason: r.reason ?? "—",
+      createdAt: r.createdAt.toISOString(),
+      elapsedMs: Date.now() - r.createdAt.getTime(),
+      isOverdue: computeSla(r.createdAt, LEAVE_SLA_HOURS).state === "overdue",
       warnings: await checkStaffingWarnings({
         requesterId: r.userId,
         teamLeadId: r.applicantTeamLeadId,
@@ -174,6 +185,23 @@ export async function getPendingApprovalCount(user: User): Promise<number> {
   return row?.n ?? 0;
 }
 
+/**
+ * KAN-147 — on-track/due-soon/overdue counts across ALL of this manager's
+ * pending requests (not just the current page), for the "SLA status" summary
+ * bar above the approvals list. Mirrors `getPendingApprovalCount`'s shape: a
+ * small aggregate query rather than fetching full paginated pages just to count.
+ */
+export async function getApprovalSlaSummary(user: User): Promise<{ ok: number; soon: number; over: number }> {
+  const scope = approverScope(user.role);
+  if (!scope) return { ok: 0, soon: 0, over: 0 };
+  const db = getDb();
+  const rows = await db
+    .select({ createdAt: leaveRequests.createdAt })
+    .from(leaveRequests)
+    .where(and(eq(scope.column, user.id), eq(leaveRequests.status, scope.status)));
+  return summarizeSla(rows.map((r) => r.createdAt), LEAVE_SLA_HOURS);
+}
+
 /** Reports of this manager who are on an approved leave/WFH that covers today. */
 export async function getOutToday(user: User): Promise<OutTodayItem[]> {
   if (!approverScope(user.role)) return [];
@@ -193,7 +221,9 @@ export async function getOutToday(user: User): Promise<OutTodayItem[]> {
     .where(
       and(
         or(eq(leaveRequests.teamLeadId, user.id), eq(leaveRequests.projectManagerId, user.id)),
-        eq(leaveRequests.status, "approved"),
+        // KAN-127 — a pending cancellation hasn't been finalized yet, so the
+        // person is still out until it's actually approved.
+        inArray(leaveRequests.status, ["approved", "cancellation_requested"]),
         lte(leaveRequests.fromDate, today),
         gte(leaveRequests.toDate, today),
       ),
@@ -205,6 +235,58 @@ export async function getOutToday(user: User): Promise<OutTodayItem[]> {
     initials: initialsOf(r.name),
     type: typeLabel(r.kind, r.code),
     kind: r.kind,
+  }));
+}
+
+export type CancellationRequest = {
+  id: string;
+  name: string;
+  initials: string;
+  role: string;
+  type: string;
+  kind: RequestKind;
+  dates: string;
+  days: string;
+  reason: string;
+};
+
+/** KAN-127 — approved requests whose applicant has asked to cancel, awaiting this manager's decision. */
+export async function getPendingCancellations(user: User): Promise<CancellationRequest[]> {
+  if (!approverScope(user.role)) return [];
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      id: leaveRequests.id,
+      name: users.name,
+      department: users.department,
+      kind: leaveRequests.kind,
+      code: leaveTypes.code,
+      from: leaveRequests.fromDate,
+      to: leaveRequests.toDate,
+      days: leaveRequests.workingDays,
+      cancellationReason: leaveRequests.cancellationReason,
+    })
+    .from(leaveRequests)
+    .innerJoin(users, eq(leaveRequests.userId, users.id))
+    .leftJoin(leaveTypes, eq(leaveRequests.leaveTypeId, leaveTypes.id))
+    .where(
+      and(
+        or(eq(leaveRequests.teamLeadId, user.id), eq(leaveRequests.projectManagerId, user.id)),
+        eq(leaveRequests.status, "cancellation_requested"),
+      ),
+    );
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    initials: initialsOf(r.name),
+    role: r.department ?? "Team member",
+    type: typeLabel(r.kind, r.code),
+    kind: r.kind,
+    dates: fmtRange(r.from, r.to),
+    days: fmtDays(Number(r.days)),
+    reason: r.cancellationReason?.trim() || "—",
   }));
 }
 

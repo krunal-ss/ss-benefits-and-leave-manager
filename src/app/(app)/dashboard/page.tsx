@@ -6,7 +6,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { available, type Category } from "@/server/benefits";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getDashboardData } from "@/server/employee/dashboard";
+import { getReminderBannerData } from "@/server/employee/reminder-banner";
 import { formatINR } from "@/lib/format";
+import { ReminderBanner } from "./reminder-banner";
 
 export const metadata = { title: "Dashboard · SmartSense" };
 
@@ -59,6 +61,7 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const data = await getDashboardData(user.id);
+  const reminderBanner = await getReminderBannerData(user.id);
   const first = user.name.split(" ")[0];
 
   return (
@@ -75,6 +78,8 @@ export default async function DashboardPage() {
           {data.fyLabel}
         </span>
       </div>
+
+      {reminderBanner && <ReminderBanner data={reminderBanner} />}
 
       <div className="grid grid-cols-2 gap-[18px]">
         {data.categories.map((c) => (

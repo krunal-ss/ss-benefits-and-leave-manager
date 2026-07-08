@@ -118,6 +118,7 @@ export async function getReimbursementBatch(fy?: string): Promise<ReimbursementB
       ),
     );
 
+  // guaranteed set — PAYABLE_STATUSES excludes draft, so amountPaise/expenseDate are non-null
   const employees = aggregateReimbursements(rows as RawRow[]);
   return {
     fy: targetFy,

@@ -242,7 +242,8 @@ export async function getAvailabilityForRange(
 
     dayUserUnitAll = buildDayUserUnitMap(rows, fromDate, toDate);
     dayUserUnitApproved = buildDayUserUnitMap(
-      rows.filter((r) => r.status === "approved"),
+      // KAN-127 — a pending cancellation isn't final yet; still counts as confirmed unavailable.
+      rows.filter((r) => r.status === "approved" || r.status === "cancellation_requested"),
       fromDate,
       toDate,
     );

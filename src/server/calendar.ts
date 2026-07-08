@@ -19,6 +19,7 @@ const STATUS_LABEL: Record<string, string> = {
   approved: "Approved",
   rejected: "Rejected",
   cancelled: "Cancelled",
+  cancellation_requested: "Cancellation requested",
 };
 
 export type EventApproval = {

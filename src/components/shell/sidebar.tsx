@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Bell, // KAN-148: benefit reminders icon
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
@@ -35,6 +36,7 @@ const ICONS: Record<string, LucideIcon> = {
   availability: Grid3x3, // KAN-75
   "availability-hr": Grid3x3, // KAN-75
   expenses: FileCheck2,
+  reminders: Bell, // KAN-148
   "expenses-history": History,
   reports: BarChart3,
   "expenses-export": Download,

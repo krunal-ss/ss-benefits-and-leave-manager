@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq, gte, lte, sql, sum } from "drizzle-orm";
+import { and, count, eq, gte, inArray, lte, sql, sum } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
   benefitCategories,
@@ -206,7 +206,8 @@ export async function getLeaveReport(range: ReportRange): Promise<LeaveReport> {
       })
       .from(leaveRequests)
       .innerJoin(leaveTypes, eq(leaveRequests.leaveTypeId, leaveTypes.id))
-      .where(and(inRange, eq(leaveRequests.status, "approved")))
+      // KAN-127 — a pending cancellation isn't final yet; still counts as approved days.
+      .where(and(inRange, inArray(leaveRequests.status, ["approved", "cancellation_requested"])))
       .groupBy(leaveTypes.name)
       .orderBy(sql`3 desc`),
   ]);

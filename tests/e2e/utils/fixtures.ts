@@ -3,7 +3,7 @@
 // base reference data the app needs to function (leave types, benefit
 // categories, a holiday). Idempotent — safe to run against the same live
 // Supabase project on every suite run.
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { testDb, supabaseAdmin, schema } from "./db";
 
 export const TEST_PASSWORD = "E2eTest#12345";
@@ -185,4 +185,44 @@ export async function getUserIdByEmail(email: string): Promise<string> {
   const [row] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)).limit(1);
   if (!row) throw new Error(`No users row for ${email} yet — has this account logged in once?`);
   return row.id;
+}
+
+/**
+ * KAN-147: the SLA clock starts at `createdAt`, set by the DB on insert — no
+ * UI flow can control it, so an "overdue" fixture backdates it directly. Finds
+ * the most recently created pending-HR claim for the given applicant email
+ * (there's exactly one per test) and pushes its `createdAt` back so it's past
+ * the 48h expense SLA target.
+ */
+export async function backdateNewestPendingClaim(applicantEmail: string, hoursAgo: number): Promise<void> {
+  const db = testDb();
+  const userId = await getUserIdByEmail(applicantEmail);
+  const [claim] = await db
+    .select({ id: schema.benefitClaims.id })
+    .from(schema.benefitClaims)
+    .where(and(eq(schema.benefitClaims.userId, userId), eq(schema.benefitClaims.status, "pending_hr")))
+    .orderBy(desc(schema.benefitClaims.createdAt))
+    .limit(1);
+  if (!claim) throw new Error(`No pending_hr claim found for ${applicantEmail} — did submission land in pending_hr?`);
+  await db
+    .update(schema.benefitClaims)
+    .set({ createdAt: new Date(Date.now() - hoursAgo * 3600_000) })
+    .where(eq(schema.benefitClaims.id, claim.id));
+}
+
+/** KAN-147: same idea as `backdateNewestPendingClaim`, for a pending leave/WFH request awaiting L1/L2 decision. */
+export async function backdateNewestPendingLeaveRequest(applicantEmail: string, hoursAgo: number): Promise<void> {
+  const db = testDb();
+  const userId = await getUserIdByEmail(applicantEmail);
+  const [request] = await db
+    .select({ id: schema.leaveRequests.id })
+    .from(schema.leaveRequests)
+    .where(eq(schema.leaveRequests.userId, userId))
+    .orderBy(desc(schema.leaveRequests.createdAt))
+    .limit(1);
+  if (!request) throw new Error(`No leave request found for ${applicantEmail}.`);
+  await db
+    .update(schema.leaveRequests)
+    .set({ createdAt: new Date(Date.now() - hoursAgo * 3600_000) })
+    .where(eq(schema.leaveRequests.id, request.id));
 }

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import Link from "next/link";
 import { FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { VersionBadge } from "@/components/ui/version-badge";
+import { AiScoreBadge } from "@/components/ui/ai-score-badge";
 import { Textarea } from "@/components/ui/textarea";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 import type { QueuedClaim } from "@/server/hr/queue-types";
 import { DetailRow } from "@/app/(app)/expenses/detail-row";
 
@@ -31,13 +34,7 @@ export function ReviewDrawer({
   onDecide: (approve: boolean) => void;
   pending: boolean;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   return (
     <>
@@ -51,8 +48,9 @@ export function ReviewDrawer({
         <div className="flex items-center gap-3 border-b px-[22px] py-[18px]">
           <div>
             <div className="text-base font-semibold">{claim.name}</div>
-            <div className="text-[12.5px] text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
               {claim.dept} · claim {claim.ref}
+              {claim.version > 1 && <VersionBadge version={claim.version} />}
             </div>
           </div>
           <button
@@ -65,6 +63,16 @@ export function ReviewDrawer({
         </div>
 
         <div className="flex flex-1 flex-col gap-[18px] overflow-y-auto px-[22px] py-5">
+          <div className="flex items-center justify-between gap-3 rounded-[10px] border px-3.5 py-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[11.5px] text-muted-foreground">AI recommendation</span>
+              <AiScoreBadge score={claim.aiScore} verdict={claim.aiVerdict} />
+            </div>
+            <Link href={`/expenses/${claim.id}/intelligence`} className="text-[12.5px] font-medium text-foreground hover:underline">
+              Full analysis →
+            </Link>
+          </div>
+
           <div className="flex h-[150px] flex-col items-center justify-center gap-[7px] rounded-[11px] border bg-muted text-muted-foreground">
             <FileText className="size-6" strokeWidth={1.8} />
             <span className="text-[12.5px]">receipt-{claim.ref}.pdf</span>

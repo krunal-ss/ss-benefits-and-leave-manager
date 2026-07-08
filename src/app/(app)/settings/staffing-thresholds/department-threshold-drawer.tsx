@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useEscapeKey } from "@/lib/hooks/use-escape-key";
 import { saveStaffingThresholdAction } from "@/server/actions/staffing-thresholds";
 import type { StaffingThresholdRow } from "@/server/hr/staffing-thresholds";
 import { useThresholdSave } from "@/app/(app)/settings/staffing-thresholds/use-threshold-save";
@@ -32,13 +33,7 @@ export function DepartmentThresholdDrawer({
       onClose,
     );
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   const title = threshold ? `Edit ${threshold.scopeValue}` : "New department override";
 

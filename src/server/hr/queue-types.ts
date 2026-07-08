@@ -1,5 +1,6 @@
 // Client-safe shapes + constants for the HR expense queue (no server-only deps,
 // so the queue UI can import them). The DB queries live in ./expenses.ts.
+import type { AiVerdict } from "@/server/verification";
 
 export type RuleCheck = {
   label: string;
@@ -21,6 +22,17 @@ export type QueuedClaim = {
   confidence: string; // e.g. "High (96%)"
   flags: string[];
   checks: RuleCheck[];
+  /** KAN-126 — 1 for a never-resubmitted claim; N = (prior versions) + 1. */
+  version: number;
+  /** KAN-113 — explainable AI score/verdict, computed once at submission (KAN-111/115). */
+  aiScore: number;
+  aiVerdict: AiVerdict;
+  /** KAN-147 — ISO timestamp; the SLA clock's start. Raw, not pre-computed, so `<SlaBadge>` can tick it live client-side. */
+  createdAt: string;
+  /** KAN-155 — milliseconds since createdAt, computed at read time (not live-ticking). */
+  elapsedMs: number;
+  /** KAN-155 — true once the SLA target has passed; drives the overdue-escalation cron's row selection too. */
+  isOverdue: boolean;
 };
 
 // Flags that represent a hard failure (red) vs a soft warning (amber).

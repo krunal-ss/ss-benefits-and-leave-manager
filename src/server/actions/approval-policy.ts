@@ -14,6 +14,7 @@ const schema = z.object({
   routingMode: z.enum(["sequential", "parallel"]),
   wfhAutoApproveMaxDays: z.number().min(0).max(30),
   ccEmails: z.array(z.string()).max(20),
+  requireLeaveCancellationApproval: z.boolean(),
 });
 
 export type SavePolicyResult = { ok: boolean; message: string };
@@ -41,6 +42,7 @@ export async function saveApprovalPolicyAction(
     routingMode: parsed.data.routingMode,
     wfhAutoApproveMaxDays: parsed.data.wfhAutoApproveMaxDays,
     ccEmails,
+    requireLeaveCancellationApproval: parsed.data.requireLeaveCancellationApproval,
   });
 
   revalidatePath("/settings/approvals");

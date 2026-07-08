@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, FileText, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FileText, History, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,14 +13,8 @@ import { useToast } from "@/components/providers";
 import { decideExpenseAction } from "@/server/actions/decide-expense";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
-import type { AiVerdict } from "@/server/verification";
+import { VERDICT_META } from "@/lib/verdict-style";
 import type { ReceiptIntelligence } from "@/server/hr/expenses";
-
-const VERDICT_META: Record<AiVerdict, { label: string; color: string; bg: string }> = {
-  approve: { label: "Recommend approve", color: "var(--emerald-500)", bg: "bg-emerald-500/10" },
-  review: { label: "Needs human review", color: "#b45309", bg: "bg-amber-500/[0.11]" },
-  reject: { label: "Recommend reject", color: "var(--destructive)", bg: "bg-red-500/[0.1]" },
-};
 
 function confidenceColor(pct: number): string {
   return pct >= 85 ? "var(--emerald-500)" : pct >= 65 ? "var(--amber-500)" : "var(--destructive)";
@@ -275,6 +269,71 @@ export function ReceiptIntelligenceClient({ intel }: { intel: ReceiptIntelligenc
           )}
         </Card>
       </div>
+
+      {intel.version > 1 && (
+        <Card className="p-5">
+          <div className="mb-3.5 flex items-center gap-2">
+            <History className="size-4 text-blue-600" strokeWidth={2} />
+            <span className="text-[15px] font-semibold">Resubmission · compare versions</span>
+            <span className="ml-auto inline-flex h-5 items-center rounded-md bg-blue-600/10 px-2 text-[11px] font-semibold text-blue-600">
+              {intel.versionHistory.length} prior {intel.versionHistory.length === 1 ? "version" : "versions"}
+            </span>
+          </div>
+          <div className="flex flex-col gap-3">
+            {intel.versionHistory
+              .map((snap, idx) => {
+                const next =
+                  idx === intel.versionHistory.length - 1
+                    ? {
+                        versionNumber: intel.version,
+                        amount: intel.claimed,
+                        category: intel.category,
+                        vendor: intel.vendor,
+                        date: intel.date,
+                        statusLabel: intel.statusLabel,
+                      }
+                    : intel.versionHistory[idx + 1];
+                const rows = [
+                  { label: "Amount", from: formatINR(snap.amount), to: formatINR(next.amount), changed: snap.amount !== next.amount },
+                  { label: "Category", from: snap.category, to: next.category, changed: snap.category !== next.category },
+                  { label: "Vendor", from: snap.vendor, to: next.vendor, changed: snap.vendor !== next.vendor },
+                  { label: "Date", from: snap.date, to: next.date, changed: snap.date !== next.date },
+                  { label: "Status", from: snap.statusLabel, to: next.statusLabel, changed: snap.statusLabel !== next.statusLabel },
+                ];
+                return { snap, next, rows };
+              })
+              // Most recent transition first.
+              .reverse()
+              .map(({ snap, next, rows }) => (
+                <div key={snap.versionNumber} className="overflow-hidden rounded-lg border">
+                  <div className="flex items-center gap-1.5 border-b bg-muted/50 px-3.5 py-2 text-[12px] font-semibold">
+                    <span>v{snap.versionNumber}</span>
+                    <ArrowRight className="size-3 text-muted-foreground" strokeWidth={2} />
+                    <span className="text-blue-600">
+                      v{next.versionNumber}
+                      {next.versionNumber === intel.version ? " · current" : ""}
+                    </span>
+                    <span className="ml-auto text-[11px] font-normal text-muted-foreground">Superseded {snap.supersededAt}</span>
+                  </div>
+                  <table className="w-full border-collapse text-[12.5px]">
+                    <tbody>
+                      {rows.map((r) => (
+                        <tr key={r.label} className="border-b last:border-b-0">
+                          <td className="w-[90px] px-3.5 py-[7px] text-muted-foreground">{r.label}</td>
+                          <td className={cn("px-3.5 py-[7px]", r.changed && "font-semibold text-destructive")}>{r.from}</td>
+                          <td className={cn("px-3.5 py-[7px]", r.changed && "font-semibold text-blue-600")}>{r.to}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="border-t px-3.5 py-2.5 text-xs leading-[1.5] text-muted-foreground">
+                    <span className="font-medium text-foreground">v{snap.versionNumber} decision:</span> {snap.decisionReason}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-[1.25fr_1fr] items-start gap-5">
         <Card className="p-5">

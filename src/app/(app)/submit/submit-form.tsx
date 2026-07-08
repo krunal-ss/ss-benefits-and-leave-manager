@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
-import { Check, Dumbbell, FileText, GraduationCap, Upload, X } from "lucide-react";
+import { Check, Dumbbell, FileText, GraduationCap, RotateCcw, Save, Upload, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,15 +9,40 @@ import { Label } from "@/components/ui/label";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/providers";
 import { submitExpenseAction, type CheckOutcome } from "@/server/actions/expense";
+import { saveDraftAction, submitDraftAction } from "@/server/actions/draft-expense";
+import { resubmitClaimAction } from "@/server/actions/resubmit-claim";
 import { formatINR } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { Row } from "@/app/(app)/submit/balance-row";
 import { CategoryButton } from "@/app/(app)/submit/category-button";
 import { VerifyResultCard } from "@/app/(app)/submit/verify-result-card";
+import { useDraftAutosave } from "@/app/(app)/submit/use-draft-autosave";
 
 type Variant = "single" | "split";
 type CategoryKey = "sports" | "learning";
 type Result = { status: "auto_approved" | "pending_hr"; checks: CheckOutcome[] };
+
+export type DraftPrefill = {
+  id: string;
+  category: CategoryKey | null;
+  amountRupees: number | null;
+  date: string | null;
+  vendor: string | null;
+  hasDocument: boolean;
+};
+
+// KAN-126 — prefill for the /submit?resubmit=<id> flow (editing a rejected claim).
+// Deliberately simpler than DraftPrefill: a resubmit is never a draft, so it carries
+// no autosave/save-draft state, just the fields to edit + the version it becomes.
+export type ResubmitPrefill = {
+  id: string;
+  category: CategoryKey | null;
+  amountRupees: number | null;
+  date: string | null;
+  vendor: string | null;
+  hasDocument: boolean;
+  nextVersion: number;
+};
 
 const EMPTY = { amount: "", date: "2026-06-20", vendor: "" };
 
@@ -35,15 +60,28 @@ export function SubmitForm({
   learningAvail,
   sportsCap,
   learningCap,
+  draft,
+  resubmit,
 }: {
   sportsAvail: number;
   learningAvail: number;
   sportsCap: number;
   learningCap: number;
+  draft?: DraftPrefill | null;
+  resubmit?: ResubmitPrefill | null;
 }) {
   const { flash } = useToast();
-  const [category, setCategory] = useState<CategoryKey>("sports");
-  const [claim, setClaim] = useState(EMPTY);
+  const isResubmit = !!resubmit;
+  const [category, setCategory] = useState<CategoryKey>(draft?.category ?? resubmit?.category ?? "sports");
+  const [claim, setClaim] = useState({
+    amount: draft?.amountRupees
+      ? String(draft.amountRupees)
+      : resubmit?.amountRupees
+        ? String(resubmit.amountRupees)
+        : EMPTY.amount,
+    date: draft?.date ?? resubmit?.date ?? EMPTY.date,
+    vendor: draft?.vendor ?? resubmit?.vendor ?? EMPTY.vendor,
+  });
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [variant, setVariant] = useState<Variant>("single");
@@ -51,17 +89,38 @@ export function SubmitForm({
   const [pending, startTransition] = useTransition();
   const [submitTried, setSubmitTried] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const descriptionMissing = claim.vendor.trim().length === 0;
-  const fileMissing = !file;
-
-  const avail = category === "sports" ? sportsAvail : learningAvail;
-  const cap = category === "sports" ? sportsCap : learningCap;
-  const label = category === "sports" ? "Sports" : "Learning";
   const amt = useMemo(
     () => parseFloat(String(claim.amount).replace(/[^0-9.]/g, "")) || 0,
     [claim.amount],
   );
+
+  const [hasExistingDocument, setHasExistingDocument] = useState(draft?.hasDocument ?? resubmit?.hasDocument ?? false);
+
+  // KAN-125 — draft save/autosave/resume, disabled entirely in resubmit mode
+  // (see `isResubmit` below) — a resubmission is never a draft.
+  const {
+    draftId,
+    draftIdRef,
+    autosavedAt,
+    savingDraft,
+    setSavingDraft,
+    setDraftIdBoth,
+    settleAutosave,
+    resetAutosave,
+  } = useDraftAutosave({
+    enabled: !isResubmit,
+    hasContent: !result && (amt > 0 || claim.vendor.trim().length > 0 || !!file),
+    buildFormData,
+    deps: [category, claim.amount, claim.date, claim.vendor, file, result],
+    initialDraftId: draft?.id ?? null,
+  });
+
+  const descriptionMissing = claim.vendor.trim().length === 0;
+  const fileMissing = !file && !hasExistingDocument;
+
+  const avail = category === "sports" ? sportsAvail : learningAvail;
+  const cap = category === "sports" ? sportsCap : learningCap;
+  const label = category === "sports" ? "Sports" : "Learning";
   const after = avail - amt;
 
   const setField = (patch: Partial<typeof claim>) => {
@@ -98,6 +157,7 @@ export function SubmitForm({
       return;
     }
     setFile(f);
+    setHasExistingDocument(false); // a freshly-picked file replaces whatever was stored
     if (f.type.startsWith("image/")) setPreviewUrl(URL.createObjectURL(f));
   };
 
@@ -115,22 +175,47 @@ export function SubmitForm({
         ? `${formatINR(after)} will remain`
         : `${formatINR(avail)} available in ${label}`;
 
+  function buildFormData(idOverride: string | null) {
+    const fd = new FormData();
+    fd.set("category", category);
+    fd.set("amountRupees", String(amt));
+    fd.set("date", claim.date);
+    fd.set("vendor", claim.vendor);
+    if (file) fd.set("receipt", file);
+    if (resubmit) fd.set("claimId", resubmit.id);
+    else if (idOverride) fd.set("draftId", idOverride);
+    return fd;
+  }
+
   function submit() {
     setSubmitTried(true);
     if (descriptionMissing || fileMissing) return;
     startTransition(async () => {
-      const fd = new FormData();
-      fd.set("category", category);
-      fd.set("amountRupees", String(amt));
-      fd.set("date", claim.date);
-      fd.set("vendor", claim.vendor);
-      if (file) fd.set("receipt", file);
-      const res = await submitExpenseAction(fd);
+      if (isResubmit) {
+        const res = await resubmitClaimAction(buildFormData(null));
+        if (!res.ok || !res.status || !res.checks) {
+          flash(res.error ?? "Could not resubmit the claim", "warn");
+          return;
+        }
+        setResult({ status: res.status, checks: res.checks });
+        setHasExistingDocument(false);
+        flash(
+          res.status === "auto_approved" ? "Resubmitted — auto-approved" : "Resubmitted — routed to HR Head for manual review",
+          res.status === "auto_approved" ? "ok" : "warn",
+        );
+        return;
+      }
+      await settleAutosave();
+      const id = draftIdRef.current;
+      const fd = buildFormData(id);
+      const res = id ? await submitDraftAction(fd) : await submitExpenseAction(fd);
       if (!res.ok || !res.status || !res.checks) {
         flash(res.error ?? "Could not submit the claim", "warn");
         return;
       }
       setResult({ status: res.status, checks: res.checks });
+      setDraftIdBoth(null); // finalized — no longer a draft
+      setHasExistingDocument(false);
       flash(
         res.status === "auto_approved"
           ? "Claim auto-approved — balance updated"
@@ -140,22 +225,45 @@ export function SubmitForm({
     });
   }
 
+  function saveDraft() {
+    setSavingDraft(true);
+    startTransition(async () => {
+      await settleAutosave();
+      const res = await saveDraftAction(buildFormData(draftIdRef.current));
+      setSavingDraft(false);
+      if (!res.ok) {
+        flash(res.error ?? "Could not save the draft", "warn");
+        return;
+      }
+      flash("Draft saved — no balance reserved", "ok");
+      reset();
+    });
+  }
+
   function reset() {
+    setCategory("sports");
     setClaim(EMPTY);
     removeFile();
     setResult(null);
     setSubmitTried(false);
+    resetAutosave();
+    setHasExistingDocument(false);
   }
 
   const maxW = variant === "split" ? "1000px" : "680px";
+  const isEditingDraft = !!draftId && !result;
 
   return (
     <div className="flex flex-col gap-[18px]">
       <div className="flex flex-wrap items-start gap-3">
         <div>
-          <h1 className="text-[23px] font-semibold tracking-[-0.02em]">Submit an expense claim</h1>
+          <h1 className="text-[23px] font-semibold tracking-[-0.02em]">
+            {isResubmit ? "Edit & resubmit claim" : isEditingDraft ? "Edit draft" : "Submit an expense claim"}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Upload a receipt and we&apos;ll try to auto-approve it against your benefit allowance.
+            {isResubmit
+              ? "Fix the flagged fields, replace the receipt if needed, and we’ll run verification again."
+              : "Upload a receipt and we’ll try to auto-approve it against your benefit allowance."}
           </p>
         </div>
         <div className="ml-auto inline-flex flex-col items-end gap-1.5">
@@ -171,6 +279,33 @@ export function SubmitForm({
           />
         </div>
       </div>
+
+      {resubmit && (
+        <div
+          className="flex items-center gap-2.5 rounded-[11px] border border-blue-600/35 bg-blue-600/[0.08] px-[15px] py-3 text-[13px]"
+          style={{ maxWidth: maxW }}
+        >
+          <RotateCcw className="size-[17px] shrink-0 text-blue-600" strokeWidth={2} />
+          <div>
+            Resubmitting claim <span className="font-semibold">{resubmit.id.slice(0, 8)}</span> · this
+            keeps the same claim ID as version {resubmit.nextVersion}. Fix the flagged fields and replace
+            the receipt, then run verification again.
+          </div>
+        </div>
+      )}
+
+      {draftId && !result && (
+        <div
+          className="flex items-center gap-2.5 rounded-[11px] border border-border bg-muted px-[15px] py-3 text-[13px]"
+          style={{ maxWidth: maxW }}
+        >
+          <FileText className="size-[17px] shrink-0 text-muted-foreground" strokeWidth={2} />
+          <div>
+            Editing draft <span className="font-semibold">{draftId.slice(0, 8)}</span> · drafts don&apos;t
+            reserve balance until you submit.
+          </div>
+        </div>
+      )}
 
       <div
         className="grid items-start gap-5"
@@ -274,6 +409,20 @@ export function SubmitForm({
                   <X className="size-[15px]" strokeWidth={2} />
                 </button>
               </div>
+            ) : hasExistingDocument ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full cursor-pointer items-center gap-3 rounded-[10px] border border-border bg-muted px-3.5 py-3 text-left"
+              >
+                <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg border bg-background text-muted-foreground">
+                  <FileText className="size-[17px]" strokeWidth={2} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-medium">Receipt on file</div>
+                  <div className="text-[11.5px] text-muted-foreground">Click to replace it with a new file</div>
+                </div>
+              </button>
             ) : (
               <button
                 type="button"
@@ -300,12 +449,24 @@ export function SubmitForm({
           <div className="flex gap-2.5 pt-1">
             <Button onClick={submit} disabled={pending} className="flex-1">
               <Check className="size-4" strokeWidth={2} />
-              {pending ? "Verifying…" : "Run verification & submit"}
+              {pending && !savingDraft ? "Verifying…" : "Run verification & submit"}
             </Button>
-            <Button variant="outline" onClick={reset}>
+            {!isResubmit && (
+              <Button variant="outline" onClick={saveDraft} disabled={pending}>
+                <Save className="size-4" strokeWidth={2} />
+                {savingDraft ? "Saving…" : "Save draft"}
+              </Button>
+            )}
+            <Button variant="outline" onClick={reset} disabled={pending}>
               Clear
             </Button>
           </div>
+          {!isResubmit && (
+            <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+              <Save className="size-[13px]" strokeWidth={2} />
+              {autosavedAt ? `Autosaved · ${autosavedAt}` : "Not saved yet"}
+            </div>
+          )}
         </Card>
 
         {variant === "split" && (

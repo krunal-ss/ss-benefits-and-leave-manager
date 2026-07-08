@@ -123,6 +123,7 @@
       <div style="display: flex; flex-direction: column; gap: 2px;">
         <button className="sc-navbtn" onClick="{{ goDashboard }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.dashboard }}; color: {{ navFg.dashboard }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
         <button className="sc-navbtn" onClick="{{ goSubmit }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.submit }}; color: {{ navFg.submit }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Submit expense</button>
+        <button className="sc-navbtn" onClick="{{ goClaims }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.claims }}; color: {{ navFg.claims }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>My claims</button>
         <button className="sc-navbtn" onClick="{{ goLeave }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.leave }}; color: {{ navFg.leave }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Apply leave / WFH</button>
       </div>
     </sc-if>
@@ -137,6 +138,7 @@
     <sc-if value="{{ isHr }}" hint-placeholder-val="{{ false }}">
       <div style="display: flex; flex-direction: column; gap: 2px;">
         <button className="sc-navbtn" onClick="{{ goHrQueue }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.hrqueue }}; color: {{ navFg.hrqueue }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>Expense queue<span style="margin-left: auto; font-size: 11px; font-weight: 600; background: var(--primary); color: var(--primary-foreground); border-radius: 9999px; padding: 1px 7px;">{{ hrCount }}</span></button>
+        <button className="sc-navbtn" onClick="{{ goReminders }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.reminders }}; color: {{ navFg.reminders }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Benefit reminders</button>
         <button className="sc-navbtn" onClick="{{ goCalendar }}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; border: 0; border-radius: 8px; background: {{ nav.calendar }}; color: {{ navFg.calendar }}; font: 500 13px/1 var(--font-sans); cursor: pointer; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Org calendar</button>
       </div>
     </sc-if>
@@ -186,6 +188,24 @@
             </div>
             <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--border); border-radius: 9999px; font-size: 12.5px; color: var(--muted-foreground); background: var(--background);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>FY 2026–27 · Apr–Mar</span>
           </div>
+
+          <sc-if value="{{ showReminder }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; border: 1px solid color-mix(in oklab, var(--amber-500) 38%, var(--border)); border-radius: 14px; background: color-mix(in oklab, var(--amber-500) 8%, var(--card)); box-shadow: var(--shadow-xs);">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: color-mix(in oklab, var(--amber-500) 20%, transparent); color: #b45309; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"><span style="font-size: 14.5px; font-weight: 600;">You have {{ reminderUnusedF }} unused in your benefit wallet</span><span style="display: inline-flex; align-items: center; height: 20px; padding: 0 8px; font-size: 11px; font-weight: 600; border-radius: 6px; background: color-mix(in oklab, var(--amber-500) 20%, transparent); color: #b45309;">{{ reminderDays }} days left</span></div>
+                <p style="font-size: 13px; color: var(--muted-foreground); margin: 4px 0 0;">Unused balance does not carry over past <strong style="color: var(--foreground);">{{ reminderFyEnd }}</strong>. Submit your claims before FY-end to make the most of it.</p>
+                <div style="display: flex; gap: 8px; margin-top: 11px; flex-wrap: wrap;">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; border-radius: 7px; background: var(--card); border: 1px solid var(--border);"><span style="width: 7px; height: 7px; border-radius: 2px; background: var(--emerald-500);"></span>Sports {{ reminderSportsF }}</span>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; border-radius: 7px; background: var(--card); border: 1px solid var(--border);"><span style="width: 7px; height: 7px; border-radius: 2px; background: var(--blue-600);"></span>Learning {{ reminderLearningF }}</span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <button onClick="{{ goSubmit }}" style="height: 34px; padding: 0 14px; font-size: 13px; font-weight: 500; border: 0; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Submit a claim</button>
+                <button onClick="{{ dismissReminder }}" aria-label="Dismiss reminder" style="width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--muted-foreground); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+              </div>
+            </div>
+          </sc-if>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
             <!-- Sports -->
@@ -240,7 +260,10 @@
                 <div style="display: flex; align-items: center; gap: 12px; padding: 13px 20px; border-bottom: 1px solid var(--border);">
                   <span style="width: 9px; height: 9px; border-radius: 9999px; background: {{ up.dot }}; flex-shrink: 0;"></span>
                   <div style="min-width: 0;"><div style="font-size: 13.5px; font-weight: 500;">{{ up.title }}</div><div style="font-size: 12px; color: var(--muted-foreground);">{{ up.dates }}</div></div>
-                  <span style="margin-left: auto; font-size: 11.5px; font-weight: 500; color: var(--muted-foreground);">{{ up.status }}</span>
+                  <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 11.5px; font-weight: 500; color: var(--muted-foreground);">{{ up.status }}</span>
+                    <sc-if value="{{ up.canCancel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ up.onCancel }}" style="height: 26px; padding: 0 10px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Cancel</button></sc-if>
+                  </div>
                 </div>
               </sc-for>
               <div style="padding: 14px 20px;"><button onClick="{{ goLeave }}" style="width: 100%; height: 34px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: flex; align-items: center; justify-content: center; gap: 7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Apply for leave / WFH</button></div>
@@ -253,7 +276,7 @@
       <sc-if value="{{ showSubmit }}" hint-placeholder-val="{{ false }}">
         <div style="display: flex; flex-direction: column; gap: 18px;">
           <div style="display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
-            <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Submit an expense claim</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Upload a receipt and we'll try to auto-approve it against your benefit allowance.</p></div>
+            <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">{{ formTitle }}</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Upload a receipt and we'll try to auto-approve it against your benefit allowance.</p></div>
             <div style="margin-left: auto; display: inline-flex; flex-direction: column; gap: 5px; align-items: flex-end;">
               <span style="font-size: 11px; color: var(--muted-foreground);">Layout</span>
               <div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 8px; gap: 3px;">
@@ -262,6 +285,13 @@
               </div>
             </div>
           </div>
+
+          <sc-if value="{{ isResubmitForm }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: center; gap: 11px; max-width: {{ claimMaxW }}; padding: 12px 15px; border: 1px solid color-mix(in oklab, var(--blue-600) 35%, transparent); border-radius: 11px; background: color-mix(in oklab, var(--blue-600) 8%, transparent);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--blue-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg><div style="font-size: 13px;"><span style="font-weight: 600;">Resubmitting claim {{ resubmitOfId }}</span> · this keeps the same claim ID as version 2. Fix the flagged fields and replace the receipt, then run verification again.</div></div>
+          </sc-if>
+          <sc-if value="{{ isDraftForm }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: center; gap: 11px; max-width: {{ claimMaxW }}; padding: 12px 15px; border: 1px solid var(--border); border-radius: 11px; background: var(--muted);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg><div style="font-size: 13px;">Editing draft <span style="font-weight: 600;">{{ draftOfId }}</span> · drafts don't reserve balance until you submit.</div></div>
+          </sc-if>
 
           <div style="display: grid; grid-template-columns: {{ claimGrid }}; gap: 20px; align-items: start; max-width: {{ claimMaxW }};">
             <!-- Form card -->
@@ -305,10 +335,12 @@
                 </sc-if>
               </div>
 
-              <div style="display: flex; gap: 10px; padding-top: 4px;">
+              <div style="display: flex; align-items: center; gap: 10px; padding-top: 4px;">
                 <button onClick="{{ runVerify }}" style="flex: 1; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: flex; align-items: center; justify-content: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 14.5 21 3"/><path d="M21 3v6h-6"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/></svg>Run verification &amp; submit</button>
+                <button onClick="{{ saveDraft }}" style="height: 40px; padding: 0 15px; font-size: 13.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>Save draft</button>
                 <button onClick="{{ resetClaim }}" style="height: 40px; padding: 0 16px; font-size: 13.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Clear</button>
               </div>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted-foreground);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="m16.24 16.24 2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="m16.24 7.76 2.83-2.83"/></svg>{{ autosaveLabel }}</div>
             </div>
 
             <!-- Right: live check (split) OR verification result (single, below) -->
@@ -354,10 +386,153 @@
         </div>
       </sc-if>
 
+      <!-- ===================== MY CLAIMS ===================== -->
+      <sc-if value="{{ showClaims }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+            <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">My claims</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Drafts, submitted claims, and anything sent back for resubmission.</p></div>
+            <button onClick="{{ goSubmit }}" style="margin-left: auto; height: 38px; padding: 0 15px; font-size: 13px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New claim</button>
+          </div>
+
+          <div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 9px; gap: 3px; align-self: flex-start;">
+            <sc-for list="{{ claimTabs }}" as="tab" hint-placeholder-count="5">
+              <button onClick="{{ tab.onPick }}" style="height: 32px; padding: 0 13px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 7px; cursor: pointer; background: {{ tab.bg }}; color: {{ tab.fg }}; box-shadow: {{ tab.sh }}; display: inline-flex; align-items: center; gap: 6px;">{{ tab.label }}<span style="font-size: 11px; font-weight: 600; padding: 0 5px; border-radius: 9999px; background: color-mix(in oklab, var(--muted-foreground) 18%, transparent);">{{ tab.count }}</span></button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ showClaimsList }}" hint-placeholder-val="{{ true }}">
+          <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+            <sc-if value="{{ myClaimsEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 52px; display: flex; flex-direction: column; align-items: center; gap: 9px; color: var(--muted-foreground);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><div style="font-size: 13.5px; font-weight: 500; color: var(--foreground);">Nothing here</div><div style="font-size: 12.5px;">No claims in this status.</div></div>
+            </sc-if>
+            <sc-for list="{{ myClaims }}" as="cl" hint-placeholder-count="5">
+              <div style="border-bottom: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; gap: 13px; padding: 14px 20px;">
+                  <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--muted); display: flex; align-items: center; justify-content: center; color: var(--muted-foreground); flex-shrink: 0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+                  <div style="min-width: 0; flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ cl.vendor }}</span><span style="font-size: 11px; color: var(--muted-foreground); font-family: var(--font-mono);">{{ cl.id }}</span></div>
+                    <div style="font-size: 12px; color: var(--muted-foreground);">{{ cl.cat }} · {{ cl.date }}<sc-if value="{{ cl.savedNote }}" hint-placeholder-val="{{ false }}"> · {{ cl.savedNote }}</sc-if></div>
+                  </div>
+                  <span style="font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums;">{{ cl.amountF }}</span>
+                  <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; font-size: 11.5px; font-weight: 500; border-radius: 6px; background: {{ cl.statusBg }}; color: {{ cl.statusFg }}; min-width: 74px; justify-content: center;">{{ cl.statusLabel }}</span>
+                  <div style="display: inline-flex; gap: 6px; min-width: 168px; justify-content: flex-end;">
+                    <sc-if value="{{ cl.isDraft }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ cl.onEdit }}" style="height: 30px; padding: 0 12px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Edit</button>
+                      <button onClick="{{ cl.onDelete }}" aria-label="Delete draft" style="width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--muted-foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    </sc-if>
+                    <sc-if value="{{ cl.isRejected }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ cl.onToggleVersions }}" style="height: 30px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">History</button>
+                      <button onClick="{{ cl.onResubmit }}" style="height: 30px; padding: 0 12px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 7px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Edit &amp; resubmit</button>
+                    </sc-if>
+                    <sc-if value="{{ cl.isOpen }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size: 12px; color: var(--muted-foreground);">No action needed</span>
+                    </sc-if>
+                  </div>
+                </div>
+                <sc-if value="{{ cl.rejectReason }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin: 0 20px 12px 65px; display: flex; align-items: flex-start; gap: 9px; padding: 10px 13px; border-radius: 9px; background: color-mix(in oklab, var(--red-500) 8%, transparent);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--destructive)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0; margin-top: 1px;"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg><div style="font-size: 12.5px; color: var(--foreground);"><span style="font-weight: 600; color: var(--destructive);">Rejected by HR: </span>{{ cl.rejectReason }}</div></div>
+                </sc-if>
+                <sc-if value="{{ cl.showVersions }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin: 0 20px 14px 65px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden;">
+                    <div style="padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 11.5px; font-weight: 600; color: var(--muted-foreground); background: var(--muted);">Version history</div>
+                    <sc-for list="{{ cl.versions }}" as="ver" hint-placeholder-count="1">
+                      <div style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--border);"><span style="font-size: 12px; font-weight: 600; font-family: var(--font-mono);">{{ ver.v }}</span><div style="min-width: 0; flex: 1;"><div style="font-size: 12.5px;">{{ ver.note }}</div><div style="font-size: 11px; color: var(--muted-foreground);">{{ ver.date }} · {{ ver.file }} · {{ ver.by }}</div></div><span style="font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums;">{{ ver.amountF }}</span><span style="font-size: 11.5px; font-weight: 500; color: {{ ver.statusFg }};">{{ ver.statusLabel }}</span></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ showLedger }}" hint-placeholder-val="{{ false }}">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 15px 17px;"><div style="font-size: 12px; color: var(--muted-foreground);">Wallet balance</div><div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-top: 3px;">{{ walletBalanceF }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 2px;">Available across benefits</div></div>
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 15px 17px;"><div style="font-size: 12px; color: var(--muted-foreground);">Credited</div><div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-top: 3px; color: var(--emerald-500);">{{ totalCreditedF }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 2px;">Allocations &amp; releases</div></div>
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 15px 17px;"><div style="font-size: 12px; color: var(--muted-foreground);">Spent</div><div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-top: 3px;">{{ totalDebitedF }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 2px;">Approved claims</div></div>
+              <div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); padding: 15px 17px;"><div style="font-size: 12px; color: var(--muted-foreground);">Reserved</div><div style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; margin-top: 3px; color: #b45309;">{{ totalReservedF }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 2px;">Pending holds</div></div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <div style="font-size: 15px; font-weight: 600;">Transaction history</div>
+                <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 8px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: var(--muted); color: var(--muted-foreground);">{{ ledgerCount }} shown</span>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <div style="position: relative; display: inline-flex; align-items: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="position: absolute; left: 10px; pointer-events: none;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input value="{{ ledgerQuery }}" onChange="{{ onLedgerQuery }}" placeholder="Search description or ref…" style="height: 34px; width: 210px; padding: 0 12px 0 32px; font-size: 13px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none;" /></div>
+                  <button onClick="{{ exportLedger }}" style="height: 34px; padding: 0 13px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 7px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV</button>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 16px; padding: 11px 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 11.5px; color: var(--muted-foreground);">Benefit</span><div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 8px; gap: 3px;"><sc-for list="{{ ledgerCatOpts }}" as="op" hint-placeholder-count="3"><button onClick="{{ op.onPick }}" style="height: 26px; padding: 0 11px; font-size: 12px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ op.bg }}; color: {{ op.fg }}; box-shadow: {{ op.sh }};">{{ op.label }}</button></sc-for></div></div>
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 11.5px; color: var(--muted-foreground);">Type</span><div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 8px; gap: 3px;"><sc-for list="{{ ledgerTypeOpts }}" as="op" hint-placeholder-count="4"><button onClick="{{ op.onPick }}" style="height: 26px; padding: 0 11px; font-size: 12px; font-weight: 500; border: 0; border-radius: 6px; cursor: pointer; background: {{ op.bg }}; color: {{ op.fg }}; box-shadow: {{ op.sh }};">{{ op.label }}</button></sc-for></div></div>
+                <button onClick="{{ clearLedgerFilters }}" style="margin-left: auto; height: 28px; padding: 0 10px; font-size: 12px; font-weight: 500; border: 0; border-radius: 7px; background: transparent; color: var(--muted-foreground); cursor: pointer;">Clear filters</button>
+              </div>
+              <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+                <thead><tr style="color: var(--muted-foreground); font-size: 12px;">
+                  <th style="text-align: left; font-weight: 500; padding: 10px 18px; border-bottom: 1px solid var(--border);">Date</th>
+                  <th style="text-align: left; font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--border);">Description</th>
+                  <th style="text-align: left; font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--border);">Benefit</th>
+                  <th style="text-align: left; font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--border);">Type</th>
+                  <th style="text-align: right; font-weight: 500; padding: 10px 12px; border-bottom: 1px solid var(--border);">Amount</th>
+                  <th style="text-align: right; font-weight: 500; padding: 10px 18px; border-bottom: 1px solid var(--border);">Balance</th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ ledgerRows }}" as="t" hint-placeholder-count="7">
+                    <tr className="sc-row" onClick="{{ t.onOpen }}" style="border-bottom: 1px solid var(--border); cursor: pointer;">
+                      <td style="padding: 12px 18px; white-space: nowrap; color: var(--muted-foreground);">{{ t.date }}</td>
+                      <td style="padding: 12px;"><div style="font-weight: 500;">{{ t.desc }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); font-family: var(--font-mono);">{{ t.ref }}</div></td>
+                      <td style="padding: 12px;"><span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 7px; height: 7px; border-radius: 2px; background: {{ t.catColor }};"></span>{{ t.cat }}</span></td>
+                      <td style="padding: 12px;"><span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; font-size: 11px; font-weight: 500; border-radius: 6px; background: {{ t.typeBg }}; color: {{ t.typeColor }};">{{ t.typeLabel }}</span></td>
+                      <td style="padding: 12px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; color: {{ t.amountColor }}; white-space: nowrap;">{{ t.amountF }}</td>
+                      <td style="padding: 12px 18px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted-foreground); white-space: nowrap;">{{ t.balanceF }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              <sc-if value="{{ ledgerEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 48px; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted-foreground);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><div style="font-size: 13.5px; font-weight: 500; color: var(--foreground);">No matching transactions</div><div style="font-size: 12.5px;">Try changing the filters above.</div></div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ showTxn }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ closeTxn }}" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 60;"></div>
+          <div style="position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 92vw; background: var(--card); border-left: 1px solid var(--border); box-shadow: var(--shadow-2xl); z-index: 70; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--border);"><div><div style="font-size: 16px; font-weight: 600;">Transaction detail</div><div style="font-size: 12.5px; color: var(--muted-foreground); font-family: var(--font-mono);">{{ txn.ref }}</div></div><button onClick="{{ closeTxn }}" style="margin-left: auto; width: 30px; height: 30px; border: 0; border-radius: 7px; background: var(--muted); color: var(--muted-foreground); cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+            <div style="flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 20px;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0 4px;">
+                <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 10px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: {{ txn.typeBg }}; color: {{ txn.typeColor }};">{{ txn.typeLabel }}</span>
+                <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: {{ txn.amountColor }};">{{ txn.amountF }}</div>
+                <div style="font-size: 12.5px; color: var(--muted-foreground);">Balance after · {{ txn.balanceF }}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 0;">
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13px;"><span style="color: var(--muted-foreground);">Description</span><span style="font-weight: 500; text-align: right;">{{ txn.desc }}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13px;"><span style="color: var(--muted-foreground);">Benefit</span><span style="font-weight: 500; display: inline-flex; align-items: center; gap: 6px;"><span style="width: 7px; height: 7px; border-radius: 2px; background: {{ txn.catColor }};"></span>{{ txn.cat }}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13px;"><span style="color: var(--muted-foreground);">Date</span><span style="font-weight: 500;">{{ txn.date }}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); font-size: 13px;"><span style="color: var(--muted-foreground);">Reference</span><span style="font-weight: 500; font-family: var(--font-mono); white-space: nowrap;">{{ txn.ref }}</span></div>
+                <div style="display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: 13px; gap: 20px;"><span style="color: var(--muted-foreground); flex-shrink: 0;">Source</span><span style="font-weight: 500; text-align: right;">{{ txn.method }}</span></div>
+              </div>
+              <sc-if value="{{ txn.isClaim }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: center; gap: 9px; padding: 11px 13px; border-radius: 9px; background: var(--muted); font-size: 12.5px; color: var(--muted-foreground);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Linked to expense claim {{ txn.ref }} · receipt on file.</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+      </sc-if>
+
       <!-- ===================== HR EXPENSE QUEUE ===================== -->
       <sc-if value="{{ showHrQueue }}" hint-placeholder-val="{{ false }}">
         <div style="display: flex; flex-direction: column; gap: 20px;">
-          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Expense approval queue</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Claims that failed automated verification, with extracted fields and flags.</p></div>
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Expense approval queue</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Claims that failed automated verification, with extracted fields and flags. Each carries a 48-hour review SLA.</p></div>
+
+          <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); flex-wrap: wrap;">
+            <span style="font-size: 12.5px; font-weight: 600; color: var(--muted-foreground);">Review SLA</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--emerald-500) 13%, transparent); color: var(--emerald-500);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--emerald-500);"></span>{{ hrSlaOk }} on track</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--amber-500) 16%, transparent); color: #b45309;"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--amber-500);"></span>{{ hrSlaSoon }} due soon</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--red-500) 13%, transparent); color: var(--destructive);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--destructive);"></span>{{ hrSlaOver }} overdue</span>
+            <sc-if value="{{ hrHasOverdue }}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--destructive);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Overdue claims escalate to HR Head</span></sc-if>
+          </div>
 
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
             <sc-for list="{{ hrStats }}" as="hs" hint-placeholder-count="4">
@@ -381,18 +556,22 @@
                   <th style="text-align: left; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">Category</th>
                   <th style="text-align: right; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">Claimed</th>
                   <th style="text-align: right; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">OCR amount</th>
+                  <th style="text-align: center; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">AI score</th>
+                  <th style="text-align: left; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">SLA</th>
                   <th style="text-align: left; font-weight: 500; padding: 11px 12px; border-bottom: 1px solid var(--border);">Flags</th>
                   <th style="border-bottom: 1px solid var(--border);"></th>
                 </tr></thead>
                 <tbody>
                   <sc-for list="{{ hrQueue }}" as="q" hint-placeholder-count="5">
                     <tr className="sc-row" style="border-bottom: 1px solid var(--border);">
-                      <td style="padding: 12px 20px;"><div style="display: flex; align-items: center; gap: 10px;"><div style="width: 30px; height: 30px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; flex-shrink: 0;">{{ q.initials }}</div><div><div style="font-weight: 500;">{{ q.name }}</div><div style="font-size: 11.5px; color: var(--muted-foreground);">{{ q.dept }}</div></div></div></td>
+                      <td style="padding: 12px 20px;"><div style="display: flex; align-items: center; gap: 10px;"><div style="width: 30px; height: 30px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; flex-shrink: 0;">{{ q.initials }}</div><div><div style="display: flex; align-items: center; gap: 7px;"><span style="font-weight: 500;">{{ q.name }}</span><sc-if value="{{ q.isResubmission }}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; font-size: 10.5px; font-weight: 600; border-radius: 6px; background: color-mix(in oklab, var(--blue-600) 13%, transparent); color: var(--blue-600);"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>{{ q.versionBadge }}</span></sc-if></div><div style="font-size: 11.5px; color: var(--muted-foreground);">{{ q.dept }}</div></div></div></td>
                       <td style="padding: 12px;">{{ q.cat }}</td>
                       <td style="padding: 12px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums;">{{ q.claimedF }}</td>
                       <td style="padding: 12px; text-align: right; font-variant-numeric: tabular-nums; color: {{ q.ocrColor }};">{{ q.extractedF }}</td>
+                      <td style="padding: 12px; text-align: center;"><span style="display: inline-flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; padding: 0 7px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; border-radius: 6px; color: {{ q.aiScoreColor }}; background: color-mix(in oklab, {{ q.aiScoreColor }} 12%, transparent);">{{ q.aiScore }}</span></td>
+                      <td style="padding: 12px; white-space: nowrap;"><span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; font-size: 11.5px; font-weight: 600; border-radius: 6px; background: {{ q.slaBg }}; color: {{ q.slaColor }}; font-variant-numeric: tabular-nums;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>{{ q.slaLabel }}</span></td>
                       <td style="padding: 12px;"><div style="display: flex; flex-wrap: wrap; gap: 5px;"><sc-for list="{{ q.flags }}" as="fl" hint-placeholder-count="2"><span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; font-size: 11px; font-weight: 500; border-radius: 6px; background: {{ fl.bg }}; color: {{ fl.fg }};">{{ fl.text }}</span></sc-for></div></td>
-                      <td style="padding: 12px 20px; text-align: right;"><button onClick="{{ q.onReview }}" style="height: 30px; padding: 0 12px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Review</button></td>
+                      <td style="padding: 12px 20px; text-align: right;"><div style="display: inline-flex; gap: 7px;"><button onClick="{{ q.onIntel }}" style="height: 30px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/></svg>Analyze</button><button onClick="{{ q.onReview }}" style="height: 30px; padding: 0 12px; font-size: 12.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Review</button></div></td>
                     </tr>
                   </sc-for>
                 </tbody>
@@ -407,7 +586,26 @@
           <div style="position: fixed; top: 0; right: 0; bottom: 0; width: 440px; max-width: 92vw; background: var(--card); border-left: 1px solid var(--border); box-shadow: var(--shadow-2xl); z-index: 70; display: flex; flex-direction: column;">
             <div style="display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--border);"><div><div style="font-size: 16px; font-weight: 600;">{{ detail.name }}</div><div style="font-size: 12.5px; color: var(--muted-foreground);">{{ detail.dept }} · claim {{ detail.id }}</div></div><button onClick="{{ closeDetail }}" style="margin-left: auto; width: 30px; height: 30px; border: 0; border-radius: 7px; background: var(--muted); color: var(--muted-foreground); cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
             <div style="flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 18px;">
+              <div style="border-radius: 11px; background: {{ detail.aiBannerBg }}; padding: 13px 15px; display: flex; align-items: center; gap: 12px;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0;"><span style="font-size: 22px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: {{ detail.aiScoreColor }};">{{ detail.aiScore }}</span><span style="font-size: 9.5px; color: var(--muted-foreground); letter-spacing: 0.03em;">AI SCORE</span></div>
+                <div style="width: 1px; align-self: stretch; background: var(--border);"></div>
+                <div style="min-width: 0;"><div style="font-size: 13px; font-weight: 600; color: {{ detail.aiVerdictColor }};">{{ detail.aiVerdictLabel }}</div><div style="font-size: 11.5px; color: var(--muted-foreground);">Based on OCR, fraud &amp; duplicate checks</div></div>
+                <button onClick="{{ detail.onIntel }}" style="margin-left: auto; height: 30px; padding: 0 11px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); border-radius: 7px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;">Full analysis<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+              </div>
               <div style="border: 1px solid var(--border); border-radius: 11px; background: var(--muted); height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; color: var(--muted-foreground);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span style="font-size: 12.5px;">{{ detail.fileName }}</span></div>
+              <sc-if value="{{ detail.isResubmission }}" hint-placeholder-val="{{ false }}">
+                <div style="border: 1px solid color-mix(in oklab, var(--blue-600) 30%, transparent); border-radius: 11px; overflow: hidden;">
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--blue-600) 8%, transparent);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg><span style="font-size: 12.5px; font-weight: 600; color: var(--blue-600);">Resubmission · compare versions</span></div>
+                  <sc-for list="{{ detail.versionRows }}" as="vr" hint-placeholder-count="2">
+                    <div style="display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: {{ vr.rowBg }};">
+                      <span style="font-size: 12px; font-weight: 700; font-family: var(--font-mono); min-width: 22px;">{{ vr.v }}</span>
+                      <div style="min-width: 0; flex: 1;"><div style="font-size: 12.5px; color: var(--foreground);">{{ vr.note }}</div><div style="font-size: 11px; color: var(--muted-foreground);">{{ vr.date }} · {{ vr.file }} · {{ vr.by }}</div></div>
+                      <span style="font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums;">{{ vr.claimedF }}</span>
+                      <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 8px; font-size: 11px; font-weight: 500; border-radius: 6px; background: {{ vr.statusBg }}; color: {{ vr.statusFg }};">{{ vr.statusLabel }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;"><div style="font-size: 11.5px; color: var(--muted-foreground); margin-bottom: 3px;">Claimed amount</div><div style="font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums;">{{ detail.claimedF }}</div></div>
                 <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;"><div style="font-size: 11.5px; color: var(--muted-foreground); margin-bottom: 3px;">OCR extracted</div><div style="font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; color: {{ detail.ocrColor }};">{{ detail.extractedF }}</div></div>
@@ -439,10 +637,157 @@
         </sc-if>
       </sc-if>
 
+      <!-- ===================== AI RECEIPT INTELLIGENCE ===================== -->
+      <sc-if value="{{ showIntel }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+            <button onClick="{{ closeIntel }}" style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 8px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); flex-shrink: 0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+            <div>
+              <h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Receipt intelligence</h1>
+              <p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">{{ intel.name }} · {{ intel.dept }} · claim {{ intel.id }} · {{ intel.category }}</p>
+            </div>
+            <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 13px; font-size: 13px; font-weight: 600; border-radius: 8px; background: {{ intel.verdictBannerBg }}; color: {{ intel.verdictColor }};"><span style="width: 8px; height: 8px; border-radius: 9999px; background: {{ intel.verdictColor }};"></span>{{ intel.verdictLabel }}</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 0.95fr 1.15fr; gap: 20px; align-items: start;">
+            <!-- Receipt mock -->
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 14px 18px; border-bottom: 1px solid var(--border);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span style="font-size: 14px; font-weight: 600;">Uploaded receipt</span><span style="margin-left: auto; font-size: 11.5px; color: var(--muted-foreground);">{{ intel.fileName }}</span></div>
+              <div style="padding: 22px; background: color-mix(in oklab, var(--muted) 45%, transparent);">
+                <div style="max-width: 320px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 22px 24px; font-family: var(--font-mono); font-size: 12px; color: var(--foreground); box-shadow: var(--shadow-md);">
+                  <div style="text-align: center; margin-bottom: 4px;"><div style="font-size: 14px; font-weight: 700; letter-spacing: 0.02em;">{{ intel.vendorFull }}</div><div style="font-size: 10.5px; color: var(--muted-foreground); margin-top: 3px;">{{ intel.address }}</div></div>
+                  <div style="border-top: 1px dashed var(--border); margin: 12px 0;"></div>
+                  <div style="display: flex; flex-direction: column; gap: 7px;">
+                    <sc-for list="{{ intel.lineItems }}" as="li" hint-placeholder-count="2">
+                      <div style="display: flex; justify-content: space-between; gap: 12px;"><span style="flex: 1;">{{ li.desc }}</span><span style="font-variant-numeric: tabular-nums; white-space: nowrap;">{{ li.amtF }}</span></div>
+                    </sc-for>
+                  </div>
+                  <div style="border-top: 1px dashed var(--border); margin: 12px 0;"></div>
+                  <div style="display: flex; flex-direction: column; gap: 5px; color: var(--muted-foreground);">
+                    <div style="display: flex; justify-content: space-between;"><span>Subtotal</span><span style="font-variant-numeric: tabular-nums;">{{ intel.subF }}</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>GST 18%</span><span style="font-variant-numeric: tabular-nums;">{{ intel.taxF }}</span></div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 13px; margin-top: 9px; color: var(--foreground);"><span>TOTAL</span><span style="font-variant-numeric: tabular-nums;">{{ intel.totalF }}</span></div>
+                  <div style="border-top: 1px dashed var(--border); margin: 12px 0;"></div>
+                  <div style="display: flex; flex-direction: column; gap: 4px; font-size: 10.5px; color: var(--muted-foreground);">
+                    <div>GSTIN: {{ intel.gstNo }}</div>
+                    <div>Invoice: {{ intel.invoiceNo }}</div>
+                    <div>Date: {{ intel.date }}</div>
+                    <div>Paid: {{ intel.payment }}</div>
+                  </div>
+                  <div style="text-align: center; font-size: 10px; color: var(--muted-foreground); margin-top: 14px; letter-spacing: 0.04em;">*** THANK YOU ***</div>
+                </div>
+                <div style="max-width: 320px; margin: 12px auto 0; display: flex; justify-content: space-between; font-size: 12px;"><span style="color: var(--muted-foreground);">Employee claimed</span><span style="font-weight: 600; font-variant-numeric: tabular-nums; color: {{ intel.claimedColor }};">{{ intel.claimedF }}</span></div>
+                <sc-if value="{{ intel.amountMismatch }}" hint-placeholder-val="{{ false }}"><div style="max-width: 320px; margin: 6px auto 0; font-size: 11px; color: var(--destructive); text-align: right;">Does not match receipt total</div></sc-if>
+              </div>
+            </div>
+
+            <!-- Right column: score + extracted fields -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px;">
+                <div style="display: flex; align-items: center; gap: 22px;">
+                  <div style="position: relative; width: 130px; flex-shrink: 0;">
+                    <svg width="130" height="80" viewBox="0 0 120 74">
+                      <path d="M 10 64 A 50 50 0 0 1 110 64" fill="none" stroke="var(--muted)" strokeWidth="11" strokeLinecap="round"></path>
+                      <path d="M 10 64 A 50 50 0 0 1 110 64" fill="none" stroke="{{ intel.scoreColor }}" strokeWidth="11" strokeLinecap="round" strokeDasharray="{{ intel.gaugeDash }}"></path>
+                    </svg>
+                    <div style="position: absolute; bottom: 2px; left: 0; right: 0; text-align: center;"><div style="font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: {{ intel.scoreColor }};">{{ intel.aiScore }}</div><div style="font-size: 10.5px; color: var(--muted-foreground); letter-spacing: 0.03em; margin-top: 2px;">/ 100 CONFIDENCE</div></div>
+                  </div>
+                  <div style="min-width: 0;"><div style="font-size: 15px; font-weight: 600; color: {{ intel.verdictColor }};">{{ intel.verdictLabel }}</div><div style="font-size: 12.5px; color: var(--muted-foreground); line-height: 1.5; margin-top: 5px;">{{ intel.verdictReason }}</div></div>
+                </div>
+                <div style="border-top: 1px solid var(--border); margin-top: 16px; padding-top: 14px;">
+                  <div style="font-size: 12px; font-weight: 600; margin-bottom: 10px;">Why this score</div>
+                  <div style="display: flex; flex-direction: column; gap: 7px;">
+                    <sc-for list="{{ intel.factors }}" as="f" hint-placeholder-count="4">
+                      <div style="display: flex; align-items: center; gap: 10px;"><span style="min-width: 40px; text-align: center; height: 21px; display: inline-flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; border-radius: 6px; color: {{ f.color }}; background: {{ f.bg }};">{{ f.deltaF }}</span><span style="font-size: 12.5px;">{{ f.label }}</span></div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;"><span style="font-size: 15px; font-weight: 600;">Extracted fields</span><span style="font-size: 12px; color: var(--muted-foreground);">· OCR confidence per field</span></div>
+                <div style="display: flex; flex-direction: column; gap: 13px;">
+                  <sc-for list="{{ intel.ocr }}" as="o" hint-placeholder-count="6">
+                    <div style="display: grid; grid-template-columns: 120px 1fr 96px; gap: 12px; align-items: center;">
+                      <span style="font-size: 12.5px; color: var(--muted-foreground);">{{ o.label }}</span>
+                      <span style="font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ o.value }}</span>
+                      <div style="display: flex; align-items: center; gap: 8px;"><div style="flex: 1; height: 6px; border-radius: 9999px; background: var(--muted); overflow: hidden;"><div style="height: 100%; width: {{ o.barW }}; background: {{ o.confColor }};"></div></div><span style="font-size: 11px; font-variant-numeric: tabular-nums; color: {{ o.confColor }}; min-width: 30px; text-align: right;">{{ o.conf }}</span></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fraud + duplicate -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg><span style="font-size: 15px; font-weight: 600;">Fraud &amp; anomaly signals</span></div>
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                <sc-for list="{{ intel.fraud }}" as="fr" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: flex-start; gap: 11px; padding: 10px 11px; border-radius: 9px; background: {{ fr.bg }};"><span style="width: 20px; height: 20px; border-radius: 9999px; background: {{ fr.color }}; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px;">{{ fr.mark }}</span><div style="min-width: 0;"><div style="font-size: 13px; font-weight: 500;">{{ fr.label }}</div><div style="font-size: 12px; color: var(--muted-foreground); line-height: 1.45;">{{ fr.detail }}</div></div></div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span style="font-size: 15px; font-weight: 600;">Duplicate detection</span></div>
+              <sc-if value="{{ intel.noDuplicate }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 26px 0; color: var(--muted-foreground); text-align: center;"><span style="width: 40px; height: 40px; border-radius: 9999px; background: color-mix(in oklab, var(--emerald-500) 13%, transparent); color: var(--emerald-500); display: inline-flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><div style="font-size: 13.5px; font-weight: 500; color: var(--foreground);">No duplicate found</div><div style="font-size: 12.5px;">Receipt hash and invoice number are unique across the ledger.</div></div>
+              </sc-if>
+              <sc-if value="{{ intel.hasDuplicate }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 9px; background: color-mix(in oklab, var(--red-500) 10%, transparent); margin-bottom: 14px;"><span style="font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--destructive);">{{ intel.dup.similarity }}</span><span style="font-size: 12.5px; color: var(--destructive); line-height: 1.4;">match to a previously reimbursed claim</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div style="border: 1px solid var(--border); border-radius: 10px; padding: 12px 13px;"><div style="font-size: 10.5px; color: var(--muted-foreground); letter-spacing: 0.03em; margin-bottom: 6px;">THIS CLAIM</div><div style="font-size: 13px; font-weight: 600;">{{ intel.id }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 3px;">{{ intel.date }} · {{ intel.totalF }}</div><div style="font-size: 11px; color: var(--muted-foreground); margin-top: 2px;">Inv {{ intel.invoiceNo }}</div></div>
+                  <div style="border: 1px solid color-mix(in oklab, var(--destructive) 40%, var(--border)); border-radius: 10px; padding: 12px 13px; background: color-mix(in oklab, var(--red-500) 6%, transparent);"><div style="font-size: 10.5px; color: var(--destructive); letter-spacing: 0.03em; margin-bottom: 6px;">MATCHED · {{ intel.dup.id }}</div><div style="font-size: 13px; font-weight: 600;">{{ intel.dup.name }}</div><div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 3px;">{{ intel.dup.date }} · {{ intel.dup.totalF }}</div><div style="font-size: 11px; color: var(--muted-foreground); margin-top: 2px;">Inv {{ intel.dup.invoiceNo }}</div></div>
+                </div>
+                <div style="font-size: 12px; color: var(--muted-foreground); margin-top: 12px; line-height: 1.5;">{{ intel.dup.note }}</div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- Audit + override -->
+          <div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; align-items: start;">
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px;">
+              <div style="font-size: 15px; font-weight: 600; margin-bottom: 16px;">Audit trail</div>
+              <div style="display: flex; flex-direction: column;">
+                <sc-for list="{{ intel.audit }}" as="ev" hint-placeholder-count="4">
+                  <div style="display: grid; grid-template-columns: 20px 1fr; gap: 12px;">
+                    <div style="display: flex; flex-direction: column; align-items: center;"><span style="width: 11px; height: 11px; border-radius: 9999px; background: {{ ev.dot }}; margin-top: 3px; flex-shrink: 0; box-shadow: 0 0 0 3px color-mix(in oklab, {{ ev.dot }} 18%, transparent);"></span><span style="flex: 1; width: 2px; background: var(--border); margin: 3px 0;"></span></div>
+                    <div style="padding-bottom: 16px;"><div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 13px; font-weight: 500;">{{ ev.action }}</span><span style="font-size: 11px; color: var(--muted-foreground);">{{ ev.actor }}</span><span style="margin-left: auto; font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;">{{ ev.time }}</span></div><div style="font-size: 12px; color: var(--muted-foreground); margin-top: 2px;">{{ ev.detail }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 15px; position: sticky; top: 78px;">
+              <div style="font-size: 15px; font-weight: 600;">HR decision</div>
+              <div style="display: flex; align-items: center; gap: 9px; padding: 11px 13px; border-radius: 9px; background: {{ intel.verdictBannerBg }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{ intel.verdictColor }}" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/></svg><span style="font-size: 12.5px; color: {{ intel.verdictColor }};">AI recommendation: <strong>{{ intel.verdictLabel }}</strong></span></div>
+              <div style="display: flex; padding: 3px; background: var(--muted); border-radius: 9px; gap: 3px;">
+                <button onClick="{{ setOverrideApprove }}" style="flex: 1; height: 36px; font-size: 13px; font-weight: 500; border: 0; border-radius: 7px; cursor: pointer; background: {{ intel.overrideApproveBg }}; color: {{ intel.overrideApproveFg }}; box-shadow: {{ intel.overrideApproveSh }}; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Approve</button>
+                <button onClick="{{ setOverrideReject }}" style="flex: 1; height: 36px; font-size: 13px; font-weight: 500; border: 0; border-radius: 7px; cursor: pointer; background: {{ intel.overrideRejectBg }}; color: {{ intel.overrideRejectFg }}; box-shadow: {{ intel.overrideRejectSh }}; display: inline-flex; align-items: center; justify-content: center; gap: 6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</button>
+              </div>
+              <div><label style="font-size: 12.5px; font-weight: 500; display: block; margin-bottom: 7px;">Decision note</label><textarea value="{{ intel.overrideReason }}" onChange="{{ onOverrideReason }}" placeholder="Recorded in the audit trail. Required to reject." style="width: 100%; min-height: 68px; padding: 9px 12px; font-size: 13px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 9px; box-shadow: var(--shadow-xs); outline: none; resize: vertical; font-family: var(--font-sans);"></textarea></div>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted-foreground); line-height: 1.4;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg><span>{{ intel.overrideNote }}</span></div>
+              <button onClick="{{ submitOverride }}" style="width: 100%; height: 40px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">{{ intel.submitLabel }}</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
       <!-- ===================== MANAGER APPROVALS ===================== -->
       <sc-if value="{{ showApprovals }}" hint-placeholder-val="{{ false }}">
         <div style="display: flex; flex-direction: column; gap: 20px;">
-          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Leave &amp; WFH approvals</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Requests from your direct reports awaiting your decision.</p></div>
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Leave &amp; WFH approvals</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Requests from your direct reports awaiting your decision, each on a 24-hour approval SLA.</p></div>
+
+          <div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); box-shadow: var(--shadow-xs); flex-wrap: wrap;">
+            <span style="font-size: 12.5px; font-weight: 600; color: var(--muted-foreground);">SLA status</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--emerald-500) 13%, transparent); color: var(--emerald-500);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--emerald-500);"></span>{{ apprSlaOk }} on track</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--amber-500) 16%, transparent); color: #b45309;"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--amber-500);"></span>{{ apprSlaSoon }} due soon</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; font-size: 12.5px; font-weight: 500; border-radius: 7px; background: color-mix(in oklab, var(--red-500) 13%, transparent); color: var(--destructive);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: var(--destructive);"></span>{{ apprSlaOver }} overdue</span>
+            <sc-if value="{{ apprHasOverdue }}" hint-placeholder-val="{{ false }}"><span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--destructive);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Overdue items auto-escalate to the next approver</span></sc-if>
+          </div>
 
           <div style="display: grid; grid-template-columns: 1.7fr 1fr; gap: 18px; align-items: start;">
             <div style="display: flex; flex-direction: column; gap: 14px;">
@@ -454,21 +799,35 @@
                   <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 38px; height: 38px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0;">{{ a.initials }}</div>
                     <div style="min-width: 0;"><div style="font-size: 14px; font-weight: 600;">{{ a.name }}</div><div style="font-size: 12.5px; color: var(--muted-foreground);">{{ a.role }}</div></div>
-                    <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; border-radius: 7px; background: {{ a.typeBg }}; color: {{ a.typeFg }};"><span style="width: 7px; height: 7px; border-radius: 9999px; background: {{ a.typeFg }};"></span>{{ a.type }}</span>
+                    <span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 12px; font-weight: 500; border-radius: 7px; background: {{ a.typeBg }}; color: {{ a.typeFg }};"><span style="width: 7px; height: 7px; border-radius: 9999px; background: {{ a.typeFg }};"></span>{{ a.cancelType }}</span>
                   </div>
+                  <div style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px; background: {{ a.slaBg }};">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{ a.slaColor }}" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <span style="font-size: 12.5px; font-weight: 600; color: {{ a.slaColor }}; font-variant-numeric: tabular-nums;">{{ a.slaLabel }}</span>
+                    <span style="font-size: 11.5px; color: var(--muted-foreground);">· {{ a.slaTargetLabel }}</span>
+                    <span style="margin-left: auto; width: 110px; height: 6px; border-radius: 9999px; background: color-mix(in oklab, var(--muted-foreground) 16%, transparent); overflow: hidden; flex-shrink: 0;"><span style="display: block; height: 100%; width: {{ a.slaBarPct }}; background: {{ a.slaColor }};"></span></span>
+                  </div>
+                  <sc-if value="{{ a.slaOverdue }}" hint-placeholder-val="{{ false }}">
+                    <div style="display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; background: color-mix(in oklab, var(--red-500) 9%, transparent); color: var(--destructive); font-size: 12.5px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span>SLA breached · auto-escalated to <strong>{{ a.escalateTo }}</strong></span></div>
+                  </sc-if>
                   <div style="display: flex; gap: 22px; flex-wrap: wrap;">
                     <div><div style="font-size: 11.5px; color: var(--muted-foreground);">Dates</div><div style="font-size: 13.5px; font-weight: 500;">{{ a.dates }}</div></div>
                     <div><div style="font-size: 11.5px; color: var(--muted-foreground);">Working days</div><div style="font-size: 13.5px; font-weight: 500;">{{ a.days }}</div></div>
                     <div style="flex: 1; min-width: 140px;"><div style="font-size: 11.5px; color: var(--muted-foreground);">Reason</div><div style="font-size: 13.5px;">{{ a.reason }}</div></div>
                   </div>
+                  <sc-if value="{{ a.showStepper }}" hint-placeholder-val="{{ true }}">
                   <div style="display: flex; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
                     <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: {{ a.l1Color }};"><span style="width: 18px; height: 18px; border-radius: 9999px; background: {{ a.l1Bg }}; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">{{ a.l1Mark }}</span>L1 · Team Lead</span>
                     <span style="flex: 1; height: 1px; background: var(--border);"></span>
                     <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: {{ a.l2Color }};"><span style="width: 18px; height: 18px; border-radius: 9999px; background: {{ a.l2Bg }}; color: {{ a.l2Fg }}; border: 1px solid {{ a.l2Border }}; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">{{ a.l2Mark }}</span>L2 · Project Manager</span>
                   </div>
+                  </sc-if>
+                  <sc-if value="{{ a.isCancel }}" hint-placeholder-val="{{ false }}">
+                  <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 9px; background: color-mix(in oklab, var(--violet-600) 9%, transparent); color: var(--violet-600); font-size: 12.5px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style="flex-shrink: 0;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg><span>Cancellation of an already-approved leave · restores {{ a.restores }}</span></div>
+                  </sc-if>
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <span style="font-size: 12px; color: var(--muted-foreground);">{{ a.actionLabel }}</span>
-                    <button onClick="{{ a.onReject }}" style="margin-left: auto; height: 34px; padding: 0 14px; font-size: 13px; font-weight: 500; border: 1px solid color-mix(in oklab, var(--destructive) 45%, transparent); border-radius: 8px; background: var(--background); color: var(--destructive); cursor: pointer; box-shadow: var(--shadow-xs);">Reject</button>
+                    <button onClick="{{ a.onReject }}" style="margin-left: auto; height: 34px; padding: 0 14px; font-size: 13px; font-weight: 500; border: 1px solid color-mix(in oklab, var(--destructive) 45%, transparent); border-radius: 8px; background: var(--background); color: var(--destructive); cursor: pointer; box-shadow: var(--shadow-xs);">{{ a.rejectLabel }}</button>
                     <button onClick="{{ a.onApprove }}" style="height: 34px; padding: 0 16px; font-size: 13px; font-weight: 500; border: 0; border-radius: 8px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">{{ a.approveLabel }}</button>
                   </div>
                 </div>
@@ -567,9 +926,114 @@
         </div>
       </sc-if>
 
+      <!-- ===================== BENEFIT REMINDERS (HR) ===================== -->
+      <sc-if value="{{ showReminders }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div><h1 style="font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0;">Benefit reminders</h1><p style="font-size: 14px; color: var(--muted-foreground); margin: 4px 0 0;">Nudge employees to use their benefit wallet before the financial year closes on 31 Mar 2027.</p></div>
+
+          <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; max-width: 1120px;">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 18px;">
+                <div style="font-size: 15px; font-weight: 600;">Reminder schedule</div>
+                <div>
+                  <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 9px;">Send reminders these many days before FY-end</label>
+                  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <sc-for list="{{ leadOpts }}" as="ld" hint-placeholder-count="5">
+                      <button onClick="{{ ld.onToggle }}" style="height: 36px; min-width: 52px; padding: 0 13px; font-size: 13px; font-weight: 600; border: 1px solid {{ ld.border }}; border-radius: 9px; background: {{ ld.bg }}; color: {{ ld.fg }}; cursor: pointer; font-variant-numeric: tabular-nums;">{{ ld.label }}</button>
+                    </sc-for>
+                  </div>
+                  <div style="font-size: 11.5px; color: var(--muted-foreground); margin-top: 8px;">Tap to toggle each checkpoint. Reminders stop once the balance reaches zero.</div>
+                </div>
+                <div style="height: 1px; background: var(--border);"></div>
+                <div>
+                  <label style="font-size: 13px; font-weight: 500; display: block; margin-bottom: 9px;">Cadence between checkpoints</label>
+                  <div style="display: inline-flex; padding: 3px; background: var(--muted); border-radius: 9px; gap: 3px;">
+                    <sc-for list="{{ freqOpts }}" as="fq" hint-placeholder-count="3">
+                      <button onClick="{{ fq.onPick }}" style="height: 32px; padding: 0 14px; font-size: 12.5px; font-weight: 500; border: 0; border-radius: 7px; cursor: pointer; background: {{ fq.bg }}; color: {{ fq.fg }}; box-shadow: {{ fq.sh }};">{{ fq.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 16px;">
+                <div style="font-size: 15px; font-weight: 600;">Delivery channels</div>
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                  <span style="width: 34px; height: 34px; border-radius: 9px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>
+                  <span style="flex: 1;"><span style="display: block; font-size: 13.5px; font-weight: 500;">Dashboard banner</span><span style="display: block; font-size: 12px; color: var(--muted-foreground);">Shows on the employee home until dismissed or spent.</span></span>
+                  <span onClick="{{ toggleCfgDashboard }}" style="width: 36px; height: 20px; border-radius: 9999px; background: {{ cfgDashTrack }}; position: relative; flex-shrink: 0; transition: background-color 150ms;"><span style="position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 9999px; background: #fff; box-shadow: var(--shadow-xs); transform: {{ cfgDashKnob }}; transition: transform 150ms;"></span></span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                  <span style="width: 34px; height: 34px; border-radius: 9px; background: var(--muted); color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+                  <span style="flex: 1;"><span style="display: block; font-size: 13.5px; font-weight: 500;">Email reminder</span><span style="display: block; font-size: 12px; color: var(--muted-foreground);">Personalised email with the employee's unused balance.</span></span>
+                  <span onClick="{{ toggleCfgEmail }}" style="width: 36px; height: 20px; border-radius: 9999px; background: {{ cfgEmailTrack }}; position: relative; flex-shrink: 0; transition: background-color 150ms;"><span style="position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 9999px; background: #fff; box-shadow: var(--shadow-xs); transform: {{ cfgEmailKnob }}; transition: transform 150ms;"></span></span>
+                </label>
+              </div>
+
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 20px 22px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 15px; font-weight: 600;">Who gets reminded</div>
+                <label style="font-size: 13px; font-weight: 500;">Only remind employees with unused balance above</label>
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <div style="position: relative; display: inline-flex; align-items: center;"><span style="position: absolute; left: 12px; font-size: 14px; color: var(--muted-foreground); pointer-events: none;">₹</span><input value="{{ cfgThreshold }}" onChange="{{ onCfgThreshold }}" inputMode="numeric" style="height: 38px; width: 160px; padding: 0 12px 0 26px; font-size: 14px; background: var(--background); color: var(--foreground); border: 1px solid var(--input); border-radius: 8px; box-shadow: var(--shadow-xs); outline: none; font-variant-numeric: tabular-nums;" /></div>
+                  <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted-foreground);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><strong style="color: var(--foreground); font-weight: 600;">{{ audienceCount }}</strong> employees currently qualify</span>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button onClick="{{ saveReminderConfig }}" style="height: 40px; padding: 0 18px; font-size: 13.5px; font-weight: 500; border: 0; border-radius: 9px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Save schedule</button>
+                <button onClick="{{ sendReminderTest }}" style="height: 40px; padding: 0 15px; font-size: 13.5px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs); display: inline-flex; align-items: center; gap: 7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>Send test to me</button>
+                <sc-if value="{{ reminderSaved }}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--emerald-500);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Saved</span></sc-if>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 16px; position: sticky; top: 78px;">
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 14px; font-weight: 600;">Schedule summary</div>
+                <div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-size: 12.5px; color: var(--muted-foreground);">Next send</span><span style="font-size: 15px; font-weight: 600; margin-left: auto;">{{ nextSendLabel }}</span></div>
+                <div style="height: 1px; background: var(--border);"></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: var(--muted-foreground);">Checkpoints</span><span style="font-weight: 500; text-align: right;">{{ leadSummary }}</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: var(--muted-foreground);">Threshold</span><span style="font-weight: 500;">{{ cfgThresholdF }}</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: var(--muted-foreground);">Audience</span><span style="font-weight: 500;">{{ audienceCount }} employees</span></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px;"><span style="color: var(--muted-foreground);">FY closes</span><span style="font-weight: 500;">{{ reminderFyEnd }}</span></div>
+              </div>
+
+              <div style="border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--shadow-xs); overflow: hidden;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 13px 16px; border-bottom: 1px solid var(--border);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg><span style="font-size: 13.5px; font-weight: 600;">Email preview</span></div>
+                <div style="padding: 16px; background: color-mix(in oklab, var(--muted) 45%, transparent);">
+                  <div style="background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-xs);">
+                    <div style="padding: 13px 16px; border-bottom: 1px solid var(--border);"><div style="font-size: 11px; color: var(--muted-foreground);">From · benefits@smartsense.com</div><div style="font-size: 14px; font-weight: 600; margin-top: 3px;">You have ₹18,000 in unused benefits</div></div>
+                    <div style="padding: 16px; display: flex; flex-direction: column; gap: 11px;">
+                      <div style="font-size: 12.5px; line-height: 1.55; color: var(--foreground);">Hi Aarav,</div>
+                      <div style="font-size: 12.5px; line-height: 1.55; color: var(--muted-foreground);">Your benefit wallet still has <strong style="color: var(--foreground);">₹18,000</strong> unused across Sports and Learning. This balance does not carry over past <strong style="color: var(--foreground);">31 Mar 2027</strong> — submit your claims before then to make full use of it.</div>
+                      <div style="display: flex; gap: 8px; margin: 2px 0;"><span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 11.5px; font-weight: 500; border-radius: 7px; border: 1px solid var(--border);"><span style="width: 7px; height: 7px; border-radius: 2px; background: var(--emerald-500);"></span>Sports ₹9,000</span><span style="display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; font-size: 11.5px; font-weight: 500; border-radius: 7px; border: 1px solid var(--border);"><span style="width: 7px; height: 7px; border-radius: 2px; background: var(--blue-600);"></span>Learning ₹9,000</span></div>
+                      <div style="height: 36px; display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; padding: 0 16px; font-size: 12.5px; font-weight: 600; border-radius: 8px; background: var(--primary); color: var(--primary-foreground);">Submit a claim</div>
+                      <div style="font-size: 11px; color: var(--muted-foreground); border-top: 1px solid var(--border); padding-top: 10px; margin-top: 2px;">Sent by SmartSense People Ops · you can manage reminder settings in the portal.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
     </main>
   </div>
   </div>
+  </sc-if>
+
+  <!-- Cancel leave dialog -->
+  <sc-if value="{{ showCancel }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCancel }}" style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 80; display: flex; align-items: center; justify-content: center; padding: 24px;">
+      <div style="width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow-2xl); padding: 24px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em;">{{ cancelHeading }}</div>
+        <div style="font-size: 13.5px; color: var(--muted-foreground); line-height: 1.5;">{{ cancelBody }}</div>
+        <div style="display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; padding: 11px 13px; border: 1px solid var(--border); border-radius: 10px; background: var(--muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg><div><div style="font-size: 13px; font-weight: 500;">{{ cancelTitle }}</div><div style="font-size: 12px; color: var(--muted-foreground);">{{ cancelDates }}</div></div></div>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button onClick="{{ closeCancel }}" style="flex: 1; height: 38px; font-size: 13px; font-weight: 500; border: 1px solid var(--border); border-radius: 9px; background: var(--background); color: var(--foreground); cursor: pointer; box-shadow: var(--shadow-xs);">Keep it</button>
+          <button onClick="{{ confirmCancel }}" style="flex: 1; height: 38px; font-size: 13px; font-weight: 500; border: 0; border-radius: 9px; background: var(--destructive); color: var(--destructive-foreground); cursor: pointer; box-shadow: var(--shadow-xs);">{{ cancelConfirmLabel }}</button>
+        </div>
+      </div>
+    </div>
   </sc-if>
 
   <!-- Toast -->
@@ -596,17 +1060,60 @@ class Component extends DCLogic {
       authView: 'login',
       resetSent: false,
       pwUpdated: false,
-      claim: { category: 'sports', amount: '', date: '2026-06-20', vendor: '', fileName: '', fileSize: '' },
+      claim: { category: 'sports', amount: '', date: '2026-06-20', vendor: '', fileName: '', fileSize: '', draftId: null, resubmitOf: null },
       verifyResult: null,
       leave: { type: 'CL', from: '2026-07-06', to: '2026-07-08', halfDay: false, reason: '' },
       leaveSubmitted: false,
+      myClaims: this.seedMyClaims(),
+      myLeaves: this.seedMyLeaves(),
+      claimsTab: 'all',
+      versionClaimId: null,
+      cancelTarget: null,
+      ledger: this.seedLedger(),
+      ledgerCat: 'all', ledgerType: 'all', ledgerQuery: '', ledgerTxnId: null,
+      reminderDismissed: false,
+      reminderConfig: { leadDays: [90, 60, 30, 7], dashboard: true, email: true, threshold: 5000, frequency: 'weekly' },
+      reminderSavedAt: null,
       hrQueue: this.seedHrQueue(),
       approvalQueue: this.seedApprovals(),
       selectedClaimId: null,
       rejectReason: '',
+      intelClaimId: null,
+      overrideChoice: null,
+      overrideReason: '',
+      autosavedAt: null,
       toast: null,
     };
     this._toastTimer = null;
+    this._mountTime = Date.now();
+    // SLA remaining time at mount (ms). Negative = already overdue. Ticks down live.
+    this._sla = {
+      'LR-558': 5.35 * 3600e3, 'LR-554': 42 * 60e3, 'LR-522C': 8.2 * 3600e3, 'LR-549': -1.5 * 3600e3, 'LR-547': 2.25 * 3600e3,
+      'BC-2041': -3.1 * 3600e3, 'BC-2038': 55 * 60e3, 'BC-2035': 6.4 * 3600e3, 'BC-2030': 1.7 * 3600e3, 'BC-2028': 20 * 3600e3,
+    };
+  }
+
+  componentDidMount() { this._slaTick = setInterval(() => this.forceUpdate(), 1000); }
+  componentWillUnmount() { if (this._slaTick) clearInterval(this._slaTick); if (this._toastTimer) clearTimeout(this._toastTimer); }
+
+  // SLA policy target in hours by queue kind
+  slaTarget(kind) { return kind === 'expense' ? 48 : 24; }
+  slaRemaining(id) {
+    const base = this._sla[id];
+    const b = (base === undefined) ? 24 * 3600e3 : base;
+    return b - (Date.now() - this._mountTime);
+  }
+  slaView(id, kind) {
+    const ms = this.slaRemaining(id);
+    const abs = Math.abs(ms);
+    const h = Math.floor(abs / 3600e3);
+    const m = Math.floor((abs % 3600e3) / 60e3);
+    const sec = Math.floor((abs % 60e3) / 1000);
+    const pad = n => String(n).padStart(2, '0');
+    const clock = h + 'h ' + pad(m) + 'm ' + pad(sec) + 's';
+    if (ms <= 0) return { state: 'overdue', clock, label: 'Overdue by ' + clock, color: 'var(--destructive)', bg: 'color-mix(in oklab, var(--red-500) 13%, transparent)', pct: 100 };
+    if (ms <= 60 * 60e3) return { state: 'soon', clock, label: clock + ' left', color: '#b45309', bg: 'color-mix(in oklab, var(--amber-500) 16%, transparent)', pct: Math.round((1 - ms / (this.slaTarget(kind) * 3600e3)) * 100) };
+    return { state: 'ok', clock, label: clock + ' left', color: 'var(--emerald-500)', bg: 'color-mix(in oklab, var(--emerald-500) 13%, transparent)', pct: Math.round((1 - ms / (this.slaTarget(kind) * 3600e3)) * 100) };
   }
 
   homeFor(role) { return role === 'manager' ? 'approvals' : role === 'hr' ? 'hrqueue' : 'dashboard'; }
@@ -616,7 +1123,11 @@ class Component extends DCLogic {
   // ---- seed data ----
   seedHrQueue() {
     return [
-      { id: 'BC-2041', name: 'Sneha Patil', dept: 'Engineering', initials: 'SP', cat: 'Learning', claimed: 18000, extracted: 16500, vendor: 'Udemy Business', date: '14 Jun 2026', confidence: 'Low (61%)',
+      { id: 'BC-2041', name: 'Sneha Patil', dept: 'Engineering', initials: 'SP', cat: 'Learning', claimed: 18000, extracted: 16500, vendor: 'Udemy Business', date: '14 Jun 2026', confidence: 'Low (61%)', version: 2,
+        versions: [
+          { v: 1, date: '02 Jun 2026', claimed: 16500, file: 'udemy-v1.pdf', status: 'rejected', by: 'Rohan Mehta (HR)', note: 'Receipt was blurry \u2014 totals unreadable. Asked employee to re-scan.' },
+          { v: 2, date: '14 Jun 2026', claimed: 18000, file: 'udemy-v2.pdf', status: 'pending', by: '\u2014', note: 'Re-scanned receipt uploaded; amount raised to include add-on.' },
+        ],
         flags: [{ text: 'Amount mismatch' }, { text: 'Low OCR' }], checks: [['File readable', true, 'PDF, 1.2 MB'], ['Not a duplicate', true, 'No prior match'], ['Amount matches receipt', false, '₹16,500 vs ₹18,000'], ['Within FY 2026–27', true, '14 Jun 2026'], ['Balance sufficient', true, '₹27,000 left'], ['Vendor / category sanity', true, 'Online course']] },
       { id: 'BC-2038', name: 'Arjun Desai', dept: 'Sales', initials: 'AD', cat: 'Sports', claimed: 16000, extracted: 16000, vendor: 'Decathlon', date: '11 Jun 2026', confidence: 'High (94%)',
         flags: [{ text: 'Over balance' }], checks: [['File readable', true, 'JPG, 0.8 MB'], ['Not a duplicate', true, 'No prior match'], ['Amount matches receipt', true, '₹16,000'], ['Within FY 2026–27', true, '11 Jun 2026'], ['Balance sufficient', false, 'Only ₹9,000 left of ₹15,000'], ['Vendor / category sanity', true, 'Sports equipment']] },
@@ -629,13 +1140,53 @@ class Component extends DCLogic {
     ];
   }
 
+  seedMyClaims() {
+    return [
+      { id: 'BC-2044', vendor: 'Cult.fit membership', cat: 'Sports', amount: 6000, date: '12 Jun 2026', status: 'approved', version: 1 },
+      { id: 'BC-2043', vendor: 'Coursera Plus annual', cat: 'Learning', amount: 22000, date: '04 Jun 2026', status: 'approved', version: 1 },
+      { id: 'BC-2042', vendor: 'Decathlon \u00b7 running shoes', cat: 'Sports', amount: 4200, date: '28 May 2026', status: 'pending', version: 1 },
+      { id: 'BC-2040', vendor: 'Coursera \u00b7 ML Specialization', cat: 'Learning', amount: 14000, date: '20 May 2026', status: 'rejected', version: 1,
+        rejectReason: 'Receipt total reads \u20b912,500 but the claim is for \u20b914,000. Upload the correct invoice and resubmit.',
+        versions: [{ v: 1, date: '20 May 2026', amount: 14000, file: 'coursera-may.pdf', note: 'Original submission', status: 'rejected', by: 'Rohan Mehta (HR)' }] },
+      { id: 'DRAFT-3', vendor: 'Udemy \u00b7 System Design course', cat: 'Learning', amount: 9000, date: '\u2014', status: 'draft', savedAt: '2 days ago', complete: true },
+      { id: 'DRAFT-2', vendor: '', cat: 'Sports', amount: 0, date: '\u2014', status: 'draft', savedAt: '5 days ago', complete: false },
+    ];
+  }
+
+  seedMyLeaves() {
+    return [
+      { id: 'LR-560', title: 'Casual Leave', type2: 'leave', dates: '6 \u2013 8 Jul 2026', sub: '3 working days', status: 'pending', days: 3, canCancel: true },
+      { id: 'LR-559', title: 'Work from home', type2: 'wfh', dates: '2 \u2013 3 Jul 2026', sub: '2 days', status: 'approved', days: 0, canCancel: true },
+      { id: 'LR-561', title: 'Earned Leave', type2: 'leave', dates: '22 Aug 2026', sub: '1 working day', status: 'approved', days: 1, canCancel: true },
+      { id: 'LR-540', title: 'Sick Leave', type2: 'leave', dates: '18 Jun 2026', sub: '1 day', status: 'approved', days: 1, canCancel: false },
+    ];
+  }
+
   seedApprovals() {
     return [
-      { id: 'LR-558', name: 'Ananya Krishnan', initials: 'AK', role: 'Backend Engineer', type: 'Casual Leave', type2: 'leave', dates: '6 \u2013 8 Jul 2026', days: '3 days', level: 1, reason: 'Family function out of town.' },
-      { id: 'LR-554', name: 'Karthik Reddy', initials: 'KR', role: 'QA Engineer', type: 'WFH', type2: 'wfh', dates: '2 \u2013 3 Jul 2026', days: '2 days', level: 1, reason: 'Electrician visit, working remotely.' },
-      { id: 'LR-549', name: 'Divya Menon', initials: 'DM', role: 'Frontend Engineer', type: 'Sick Leave', type2: 'leave', dates: '29 Jun 2026', days: '1 day', level: 2, reason: 'Fever, doctor advised rest. (TL approved)' },
-      { id: 'LR-547', name: 'Rohit Shetty', initials: 'RS', role: 'DevOps Engineer', type: 'Earned Leave', type2: 'leave', dates: '13 \u2013 17 Jul 2026', days: '5 days', level: 1, reason: 'Annual vacation with family.' },
+      { id: 'LR-558', kind: 'leave', name: 'Ananya Krishnan', initials: 'AK', role: 'Backend Engineer', type: 'Casual Leave', type2: 'leave', dates: '6 \u2013 8 Jul 2026', days: '3 days', level: 1, reason: 'Family function out of town.' },
+      { id: 'LR-554', kind: 'leave', name: 'Karthik Reddy', initials: 'KR', role: 'QA Engineer', type: 'WFH', type2: 'wfh', dates: '2 \u2013 3 Jul 2026', days: '2 days', level: 1, reason: 'Electrician visit, working remotely.' },
+      { id: 'LR-522C', kind: 'cancel', name: 'Divya Menon', initials: 'DM', role: 'Frontend Engineer', type: 'Earned Leave', type2: 'leave', dates: '9 \u2013 10 Jul 2026', days: '2 days', level: 1, reason: 'Trip cancelled \u2014 no longer need the leave.', restores: '2 EL days' },
+      { id: 'LR-549', kind: 'leave', name: 'Divya Menon', initials: 'DM', role: 'Frontend Engineer', type: 'Sick Leave', type2: 'leave', dates: '29 Jun 2026', days: '1 day', level: 2, reason: 'Fever, doctor advised rest. (TL approved)' },
+      { id: 'LR-547', kind: 'leave', name: 'Rohit Shetty', initials: 'RS', role: 'DevOps Engineer', type: 'Earned Leave', type2: 'leave', dates: '13 \u2013 17 Jul 2026', days: '5 days', level: 1, reason: 'Annual vacation with family.' },
     ];
+  }
+
+  seedLedger() {
+    // Chronological wallet events for FY 2026–27. Running balance computed below.
+    const raw = [
+      { d: '2026-04-01', iso: '01 Apr 2026', type: 'credit', cat: 'Sports', desc: 'Annual benefit allocation', ref: 'ALLOC-SP-27', amount: 15000, method: 'System · FY roll-over' },
+      { d: '2026-04-01', iso: '01 Apr 2026', type: 'credit', cat: 'Learning', desc: 'Annual benefit allocation', ref: 'ALLOC-LN-27', amount: 45000, method: 'System · FY roll-over' },
+      { d: '2026-05-20', iso: '20 May 2026', type: 'reserved', cat: 'Learning', desc: 'Coursera · ML Specialization', ref: 'BC-2040', amount: -14000, method: 'Claim submitted · hold placed' },
+      { d: '2026-05-24', iso: '24 May 2026', type: 'released', cat: 'Learning', desc: 'Hold released · claim rejected', ref: 'BC-2040', amount: 14000, method: 'HR rejected · amount mismatch' },
+      { d: '2026-06-04', iso: '04 Jun 2026', type: 'debit', cat: 'Learning', desc: 'Coursera Plus · annual', ref: 'BC-2043', amount: -22000, method: 'Auto-approved · OCR 94%' },
+      { d: '2026-06-08', iso: '08 Jun 2026', type: 'reserved', cat: 'Learning', desc: 'Pluralsight · annual (pending)', ref: 'BC-2045', amount: -5000, method: 'Awaiting HR review · hold placed' },
+      { d: '2026-06-12', iso: '12 Jun 2026', type: 'debit', cat: 'Sports', desc: 'Cult.fit · membership', ref: 'BC-2044', amount: -6000, method: 'Auto-approved · OCR 96%' },
+    ];
+    let bal = 0;
+    raw.forEach(t => { bal += t.amount; t.balance = bal; });
+    // present newest first, with sequential index preserved
+    return raw.map((t, i) => ({ ...t, seq: i + 1 })).reverse();
   }
 
   // ---- holidays / weekend helpers ----
@@ -670,8 +1221,30 @@ class Component extends DCLogic {
     this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2800);
   }
 
+  // ---- wallet ledger ----
+  setLedgerCat(v) { this.setState({ ledgerCat: v }); }
+  setLedgerType(v) { this.setState({ ledgerType: v }); }
+  setLedgerQuery(v) { this.setState({ ledgerQuery: v }); }
+  clearLedgerFilters() { this.setState({ ledgerCat: 'all', ledgerType: 'all', ledgerQuery: '' }); }
+  openTxn(id) { this.setState({ ledgerTxnId: id }); }
+  closeTxn() { this.setState({ ledgerTxnId: null }); }
+  exportLedger(n) { this.flash('Exported ' + n + ' transaction' + (n === 1 ? '' : 's') + ' to CSV', 'ok'); }
+
+  // ---- benefit reminders ----
+  dismissReminder() { this.setState({ reminderDismissed: true }); }
+  toggleLeadDay(d) {
+    this.setState(s => {
+      const has = s.reminderConfig.leadDays.includes(d);
+      const leadDays = (has ? s.reminderConfig.leadDays.filter(x => x !== d) : [...s.reminderConfig.leadDays, d]).sort((a, b) => b - a);
+      return { reminderConfig: { ...s.reminderConfig, leadDays }, reminderSavedAt: null };
+    });
+  }
+  setReminderCfg(obj) { this.setState(s => ({ reminderConfig: { ...s.reminderConfig, ...obj }, reminderSavedAt: null })); }
+  saveReminderConfig() { this.setState({ reminderSavedAt: 'just now' }); this.flash('Reminder schedule saved', 'ok'); }
+  sendReminderTest() { this.flash('Test reminder emailed to you', 'ok'); }
+
   // ---- claim handlers ----
-  setField(obj) { this.setState(s => ({ claim: { ...s.claim, ...obj }, verifyResult: null })); }
+  setField(obj) { this.setState(s => ({ claim: { ...s.claim, ...obj }, verifyResult: null, autosavedAt: (obj.amount !== undefined || obj.vendor !== undefined) ? 'just now' : s.autosavedAt })); }
   catData(cat) {
     const sports = { cap: 15000, approved: 6000, pending: 0 };
     const learning = { cap: 45000, approved: 22000, pending: 5000 };
@@ -697,7 +1270,63 @@ class Component extends DCLogic {
     this.setState({ verifyResult: { pass, checks } });
     this.flash(pass ? 'Claim auto-approved \u2014 balance updated' : 'Routed to HR Head for manual review', pass ? 'ok' : 'warn');
   }
-  resetClaim() { this.setState({ claim: { category: 'sports', amount: '', date: '2026-06-20', vendor: '', fileName: '', fileSize: '' }, verifyResult: null }); }
+  resetClaim() { this.setState({ claim: { category: 'sports', amount: '', date: '2026-06-20', vendor: '', fileName: '', fileSize: '', draftId: null, resubmitOf: null }, verifyResult: null, autosavedAt: null }); }
+
+  // ---- drafts & resubmission ----
+  autosave() {
+    const c = this.state.claim;
+    if (!c.vendor && !c.amount) return;
+    this.setState({ autosavedAt: 'just now' });
+  }
+  saveDraft() {
+    const c = this.state.claim;
+    const amt = parseFloat(String(c.amount).replace(/[^0-9.]/g, '')) || 0;
+    const complete = !!c.vendor && amt > 0;
+    this.setState(s => {
+      let list = s.myClaims.slice();
+      if (c.draftId) {
+        list = list.map(x => x.id === c.draftId ? { ...x, vendor: c.vendor, cat: c.category === 'sports' ? 'Sports' : 'Learning', amount: amt, savedAt: 'just now', complete } : x);
+      } else {
+        const newId = 'DRAFT-' + (Math.floor(Math.random() * 90) + 10);
+        list = [{ id: newId, vendor: c.vendor, cat: c.category === 'sports' ? 'Sports' : 'Learning', amount: amt, date: '\u2014', status: 'draft', savedAt: 'just now', complete }, ...list];
+      }
+      return { myClaims: list, route: 'claims', claimsTab: 'draft', claim: { category: 'sports', amount: '', date: '2026-06-20', vendor: '', fileName: '', fileSize: '', draftId: null, resubmitOf: null }, verifyResult: null, autosavedAt: null };
+    });
+    this.flash('Draft saved \u2014 no balance reserved', 'ok');
+  }
+  editDraft(id) {
+    const d = this.state.myClaims.find(x => x.id === id);
+    if (!d) return;
+    this.setState({ route: 'submit', verifyResult: null, autosavedAt: d.savedAt, claim: { category: d.cat === 'Sports' ? 'sports' : 'learning', amount: d.amount ? String(d.amount) : '', date: '2026-06-20', vendor: d.vendor, fileName: '', fileSize: '', draftId: id, resubmitOf: null } });
+  }
+  deleteDraft(id) { this.setState(s => ({ myClaims: s.myClaims.filter(x => x.id !== id) })); this.flash('Draft deleted', 'warn'); }
+  startResubmit(id) {
+    const r = this.state.myClaims.find(x => x.id === id);
+    if (!r) return;
+    this.setState({ route: 'submit', verifyResult: null, autosavedAt: null, claim: { category: r.cat === 'Sports' ? 'sports' : 'learning', amount: String(r.amount), date: '2026-06-20', vendor: r.vendor, fileName: '', fileSize: '', draftId: null, resubmitOf: id } });
+  }
+  toggleVersions(id) { this.setState(s => ({ versionClaimId: s.versionClaimId === id ? null : id })); }
+
+  // ---- leave cancellation ----
+  askCancel(id) { const lv = this.state.myLeaves.find(x => x.id === id); this.setState({ cancelTarget: lv || null }); }
+  closeCancel() { this.setState({ cancelTarget: null }); }
+  confirmCancel() {
+    const lv = this.state.cancelTarget;
+    if (!lv) return;
+    if (lv.status === 'pending') {
+      // pending leave: withdraw immediately
+      this.setState(s => ({ myLeaves: s.myLeaves.filter(x => x.id !== lv.id), cancelTarget: null }));
+      this.flash('Request withdrawn \u2014 nothing was deducted', 'ok');
+    } else {
+      // approved leave: raise a cancellation request to the manager
+      this.setState(s => ({
+        myLeaves: s.myLeaves.map(x => x.id === lv.id ? { ...x, status: 'cancel-pending', canCancel: false } : x),
+        approvalQueue: [{ id: lv.id + 'C', kind: 'cancel', name: 'Aarav Sharma', initials: 'AS', role: 'Software Engineer', type: lv.title, type2: lv.type2, dates: lv.dates, days: lv.sub, level: 1, reason: 'Plans changed \u2014 requesting cancellation.', restores: lv.days > 0 ? (lv.days + ' day(s)') : 'no balance' }, ...s.approvalQueue],
+        cancelTarget: null,
+      }));
+      this.flash('Cancellation requested \u2014 sent to Priya Nair (L1)', 'ok');
+    }
+  }
 
   // ---- HR queue ----
   closeDetail() { this.setState({ selectedClaimId: null, rejectReason: '' }); }
@@ -707,9 +1336,87 @@ class Component extends DCLogic {
     this.flash(approve ? 'Claim approved \u2014 employee notified' : 'Claim rejected \u2014 balance released', approve ? 'ok' : 'warn');
   }
 
+  // ---- AI Receipt Intelligence ----
+  openIntel(id) { const iv = this.intelData()[id]; this.setState({ route: 'intel', intelClaimId: id, selectedClaimId: null, overrideChoice: iv ? iv.verdict : null, overrideReason: '' }); }
+  closeIntel() { this.setState({ route: 'hrqueue', intelClaimId: null }); }
+  submitOverride() {
+    const id = this.state.intelClaimId;
+    const choice = this.state.overrideChoice;
+    if (choice === 'reject' && !this.state.overrideReason.trim()) { this.flash('Add a reason before rejecting', 'warn'); return; }
+    this.setState(s => ({ hrQueue: s.hrQueue.filter(q => q.id !== id), route: 'hrqueue', intelClaimId: null, overrideReason: '' }));
+    this.flash(choice === 'approve' ? 'Approved \u2014 override logged to audit trail' : 'Rejected \u2014 override logged to audit trail', choice === 'approve' ? 'ok' : 'warn');
+  }
+
+  intelData() {
+    if (this._intel) return this._intel;
+    const F = n => this.fmt(n);
+    const gst = total => { const sub = Math.round(total / 1.18); return { sub, tax: total - sub }; };
+    const mk = (o) => {
+      const g = gst(o.total);
+      return Object.assign({ sub: g.sub, tax: g.tax }, o);
+    };
+    this._intel = {
+      'BC-2041': mk({ vendorFull: 'Udemy Business India Pvt Ltd', address: 'Bengaluru, KA \u00b7 GSTIN 29AABCU9603R1ZX', invoiceNo: 'UDM-IN-88214', gstNo: '29AABCU9603R1ZX', payment: 'Corporate card \u2022\u2022\u2022\u2022 4821', date: '14 Jun 2026', category: 'Learning',
+        lineItems: [['Advanced System Design (annual seat)', 14000], ['Team analytics add-on', 2500]], total: 16500, claimed: 18000,
+        aiScore: 58, verdict: 'reject',
+        verdictReason: 'Claimed amount is \u20b91,500 higher than the receipt total and OCR confidence is low. Recommend rejecting or requesting a corrected receipt.',
+        factors: [['Vendor recognised (known merchant)', 18, true], ['Within FY 2026\u201327 window', 12, true], ['Receipt readable & un-edited', 14, true], ['Claimed \u2260 OCR total (\u20b918,000 vs \u20b916,500)', -22, false], ['Low OCR confidence on totals (61%)', -18, false]],
+        fraud: [['Amount mismatch', 'Claimed \u20b918,000 but receipt total reads \u20b916,500 (\u20b91,500 over).', 'high'], ['Low OCR confidence', 'Totals block scanned at 61% \u2014 below the 75% auto-approve threshold.', 'warn'], ['Image integrity', 'No signs of digital editing (ELA clean).', 'ok'], ['Vendor reputation', 'Udemy is an approved learning vendor.', 'ok']],
+        duplicate: null,
+        ocr: [['Vendor', 'Udemy Business India', 93], ['Total amount', F(16500), 61], ['Invoice date', '14 Jun 2026', 88], ['GSTIN', '29AABCU9603R1ZX', 74], ['Tax (GST 18%)', F(gst(16500).tax), 66], ['Category match', 'Learning', 90]],
+        audit: [['09:41', 'System', 'Receipt uploaded', 'receipt-BC-2041.pdf \u00b7 1.2 MB', 'neutral'], ['09:41', 'OCR engine', 'Fields extracted', '6 fields \u00b7 avg confidence 79%', 'neutral'], ['09:41', 'AI validator', 'Score computed', 'Score 58 / 100 \u2014 flagged: amount mismatch', 'warn'], ['09:42', 'Routing', 'Sent to HR review', 'Below auto-approve threshold', 'warn']] }),
+      'BC-2038': mk({ vendorFull: 'Decathlon Sports India', address: 'Sarjapur Rd, Bengaluru \u00b7 GSTIN 29AAECD1234M1Z5', invoiceNo: 'DEC-IN-40192', gstNo: '29AAECD1234M1Z5', payment: 'UPI \u00b7 arjun@okhdfc', date: '11 Jun 2026', category: 'Sports',
+        lineItems: [['Rockrider MTB 27.5', 13500], ['Cycling helmet', 2500]], total: 16000, claimed: 16000,
+        aiScore: 72, verdict: 'review',
+        verdictReason: 'Receipt is clean and matches the claim, but the amount exceeds the employee\u2019s remaining Sports balance. Needs an HR call on the over-limit portion.',
+        factors: [['Claimed = OCR total (exact match)', 22, true], ['High OCR confidence (94%)', 20, true], ['Vendor recognised', 16, true], ['Exceeds Sports balance (only \u20b99,000 left)', -24, false], ['New vendor for this employee', -2, false]],
+        fraud: [['Over balance', 'Claim of \u20b916,000 exceeds the \u20b99,000 remaining Sports allowance.', 'warn'], ['Amount match', 'Claimed and extracted totals are identical.', 'ok'], ['Image integrity', 'No editing detected.', 'ok'], ['Duplicate check', 'No matching prior receipt.', 'ok']],
+        duplicate: null,
+        ocr: [['Vendor', 'Decathlon Sports India', 96], ['Total amount', F(16000), 94], ['Invoice date', '11 Jun 2026', 92], ['GSTIN', '29AAECD1234M1Z5', 90], ['Tax (GST 18%)', F(gst(16000).tax), 88], ['Category match', 'Sports', 95]],
+        audit: [['11 Jun, 18:02', 'System', 'Receipt uploaded', 'receipt-BC-2038.jpg \u00b7 0.8 MB', 'neutral'], ['11 Jun, 18:02', 'OCR engine', 'Fields extracted', '6 fields \u00b7 avg confidence 92%', 'neutral'], ['11 Jun, 18:02', 'AI validator', 'Score computed', 'Score 72 / 100 \u2014 flagged: over balance', 'warn'], ['11 Jun, 18:03', 'Routing', 'Sent to HR review', 'Balance rule triggered', 'warn']] }),
+      'BC-2035': mk({ vendorFull: 'O\u2019Reilly Media (learning subscription)', address: 'Billed via Razorpay \u00b7 GSTIN unreadable', invoiceNo: 'ORLY-99820', gstNo: 'Not detected', payment: 'Credit card \u2022\u2022\u2022\u2022 7730', date: '09 Jun 2026', category: 'Learning',
+        lineItems: [['O\u2019Reilly annual subscription', 12500]], total: 12500, claimed: 12500,
+        aiScore: 74, verdict: 'review',
+        verdictReason: 'Amounts match and balance is fine, but the vendor block and GSTIN could not be classified with confidence. A quick human glance confirms it.',
+        factors: [['Claimed = OCR total', 22, true], ['Within balance (\u20b940,000 left)', 18, true], ['Within FY window', 12, true], ['Vendor/GSTIN not classified', -16, false], ['Medium OCR confidence (78%)', -12, false]],
+        fraud: [['Vendor unclear', 'OCR could not confidently classify the vendor or read GSTIN.', 'warn'], ['Amount match', 'Totals match the claim.', 'ok'], ['Image integrity', 'No editing detected.', 'ok'], ['Duplicate check', 'No matching prior receipt.', 'ok']],
+        duplicate: null,
+        ocr: [['Vendor', 'O\u2019Reilly Media', 71], ['Total amount', F(12500), 86], ['Invoice date', '09 Jun 2026', 84], ['GSTIN', 'Not detected', 22], ['Tax (GST 18%)', F(gst(12500).tax), 60], ['Category match', 'Learning', 79]],
+        audit: [['09 Jun, 14:20', 'System', 'Receipt uploaded', 'receipt-BC-2035.pdf \u00b7 0.5 MB', 'neutral'], ['09 Jun, 14:20', 'OCR engine', 'Fields extracted', '6 fields \u00b7 avg confidence 78%', 'neutral'], ['09 Jun, 14:20', 'AI validator', 'Score computed', 'Score 74 / 100 \u2014 flagged: vendor unclear', 'warn'], ['09 Jun, 14:21', 'Routing', 'Sent to HR review', 'Confidence below threshold', 'warn']] }),
+      'BC-2030': mk({ vendorFull: 'Cult.fit (Curefit Healthcare)', address: 'Bengaluru \u00b7 GSTIN 29AAFCC9985P1ZK', invoiceNo: 'CF-IN-55107', gstNo: '29AAFCC9985P1ZK', payment: 'UPI \u00b7 rahul@okaxis', date: '02 Jun 2026', category: 'Sports',
+        lineItems: [['Cult PRO membership (3 mo)', 8500]], total: 8500, claimed: 8500,
+        aiScore: 69, verdict: 'review',
+        verdictReason: 'The claim is plausible and within balance, but the uploaded image is low-resolution so the totals were read at low confidence. Confirm the amount.',
+        factors: [['Claimed = OCR total', 20, true], ['Within balance (\u20b915,000 left)', 18, true], ['Vendor recognised (Cult.fit)', 16, true], ['Low OCR confidence (58%)', -20, false], ['Low-resolution image (2.1 MB PNG)', -5, false]],
+        fraud: [['Low OCR confidence', 'Totals read at 58% \u2014 image is blurry.', 'warn'], ['Amount match', 'Extracted total matches the claim.', 'ok'], ['Image integrity', 'No editing detected.', 'ok'], ['Duplicate check', 'No matching prior receipt.', 'ok']],
+        duplicate: null,
+        ocr: [['Vendor', 'Cult.fit / Curefit', 83], ['Total amount', F(8500), 58], ['Invoice date', '02 Jun 2026', 76], ['GSTIN', '29AAFCC9985P1ZK', 70], ['Tax (GST 18%)', F(gst(8500).tax), 55], ['Category match', 'Sports', 88]],
+        audit: [['02 Jun, 08:11', 'System', 'Receipt uploaded', 'receipt-BC-2030.png \u00b7 2.1 MB', 'neutral'], ['02 Jun, 08:11', 'OCR engine', 'Fields extracted', '6 fields \u00b7 avg confidence 68%', 'neutral'], ['02 Jun, 08:11', 'AI validator', 'Score computed', 'Score 69 / 100 \u2014 flagged: low OCR', 'warn'], ['02 Jun, 08:12', 'Routing', 'Sent to HR review', 'Confidence below threshold', 'warn']] }),
+      'BC-2028': mk({ vendorFull: 'Coursera Plus (annual)', address: 'Billed via Coursera Inc \u00b7 GSTIN 29AAJCS0000Q1Z8', invoiceNo: 'CRS-PLUS-77410', gstNo: '29AAJCS0000Q1Z8', payment: 'Corporate card \u2022\u2022\u2022\u2022 4821', date: '28 May 2026', category: 'Learning',
+        lineItems: [['Coursera Plus annual subscription', 30000]], total: 30000, claimed: 30000,
+        aiScore: 34, verdict: 'reject',
+        verdictReason: 'This receipt is a near-exact match to an already-reimbursed claim (BC-1990). Same invoice number, amount and date \u2014 almost certainly a duplicate submission.',
+        factors: [['Vendor recognised', 14, true], ['High OCR confidence (91%)', 16, true], ['Amounts match', 12, true], ['Duplicate of reimbursed claim BC-1990', -40, false], ['Same invoice number reused', -18, false]],
+        fraud: [['Duplicate suspected', 'Receipt hash matches BC-1990, reimbursed on 12 Apr 2026.', 'high'], ['Reused invoice number', 'Invoice CRS-PLUS-77410 already exists in the ledger.', 'high'], ['Image integrity', 'No editing detected \u2014 same file re-uploaded.', 'warn'], ['Amount match', 'Totals match the claim.', 'ok']],
+        duplicate: { id: 'BC-1990', name: 'Meera Joshi', date: '12 Apr 2026', total: 30000, vendorFull: 'Coursera Plus (annual)', invoiceNo: 'CRS-PLUS-77410', similarity: 98, note: 'Reimbursed \u00b7 paid out on 15 Apr 2026' },
+        ocr: [['Vendor', 'Coursera Plus', 94], ['Total amount', F(30000), 91], ['Invoice date', '28 May 2026', 89], ['GSTIN', '29AAJCS0000Q1Z8', 90], ['Invoice no.', 'CRS-PLUS-77410', 93], ['Category match', 'Learning', 92]],
+        audit: [['28 May, 10:05', 'System', 'Receipt uploaded', 'receipt-BC-2028.pdf \u00b7 0.9 MB', 'neutral'], ['28 May, 10:05', 'OCR engine', 'Fields extracted', '6 fields \u00b7 avg confidence 91%', 'neutral'], ['28 May, 10:05', 'Duplicate check', 'Match found', 'Hash + invoice no. match BC-1990', 'bad'], ['28 May, 10:05', 'AI validator', 'Score computed', 'Score 34 / 100 \u2014 flagged: duplicate', 'bad'], ['28 May, 10:06', 'Routing', 'Escalated to HR review', 'High-risk: duplicate submission', 'bad']] }),
+    };
+    return this._intel;
+  }
+
   // ---- approvals ----
   decideApproval(id, approve) {
     const item = this.state.approvalQueue.find(a => a.id === id);
+    if (item && item.kind === 'cancel') {
+      const leaveId = id.replace(/C$/, '');
+      this.setState(s => ({
+        approvalQueue: s.approvalQueue.filter(a => a.id !== id),
+        myLeaves: approve ? s.myLeaves.filter(x => x.id !== leaveId) : s.myLeaves.map(x => x.id === leaveId ? { ...x, status: 'approved', canCancel: true } : x),
+      }));
+      this.flash(approve ? 'Cancellation approved \u2014 balance restored, calendar updated' : 'Cancellation declined \u2014 leave stays booked', approve ? 'ok' : 'warn');
+      return;
+    }
     if (approve && item && item.level === 1) {
       this.setState(s => ({ approvalQueue: s.approvalQueue.map(a => a.id === id ? { ...a, level: 2 } : a) }));
       this.flash('Approved at L1 \u2014 forwarded to Project Manager', 'ok');
@@ -797,10 +1504,16 @@ class Component extends DCLogic {
     const navKey = s.route;
     const navBg = k => navKey === k ? 'var(--accent)' : 'transparent';
     const navColor = k => navKey === k ? 'var(--foreground)' : 'var(--muted-foreground)';
-    const nav = { dashboard: navBg('dashboard'), submit: navBg('submit'), leave: navBg('leave'), approvals: navBg('approvals'), calendar: navBg('calendar'), hrqueue: navBg('hrqueue') };
-    const navFg = { dashboard: navColor('dashboard'), submit: navColor('submit'), leave: navColor('leave'), approvals: navColor('approvals'), calendar: navColor('calendar'), hrqueue: navColor('hrqueue') };
+    const nav = { dashboard: navBg('dashboard'), submit: navBg('submit'), leave: navBg('leave'), claims: navBg('claims'), approvals: navBg('approvals'), calendar: navBg('calendar'), hrqueue: navBg('hrqueue'), reminders: navBg('reminders') };
+    const navFg = { dashboard: navColor('dashboard'), submit: navColor('submit'), leave: navColor('leave'), claims: navColor('claims'), approvals: navColor('approvals'), calendar: navColor('calendar'), hrqueue: navColor('hrqueue'), reminders: navColor('reminders') };
 
-    const crumbMap = { dashboard: 'Dashboard', submit: 'Submit expense', leave: 'Apply leave / WFH', approvals: 'Approvals', calendar: 'Team calendar', hrqueue: 'Expense queue' };
+    const crumbMap = { dashboard: 'Dashboard', submit: 'Submit expense', leave: 'Apply leave / WFH', claims: 'My claims', approvals: 'Approvals', calendar: 'Team calendar', hrqueue: 'Expense queue', intel: 'Receipt intelligence', reminders: 'Benefit reminders' };
+
+    const intelAll = this.intelData();
+    const verdictMeta = { approve: ['Recommend approve', 'var(--emerald-500)'], review: ['Needs human review', 'var(--amber-500)'], reject: ['Recommend reject', 'var(--destructive)'] };
+    const scoreColorFor = n => n >= 80 ? 'var(--emerald-500)' : n >= 60 ? 'var(--amber-500)' : 'var(--destructive)';
+    const aiBadgeBg = v => v === 'approve' ? 'color-mix(in oklab, var(--emerald-500) 14%, transparent)' : v === 'review' ? 'color-mix(in oklab, var(--amber-500) 16%, transparent)' : 'color-mix(in oklab, var(--red-500) 13%, transparent)';
+    const aiBadgeFg = v => v === 'approve' ? 'var(--emerald-500)' : v === 'review' ? '#b45309' : 'var(--destructive)';
 
     // dashboard benefit data
     const sp = this.catData('sports'); const ln = this.catData('learning');
@@ -821,11 +1534,43 @@ class Component extends DCLogic {
       ['Tech conference ticket', 'Learning', '15 May', 5000, 'Reimbursed'],
     ];
     const recentClaims = recentRaw.map(([vendor, cat, date, amt, st]) => { const [bg, fg] = badge(st); return { vendor, cat, date, amountF: fmt(amt), status: st, bg, fg }; });
-    const upcoming = [
-      { title: 'Casual Leave', dates: '6 \u2013 8 Jul 2026 · 3 days', status: 'Pending L1', dot: 'var(--amber-500)' },
-      { title: 'Work from home', dates: '2 \u2013 3 Jul 2026', status: 'Approved', dot: 'var(--emerald-500)' },
-      { title: 'Earned Leave', dates: '22 Aug 2026 · 1 day', status: 'Approved', dot: 'var(--emerald-500)' },
-    ];
+
+    // ---- My claims (drafts / resubmission) ----
+    const statusMeta = {
+      draft: ['Draft', 'var(--muted)', 'var(--muted-foreground)'],
+      pending: ['Pending', 'color-mix(in oklab, var(--amber-500) 17%, transparent)', '#b45309'],
+      approved: ['Approved', 'color-mix(in oklab, var(--emerald-500) 15%, transparent)', 'var(--emerald-500)'],
+      rejected: ['Rejected', 'color-mix(in oklab, var(--red-500) 14%, transparent)', 'var(--destructive)'],
+    };
+    const claimTabs = [['all', 'All'], ['draft', 'Drafts'], ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['ledger', 'Ledger']];
+    const tabCounts = { all: s.myClaims.length, ledger: s.ledger.length };
+    ['draft', 'pending', 'approved', 'rejected'].forEach(k => tabCounts[k] = s.myClaims.filter(x => x.status === k).length);
+    const claimTabsView = claimTabs.map(([k, label]) => ({ key: k, label, count: String(tabCounts[k] || 0),
+      bg: s.claimsTab === k ? 'var(--background)' : 'transparent', fg: s.claimsTab === k ? 'var(--foreground)' : 'var(--muted-foreground)', sh: s.claimsTab === k ? 'var(--shadow-xs)' : 'none',
+      onPick: () => this.setState({ claimsTab: k }) }));
+    const filteredClaims = (s.claimsTab === 'all' ? s.myClaims : s.myClaims.filter(x => x.status === s.claimsTab)).map(x => {
+      const [label, bg, fg] = statusMeta[x.status];
+      return {
+        id: x.id, vendor: x.vendor || 'Untitled draft', cat: x.cat, amountF: x.amount ? fmt(x.amount) : '\u2014', date: x.date,
+        statusLabel: label, statusBg: bg, statusFg: fg,
+        isDraft: x.status === 'draft', isRejected: x.status === 'rejected', isOpen: x.status === 'pending' || x.status === 'approved',
+        incomplete: x.status === 'draft' && !x.complete, savedNote: x.savedAt ? ('Saved ' + x.savedAt) : '',
+        rejectReason: x.rejectReason || '', versionCount: x.versions ? x.versions.length : 0,
+        showVersions: s.versionClaimId === x.id,
+        versions: (x.versions || []).map(v => ({ v: 'v' + v.v, date: v.date, amountF: fmt(v.amount), file: v.file, note: v.note, by: v.by,
+          statusLabel: statusMeta[v.status][0], statusFg: statusMeta[v.status][2] })),
+        onEdit: () => this.editDraft(x.id), onDelete: () => this.deleteDraft(x.id), onSubmit: () => this.editDraft(x.id),
+        onResubmit: () => this.startResubmit(x.id), onToggleVersions: () => this.toggleVersions(x.id),
+      };
+    });
+
+    // ---- My leaves (cancellation) → also drives dashboard upcoming ----
+    const leaveStatusMeta = { pending: ['Pending L1', 'var(--amber-500)'], approved: ['Approved', 'var(--emerald-500)'], 'cancel-pending': ['Cancellation pending', 'var(--violet-600)'] };
+    const upcoming = s.myLeaves.map(lv => {
+      const [stLabel, dot] = leaveStatusMeta[lv.status];
+      return { id: lv.id, title: lv.title, dates: lv.dates + (lv.sub ? ' \u00b7 ' + lv.sub : ''), status: stLabel, dot,
+        canCancel: lv.canCancel && lv.status !== 'cancel-pending', onCancel: () => this.askCancel(lv.id) };
+    });
 
     // submit claim
     const variant = s.claimVariant;
@@ -857,18 +1602,32 @@ class Component extends DCLogic {
     }
 
     // HR queue
+    const slaCount = (arr, kind) => {
+      let ok = 0, soon = 0, over = 0;
+      arr.forEach(x => { const v = this.slaView(x.id, kind); if (v.state === 'overdue') over++; else if (v.state === 'soon') soon++; else ok++; });
+      return { ok, soon, over };
+    };
     const ocrColor = (q) => q.claimed !== q.extracted ? 'var(--destructive)' : 'var(--muted-foreground)';
     const flagStyle = (t) => {
       const warn = ['color-mix(in oklab, var(--amber-500) 16%, transparent)', '#b45309'];
       const bad = ['color-mix(in oklab, var(--red-500) 13%, transparent)', 'var(--destructive)'];
       return (t === 'Over balance' || t === 'Duplicate suspected' || t === 'Amount mismatch') ? bad : warn;
     };
-    const hrQueue = s.hrQueue.map(q => ({
+    const hrQueue = s.hrQueue.map(q => {
+      const sla = this.slaView(q.id, 'expense');
+      return {
       id: q.id, name: q.name, dept: q.dept, initials: q.initials, cat: q.cat,
+      isResubmission: !!q.versions, versionBadge: q.version ? ('v' + q.version) : '',
       claimedF: fmt(q.claimed), extractedF: fmt(q.extracted), ocrColor: ocrColor(q),
       flags: q.flags.map(f => { const [bg, fg] = flagStyle(f.text); return { text: f.text, bg, fg }; }),
+      aiScore: intelAll[q.id] ? String(intelAll[q.id].aiScore) : '—',
+      aiScoreColor: intelAll[q.id] ? scoreColorFor(intelAll[q.id].aiScore) : 'var(--muted-foreground)',
+      slaLabel: sla.label, slaColor: sla.color, slaBg: sla.bg, slaOverdue: sla.state === 'overdue', slaSoon: sla.state === 'soon',
       onReview: () => this.setState({ selectedClaimId: q.id, rejectReason: '' }),
-    }));
+      onIntel: () => this.openIntel(q.id),
+      };
+    });
+    const hrSla = slaCount(s.hrQueue, 'expense');
     const hrStats = [
       { label: 'Pending review', value: String(s.hrQueue.length), sub: 'Awaiting your decision', color: 'var(--foreground)' },
       { label: 'Auto-approved today', value: '23', sub: '88% straight-through', color: 'var(--emerald-500)' },
@@ -883,7 +1642,58 @@ class Component extends DCLogic {
         id: sel.id, name: sel.name, dept: sel.dept, cat: sel.cat, vendor: sel.vendor, date: sel.date,
         claimedF: fmt(sel.claimed), extractedF: fmt(sel.extracted), ocrColor: ocrColor(sel),
         confidence: sel.confidence, confColor: conf, fileName: 'receipt-' + sel.id + '.pdf',
+        isResubmission: !!sel.versions, versionBadge: sel.version ? ('v' + sel.version) : '',
+        versionRows: (sel.versions || []).map(v => ({ v: 'v' + v.v, date: v.date, claimedF: fmt(v.claimed), file: v.file,
+          statusLabel: v.status === 'rejected' ? 'Rejected' : v.status === 'pending' ? 'This version' : 'Approved',
+          statusFg: v.status === 'rejected' ? 'var(--destructive)' : v.status === 'pending' ? 'var(--blue-600)' : 'var(--emerald-500)',
+          statusBg: v.status === 'rejected' ? 'color-mix(in oklab, var(--red-500) 12%, transparent)' : v.status === 'pending' ? 'color-mix(in oklab, var(--blue-600) 12%, transparent)' : 'color-mix(in oklab, var(--emerald-500) 13%, transparent)',
+          note: v.note, by: v.by, isCurrent: v.status === 'pending', rowBg: v.status === 'pending' ? 'color-mix(in oklab, var(--blue-600) 5%, transparent)' : 'var(--card)' })),
         checks: sel.checks.map(([label, ok, det]) => ({ label, mark: ok ? '\u2713' : '!', color: ok ? 'var(--emerald-500)' : 'var(--amber-500)', detail: det })),
+        aiScore: intelAll[sel.id] ? String(intelAll[sel.id].aiScore) : '\u2014',
+        aiScoreColor: intelAll[sel.id] ? scoreColorFor(intelAll[sel.id].aiScore) : 'var(--muted-foreground)',
+        aiVerdictLabel: intelAll[sel.id] ? verdictMeta[intelAll[sel.id].verdict][0] : '',
+        aiVerdictColor: intelAll[sel.id] ? verdictMeta[intelAll[sel.id].verdict][1] : 'var(--muted-foreground)',
+        aiBannerBg: intelAll[sel.id] ? aiBadgeBg(intelAll[sel.id].verdict) : 'var(--muted)',
+        onIntel: () => this.openIntel(sel.id),
+      };
+    }
+
+    // AI Receipt Intelligence deep-dive
+    const iid = s.intelClaimId;
+    const iv = iid ? intelAll[iid] : null;
+    const ivBase = iid ? s.hrQueue.find(q => q.id === iid) : null;
+    let intel = {};
+    if (iv && ivBase) {
+      const arc = Math.PI * 50;
+      const sColor = scoreColorFor(iv.aiScore);
+      const confColor = c => c >= 85 ? 'var(--emerald-500)' : c >= 65 ? 'var(--amber-500)' : 'var(--destructive)';
+      const sevMeta = k => k === 'ok' ? ['var(--emerald-500)', '\u2713'] : k === 'warn' ? ['var(--amber-500)', '!'] : ['var(--destructive)', '!'];
+      const auditDot = k => k === 'warn' ? 'var(--amber-500)' : k === 'bad' ? 'var(--destructive)' : 'var(--muted-foreground)';
+      const oc = s.overrideChoice;
+      const segOn = active => active ? 'var(--background)' : 'transparent';
+      intel = {
+        id: iv.id || iid, name: ivBase.name, dept: ivBase.dept, initials: ivBase.initials,
+        fileName: 'receipt-' + iid + '.pdf', category: iv.category,
+        vendorFull: iv.vendorFull, address: iv.address, invoiceNo: iv.invoiceNo, gstNo: iv.gstNo, payment: iv.payment, date: iv.date,
+        lineItems: iv.lineItems.map(([desc, amt]) => ({ desc, amtF: fmt(amt) })),
+        subF: fmt(iv.sub), taxF: fmt(iv.tax), totalF: fmt(iv.total), claimedF: fmt(iv.claimed),
+        amountMismatch: iv.claimed !== iv.total,
+        claimedColor: iv.claimed !== iv.total ? 'var(--destructive)' : 'var(--foreground)',
+        aiScore: String(iv.aiScore), scoreColor: sColor,
+        gaugeDash: (iv.aiScore / 100 * arc).toFixed(1) + ' ' + arc.toFixed(1),
+        verdictLabel: verdictMeta[iv.verdict][0], verdictColor: verdictMeta[iv.verdict][1], verdictReason: iv.verdictReason,
+        verdictBannerBg: aiBadgeBg(iv.verdict),
+        factors: iv.factors.map(([label, delta, positive]) => ({ label, deltaF: (delta > 0 ? '+' : '') + delta, color: positive ? 'var(--emerald-500)' : 'var(--destructive)', bg: positive ? 'color-mix(in oklab, var(--emerald-500) 13%, transparent)' : 'color-mix(in oklab, var(--red-500) 12%, transparent)' })),
+        ocr: iv.ocr.map(([label, value, conf]) => ({ label, value, conf: conf + '%', confColor: confColor(conf), barW: conf + '%' })),
+        fraud: iv.fraud.map(([label, detail2, severity]) => { const [color, mark] = sevMeta(severity); return { label, detail: detail2, color, mark, bg: severity === 'ok' ? 'transparent' : severity === 'warn' ? 'color-mix(in oklab, var(--amber-500) 8%, transparent)' : 'color-mix(in oklab, var(--red-500) 9%, transparent)' }; }),
+        hasDuplicate: !!iv.duplicate, noDuplicate: !iv.duplicate,
+        dup: iv.duplicate ? { id: iv.duplicate.id, name: iv.duplicate.name, date: iv.duplicate.date, totalF: fmt(iv.duplicate.total), vendorFull: iv.duplicate.vendorFull, invoiceNo: iv.duplicate.invoiceNo, similarity: iv.duplicate.similarity + '%', note: iv.duplicate.note } : {},
+        audit: iv.audit.map(([time, actor, action, det, kind]) => ({ time, actor, action, detail: det, dot: auditDot(kind) })),
+        overrideApproveBg: segOn(oc === 'approve'), overrideApproveFg: oc === 'approve' ? 'var(--emerald-500)' : 'var(--muted-foreground)', overrideApproveSh: oc === 'approve' ? 'var(--shadow-xs)' : 'none',
+        overrideRejectBg: segOn(oc === 'reject'), overrideRejectFg: oc === 'reject' ? 'var(--destructive)' : 'var(--muted-foreground)', overrideRejectSh: oc === 'reject' ? 'var(--shadow-xs)' : 'none',
+        matchesAi: oc === iv.verdict,
+        overrideNote: oc === iv.verdict ? 'Matches the AI recommendation.' : 'Overrides the AI recommendation \u2014 this will be recorded against your name.',
+        submitLabel: oc === 'approve' ? 'Approve claim' : oc === 'reject' ? 'Reject claim' : 'Choose a decision',
       };
     }
 
@@ -892,18 +1702,29 @@ class Component extends DCLogic {
     const approvalQueue = s.approvalQueue.map(a => {
       const [tb, tf] = typeColor(a.type2);
       const l1done = a.level >= 2;
-      const isHr = false;
+      const isCancel = a.kind === 'cancel';
+      const sla = this.slaView(a.id, 'leave');
+      const escTo = l1done ? 'HR Head (skip-level)' : 'Project Manager (L2)';
       return {
         id: a.id, name: a.name, initials: a.initials, role: a.role, type: a.type, dates: a.dates, days: a.days, reason: a.reason,
-        typeBg: tb, typeFg: tf,
+        slaLabel: sla.label, slaColor: sla.color, slaBg: sla.bg, slaState: sla.state,
+        slaTargetLabel: l1done ? 'L2 · 24h SLA' : 'L1 · 24h SLA',
+        slaOverdue: sla.state === 'overdue', slaSoon: sla.state === 'soon',
+        slaBarPct: Math.max(4, Math.min(100, sla.pct)) + '%',
+        escalateTo: escTo,
+        isCancel, notCancel: !isCancel, cancelType: isCancel ? ('Cancel · ' + a.type) : a.type, restores: a.restores || '',
+        typeBg: isCancel ? 'color-mix(in oklab, var(--violet-600) 13%, transparent)' : tb, typeFg: isCancel ? 'var(--violet-600)' : tf,
         l1Bg: 'var(--emerald-500)', l1Mark: l1done ? '\u2713' : '\u2022', l1Color: l1done ? 'var(--emerald-500)' : 'var(--foreground)',
         l2Bg: l1done ? 'var(--amber-500)' : 'var(--muted)', l2Fg: l1done ? '#fff' : 'var(--muted-foreground)', l2Border: l1done ? 'var(--amber-500)' : 'var(--border)', l2Mark: l1done ? '\u2022' : '2', l2Color: l1done ? '#b45309' : 'var(--muted-foreground)',
-        actionLabel: l1done ? 'Awaiting your L2 decision (Project Manager)' : 'Your L1 decision (Team Lead)',
-        approveLabel: l1done ? 'Approve (final)' : 'Approve \u2192 L2',
+        actionLabel: isCancel ? ('Approving restores ' + (a.restores || 'balance') + ' and frees the calendar') : (l1done ? 'Awaiting your L2 decision (Project Manager)' : 'Your L1 decision (Team Lead)'),
+        approveLabel: isCancel ? 'Approve cancellation' : (l1done ? 'Approve (final)' : 'Approve \u2192 L2'),
+        rejectLabel: isCancel ? 'Decline' : 'Reject',
+        showStepper: !isCancel,
         onApprove: () => this.decideApproval(a.id, true),
         onReject: () => this.decideApproval(a.id, false),
       };
     });
+    const apprSla = slaCount(s.approvalQueue, 'leave');
     const outToday = [
       { name: 'Ananya Krishnan', role: 'Backend Engineer', initials: 'AK', type: 'Casual Leave', fg: 'var(--blue-600)' },
       { name: 'Sneha Patil', role: 'Engineering', initials: 'SP', type: 'WFH', fg: 'var(--violet-600)' },
@@ -936,6 +1757,77 @@ class Component extends DCLogic {
     // calendar
     const calWeeks = this.buildCalendar();
 
+    // ---- wallet ledger ----
+    const txTypeMeta = {
+      credit: ['Credit', 'var(--emerald-500)', 'color-mix(in oklab, var(--emerald-500) 13%, transparent)'],
+      debit: ['Debit', 'var(--foreground)', 'var(--muted)'],
+      reserved: ['Reserved', '#b45309', 'color-mix(in oklab, var(--amber-500) 15%, transparent)'],
+      released: ['Released', 'var(--emerald-500)', 'color-mix(in oklab, var(--emerald-500) 12%, transparent)'],
+    };
+    const catAccent = c => c === 'Sports' ? 'var(--emerald-500)' : 'var(--blue-600)';
+    const lq = s.ledgerQuery.trim().toLowerCase();
+    const ledgerFiltered = s.ledger.filter(t => {
+      if (s.ledgerCat !== 'all' && t.cat.toLowerCase() !== s.ledgerCat) return false;
+      if (s.ledgerType === 'credit' && !(t.type === 'credit' || t.type === 'released')) return false;
+      if (s.ledgerType === 'debit' && t.type !== 'debit') return false;
+      if (s.ledgerType === 'reserved' && t.type !== 'reserved') return false;
+      if (lq && !(t.desc.toLowerCase().includes(lq) || t.ref.toLowerCase().includes(lq))) return false;
+      return true;
+    });
+    const txId = t => t.ref + '-' + t.seq;
+    const ledgerRows = ledgerFiltered.map(t => {
+      const [tl, tc, tbg] = txTypeMeta[t.type];
+      const pos = t.amount >= 0;
+      return {
+        id: txId(t), ref: t.ref, date: t.iso, cat: t.cat, catColor: catAccent(t.cat),
+        desc: t.desc, typeLabel: tl, typeColor: tc, typeBg: tbg,
+        amountF: (pos ? '+ ' : '\u2212 ') + fmt(Math.abs(t.amount)), amountColor: pos ? 'var(--emerald-500)' : 'var(--foreground)',
+        balanceF: fmt(t.balance),
+        selected: s.ledgerTxnId === txId(t),
+        onOpen: () => this.openTxn(txId(t)),
+      };
+    });
+    const ledgerCatSeg = k => ({ bg: seg(s.ledgerCat === k), fg: segFg(s.ledgerCat === k), sh: segSh(s.ledgerCat === k), onPick: () => this.setLedgerCat(k) });
+    const ledgerTypeSeg = k => ({ bg: seg(s.ledgerType === k), fg: segFg(s.ledgerType === k), sh: segSh(s.ledgerType === k), onPick: () => this.setLedgerType(k) });
+    const ledgerCatOpts = [['all', 'All'], ['sports', 'Sports'], ['learning', 'Learning']].map(([k, label]) => ({ key: k, label, ...ledgerCatSeg(k) }));
+    const ledgerTypeOpts = [['all', 'All'], ['credit', 'Credit'], ['debit', 'Debit'], ['reserved', 'Reserved']].map(([k, label]) => ({ key: k, label, ...ledgerTypeSeg(k) }));
+    const walletBalance = s.ledger.length ? s.ledger[0].balance : 0;
+    const totalCredited = s.ledger.filter(t => t.amount > 0).reduce((a, t) => a + t.amount, 0);
+    const totalDebited = s.ledger.filter(t => t.type === 'debit').reduce((a, t) => a + Math.abs(t.amount), 0);
+    const totalReleased = s.ledger.filter(t => t.type === 'released').reduce((a, t) => a + Math.abs(t.amount), 0);
+    const totalReserved = s.ledger.filter(t => t.type === 'reserved').reduce((a, t) => a + Math.abs(t.amount), 0) - totalReleased;
+    const selTxnRaw = s.ledgerTxnId ? s.ledger.find(t => txId(t) === s.ledgerTxnId) : null;
+    let txnDetail = {};
+    if (selTxnRaw) {
+      const [tl, tc, tbg] = txTypeMeta[selTxnRaw.type];
+      const pos = selTxnRaw.amount >= 0;
+      txnDetail = {
+        ref: selTxnRaw.ref, date: selTxnRaw.iso, cat: selTxnRaw.cat, catColor: catAccent(selTxnRaw.cat),
+        desc: selTxnRaw.desc, typeLabel: tl, typeColor: tc, typeBg: tbg, method: selTxnRaw.method,
+        amountF: (pos ? '+ ' : '\u2212 ') + fmt(Math.abs(selTxnRaw.amount)), amountColor: pos ? 'var(--emerald-500)' : 'var(--foreground)',
+        balanceF: fmt(selTxnRaw.balance),
+        isClaim: /^BC-/.test(selTxnRaw.ref),
+      };
+    }
+
+    // ---- benefit reminder ----
+    const availSports = sp.cap - sp.approved - sp.pending;
+    const availLearning = ln.cap - ln.approved - ln.pending;
+    const unusedTotal = availSports + availLearning;
+    const fyEndD = new Date(2027, 2, 31), todayD = new Date(2026, 6, 6);
+    const daysToFy = Math.round((fyEndD - todayD) / 86400e3);
+    const rc = s.reminderConfig;
+    const audienceCount = rc.threshold <= 2000 ? 196 : rc.threshold <= 5000 ? 142 : rc.threshold <= 10000 ? 88 : 41;
+    const maxLead = rc.leadDays.length ? Math.max(...rc.leadDays) : 30;
+    const nextSendD = new Date(fyEndD.getTime() - maxLead * 86400e3);
+    const nextSendLabel = nextSendD.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const leadOpts = [90, 60, 30, 14, 7].map(d => ({ d, label: d + 'd', active: rc.leadDays.includes(d),
+      bg: rc.leadDays.includes(d) ? 'var(--primary)' : 'var(--background)', fg: rc.leadDays.includes(d) ? 'var(--primary-foreground)' : 'var(--foreground)',
+      border: rc.leadDays.includes(d) ? 'var(--primary)' : 'var(--border)', onToggle: () => this.toggleLeadDay(d) }));
+    const freqOpts = [['once', 'Once'], ['weekly', 'Weekly'], ['daily', 'Daily · final week']].map(([k, label]) => ({ key: k, label,
+      bg: rc.frequency === k ? 'var(--background)' : 'transparent', fg: rc.frequency === k ? 'var(--foreground)' : 'var(--muted-foreground)',
+      sh: rc.frequency === k ? 'var(--shadow-xs)' : 'none', onPick: () => this.setReminderCfg({ frequency: k }) }));
+
     const toast = s.toast;
 
     return {
@@ -958,7 +1850,7 @@ class Component extends DCLogic {
       roleName: r.name, roleTitle: r.title, roleInitials: r.initials, firstName: roles.employee.first,
       navSectionLabel: s.role === 'employee' ? 'My workspace' : s.role === 'manager' ? 'Manager' : 'HR Head',
       nav, navFg,
-      goDashboard: () => this.go('dashboard'), goSubmit: () => this.go('submit'), goLeave: () => this.go('leave'),
+      goDashboard: () => this.go('dashboard'), goSubmit: () => this.go('submit'), goLeave: () => this.go('leave'), goClaims: () => this.go('claims'),
       goApprovals: () => this.go('approvals'), goCalendar: () => this.go('calendar'), goHrQueue: () => this.go('hrqueue'),
       setRoleEmployee: () => this.setRole('employee'), setRoleManager: () => this.setRole('manager'), setRoleHr: () => this.setRole('hr'),
       roleSeg: { employee: seg(s.role === 'employee'), manager: seg(s.role === 'manager'), hr: seg(s.role === 'hr') },
@@ -970,8 +1862,47 @@ class Component extends DCLogic {
 
       showDashboard: s.route === 'dashboard', showSubmit: s.route === 'submit', showHrQueue: s.route === 'hrqueue',
       showApprovals: s.route === 'approvals', showApplyLeave: s.route === 'leave', showCalendar: s.route === 'calendar',
+      showIntel: s.route === 'intel',
 
       sports, learning, leaveCards, recentClaims, upcoming,
+
+      showClaims: s.route === 'claims', claimTabs: claimTabsView, myClaims: filteredClaims,
+      myClaimsEmpty: filteredClaims.length === 0 && s.claimsTab !== 'ledger',
+      showLedger: s.claimsTab === 'ledger', showClaimsList: s.claimsTab !== 'ledger',
+
+      // wallet ledger
+      ledgerRows, ledgerEmpty: ledgerRows.length === 0, ledgerCount: String(ledgerFiltered.length),
+      ledgerCatOpts, ledgerTypeOpts, ledgerQuery: s.ledgerQuery,
+      onLedgerQuery: e => this.setLedgerQuery(e.target.value),
+      clearLedgerFilters: () => this.clearLedgerFilters(),
+      exportLedger: () => this.exportLedger(ledgerFiltered.length),
+      walletBalanceF: fmt(walletBalance), totalCreditedF: fmt(totalCredited), totalDebitedF: fmt(totalDebited), totalReservedF: fmt(totalReserved),
+      showTxn: !!selTxnRaw, closeTxn: () => this.closeTxn(), txn: txnDetail,
+
+      // benefit reminder (dashboard)
+      showReminder: !s.reminderDismissed, dismissReminder: () => this.dismissReminder(),
+      reminderUnusedF: fmt(unusedTotal), reminderSportsF: fmt(availSports), reminderLearningF: fmt(availLearning),
+      reminderDays: String(daysToFy), reminderFyEnd: '31 Mar 2027',
+
+      // reminders config (HR)
+      showReminders: s.route === 'reminders', goReminders: () => this.go('reminders'),
+      leadOpts, freqOpts,
+      cfgDashboard: rc.dashboard, cfgEmail: rc.email,
+      cfgDashTrack: rc.dashboard ? 'var(--primary)' : 'var(--input)', cfgDashKnob: rc.dashboard ? 'translateX(16px)' : 'translateX(0)',
+      cfgEmailTrack: rc.email ? 'var(--primary)' : 'var(--input)', cfgEmailKnob: rc.email ? 'translateX(16px)' : 'translateX(0)',
+      toggleCfgDashboard: () => this.setReminderCfg({ dashboard: !rc.dashboard }),
+      toggleCfgEmail: () => this.setReminderCfg({ email: !rc.email }),
+      cfgThreshold: String(rc.threshold), onCfgThreshold: e => this.setReminderCfg({ threshold: Math.max(0, parseInt(e.target.value.replace(/[^0-9]/g, ''), 10) || 0) }),
+      cfgThresholdF: fmt(rc.threshold),
+      audienceCount: String(audienceCount), nextSendLabel,
+      reminderSaved: !!s.reminderSavedAt, saveReminderConfig: () => this.saveReminderConfig(), sendReminderTest: () => this.sendReminderTest(),
+      leadSummary: rc.leadDays.length ? rc.leadDays.join(', ') + ' days before' : 'No reminders scheduled',
+
+      autosaveLabel: s.autosavedAt ? ('Autosaved · ' + s.autosavedAt) : 'Not saved yet',
+      isResubmitForm: !!s.claim.resubmitOf, isDraftForm: !!s.claim.draftId,
+      resubmitOfId: s.claim.resubmitOf || '', draftOfId: s.claim.draftId || '',
+      formTitle: s.claim.resubmitOf ? 'Resubmit claim' : (s.claim.draftId ? 'Edit draft' : 'Submit an expense claim'),
+      saveDraft: () => this.saveDraft(),
 
       claimVariant: variant, claimGrid: variant === 'split' ? '1.5fr 1fr' : '1fr', claimMaxW: variant === 'split' ? '1000px' : '680px', showLivePanel: variant === 'split',
       setVariantSingle: () => this.setState({ claimVariant: 'single' }), setVariantSplit: () => this.setState({ claimVariant: 'split' }),
@@ -999,7 +1930,24 @@ class Component extends DCLogic {
       rejectReason: s.rejectReason, onRejectReason: e => this.setState({ rejectReason: e.target.value }),
       approveClaim: () => this.decideClaim(true), rejectClaim: () => this.decideClaim(false),
 
+      intel, closeIntel: () => this.closeIntel(),
+      setOverrideApprove: () => this.setState({ overrideChoice: 'approve' }), setOverrideReject: () => this.setState({ overrideChoice: 'reject' }),
+      overrideReason: s.overrideReason, onOverrideReason: e => this.setState({ overrideReason: e.target.value }),
+      submitOverride: () => this.submitOverride(),
+
       approvalQueue, approvalsEmpty: s.approvalQueue.length === 0, outToday, todayLabel: 'Monday, 6 Jul 2026',
+      apprSlaOk: String(apprSla.ok), apprSlaSoon: String(apprSla.soon), apprSlaOver: String(apprSla.over), apprHasOverdue: apprSla.over > 0,
+      hrSlaOk: String(hrSla.ok), hrSlaSoon: String(hrSla.soon), hrSlaOver: String(hrSla.over), hrHasOverdue: hrSla.over > 0,
+
+      showCancel: !!s.cancelTarget,
+      cancelTitle: s.cancelTarget ? s.cancelTarget.title : '', cancelDates: s.cancelTarget ? s.cancelTarget.dates : '',
+      cancelIsPending: s.cancelTarget ? s.cancelTarget.status === 'pending' : false,
+      cancelHeading: s.cancelTarget ? (s.cancelTarget.status === 'pending' ? 'Withdraw this request?' : 'Request to cancel this leave?') : '',
+      cancelBody: s.cancelTarget ? (s.cancelTarget.status === 'pending'
+        ? 'It hasn’t been approved yet, so it will be withdrawn immediately and nothing is deducted.'
+        : ('This leave is already approved. Your manager must approve the cancellation. ' + (s.cancelTarget.days > 0 ? (s.cancelTarget.days + ' day(s) will be restored to your balance once approved.') : 'No balance was deducted for this request.'))) : '',
+      cancelConfirmLabel: s.cancelTarget ? (s.cancelTarget.status === 'pending' ? 'Withdraw request' : 'Request cancellation') : '',
+      confirmCancel: () => this.confirmCancel(), closeCancel: () => this.closeCancel(),
 
       leaveTypes, leave: { from: L.from, to: L.to, reason: L.reason },
       onFrom: e => this.setLeave({ from: e.target.value }), onTo: e => this.setLeave({ to: e.target.value }), onReason: e => this.setLeave({ reason: e.target.value }),
@@ -1022,3 +1970,4 @@ class Component extends DCLogic {
 </script>
 </body>
 </html>
+

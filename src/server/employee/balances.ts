@@ -36,8 +36,9 @@ export async function getCategoryBalances(userId: string, fy: string): Promise<C
     let pendingPaise = 0;
     for (const claim of claims) {
       if (claim.categoryId !== c.id) continue;
-      if (APPROVED.has(claim.status)) approvedPaise += claim.amountPaise;
-      else if (PENDING.has(claim.status)) pendingPaise += claim.amountPaise;
+      // guaranteed set — APPROVED/PENDING statuses exclude draft
+      if (APPROVED.has(claim.status)) approvedPaise += claim.amountPaise!;
+      else if (PENDING.has(claim.status)) pendingPaise += claim.amountPaise!;
     }
     return {
       categoryId: c.id,
