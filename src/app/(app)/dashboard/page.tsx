@@ -8,9 +8,11 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { getDashboardData } from "@/server/employee/dashboard";
 import { getReminderBannerData } from "@/server/employee/reminder-banner";
 import { getRecentActivity, type ActivityType } from "@/server/employee/activity-feed";
+import { getNextHoliday } from "@/server/employee/holiday-countdown";
 import { currentFy } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
 import { ReminderBanner } from "./reminder-banner";
+import { HolidayCountdownWidget } from "./holiday-countdown-widget";
 
 // KAN-186 — compact preview on the dashboard; the full filterable feed lives at /activity.
 const ACTIVITY_ICON: Record<ActivityType, LucideIcon> = { leave: CalendarDays, claim: FileText, wallet: Wallet };
@@ -68,6 +70,7 @@ export default async function DashboardPage() {
   const data = await getDashboardData(user.id);
   const reminderBanner = await getReminderBannerData(user.id);
   const recentActivity = (await getRecentActivity(user.id, currentFy().label)).slice(0, 5);
+  const nextHoliday = await getNextHoliday(user.location);
   const first = user.name.split(" ")[0];
 
   return (
@@ -84,6 +87,8 @@ export default async function DashboardPage() {
           {data.fyLabel}
         </span>
       </div>
+
+      {nextHoliday && <HolidayCountdownWidget data={nextHoliday} />}
 
       {reminderBanner && <ReminderBanner data={reminderBanner} />}
 

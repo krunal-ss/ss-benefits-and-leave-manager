@@ -71,6 +71,9 @@ export const users = pgTable("users", {
   // holder for a day. HR/Admin-managed; defaults false for every existing user.
   isCriticalRole: boolean().notNull().default(false),
   joinDate: date(),
+  // KAN-206 — office/region, used to filter which holidays apply to this user.
+  // Nullable: unset means "no location filter", so org-wide holidays still show.
+  location: text(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
