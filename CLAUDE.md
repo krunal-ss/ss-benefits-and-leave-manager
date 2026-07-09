@@ -48,7 +48,7 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 - `src/server/` — services + mock data: `auth/rbac.ts`, `supabase/`, `email/`, `verification.ts`
 - `src/db/` — Drizzle schema, lazy client, `migrations/`
 - `src/lib/` — `env.ts` (zod), `format.ts`, `working-days.ts`, `cn.ts`
-- `tests/e2e/` — Playwright · `design/source/` — imported Claude Design comp · `.claude/docs/` — PRDs (Benefit Wallet + Leave Manager, Smart Team Availability & Capacity Planner, AI Expense Verification & Receipt Intelligence, Productivity & Usability Enhancements, Employee Experience Enhancements)
+- `tests/e2e/` — Playwright · `design/source/` — imported Claude Design comp · `.claude/docs/` — single consolidated PRD (`PRD-Benefit-Wallet-and-Leave-Manager.md`, covers the v1 core plus every follow-on epic as appendices) + `Architecture-and-Flow-Reference.pdf`
 - `.claude/skills/` — project skills (see below)
 
 ## Architecture (big picture)
@@ -82,6 +82,7 @@ Roles: Employee, Team Lead, Project Manager, HR Head (+ optional Admin). Reporti
 - `e2e-testing` — how to write + what a Playwright test must satisfy
 - `prd-to-stories` — turn a PRD section into JIRA-ready epics/stories/sub-tasks
 - `pr-description` — draft a PR title/body from a branch's commits+diff in this repo's KAN-ticket convention
+- `auto-fix-jira` — poll JIRA for issues labeled `auto-fix`, implement + verify + open a PR per issue, never auto-merge
 
 ## Hard rules
 
