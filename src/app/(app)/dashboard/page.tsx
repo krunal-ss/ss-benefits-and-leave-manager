@@ -1,14 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Clock, Dumbbell, FileText, GraduationCap, type LucideIcon, Plus } from "lucide-react";
+import { CalendarDays, Clock, Dumbbell, FileText, GraduationCap, type LucideIcon, Plus, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { available, type Category } from "@/server/benefits";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getDashboardData } from "@/server/employee/dashboard";
 import { getReminderBannerData } from "@/server/employee/reminder-banner";
+import { getRecentActivity, type ActivityType } from "@/server/employee/activity-feed";
+import { currentFy } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
 import { ReminderBanner } from "./reminder-banner";
+
+// KAN-186 — compact preview on the dashboard; the full filterable feed lives at /activity.
+const ACTIVITY_ICON: Record<ActivityType, LucideIcon> = { leave: CalendarDays, claim: FileText, wallet: Wallet };
 
 export const metadata = { title: "Dashboard · SmartSense" };
 
@@ -62,6 +67,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const data = await getDashboardData(user.id);
   const reminderBanner = await getReminderBannerData(user.id);
+  const recentActivity = (await getRecentActivity(user.id, currentFy().label)).slice(0, 5);
   const first = user.name.split(" ")[0];
 
   return (
@@ -169,6 +175,40 @@ export default async function DashboardPage() {
           </div>
         </Card>
       </div>
+
+      <Card className="overflow-hidden">
+        <div className="flex items-center border-b px-5 py-4">
+          <div>
+            <div className="text-[15px] font-semibold tracking-[-0.01em]">Recent activity</div>
+            <div className="text-[12.5px] text-muted-foreground">Your latest updates across leave, claims &amp; benefits</div>
+          </div>
+          <Link
+            href="/activity"
+            className="ml-auto inline-flex h-[30px] items-center rounded-[7px] border bg-background px-[11px] text-[12.5px] font-medium shadow-xs hover:bg-accent"
+          >
+            View all
+          </Link>
+        </div>
+        {recentActivity.length === 0 ? (
+          <div className="px-5 py-10 text-center text-[13px] text-muted-foreground">Nothing yet — activity shows up here as you go.</div>
+        ) : (
+          recentActivity.map((it) => {
+            const Icon = ACTIVITY_ICON[it.type];
+            return (
+              <div key={it.id} className="flex items-center gap-3 border-b px-5 py-[13px] last:border-b-0">
+                <span className="flex size-[30px] shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <Icon className="size-[15px]" strokeWidth={2} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13.5px] font-medium">{it.title}</div>
+                  <div className="text-xs text-muted-foreground">{it.detail}</div>
+                </div>
+                <span className="ml-auto shrink-0 text-[11.5px] text-muted-foreground">{it.statusLabel}</span>
+              </div>
+            );
+          })
+        )}
+      </Card>
     </div>
   );
 }
