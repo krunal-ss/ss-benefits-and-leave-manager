@@ -63,7 +63,7 @@ export function Sidebar({
   user,
   approvalCount = 0,
 }: {
-  user: { name: string; role: AppRole };
+  user: { name: string; email: string; role: AppRole };
   approvalCount?: number;
 }) {
   const pathname = usePathname();
@@ -121,6 +121,7 @@ export function Sidebar({
         <Avatar initials={initialsOf(user.name)} tone="primary" className="size-8 text-xs" />
         <div className="flex min-w-0 flex-1 flex-col leading-[1.3]">
           <span className="truncate text-[12.5px] font-medium">{user.name}</span>
+          <span className="truncate text-[11px] text-muted-foreground">{user.email}</span>
           <span className="truncate text-[11px] text-muted-foreground">{ROLE_LABEL[user.role]}</span>
         </div>
         <button
