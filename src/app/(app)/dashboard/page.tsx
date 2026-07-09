@@ -8,9 +8,12 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { getDashboardData } from "@/server/employee/dashboard";
 import { getReminderBannerData } from "@/server/employee/reminder-banner";
 import { getRecentActivity, type ActivityType } from "@/server/employee/activity-feed";
+import { getTeamAvailabilityToday } from "@/server/team-today";
+import { canAccessPath } from "@/server/users";
 import { currentFy } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
 import { ReminderBanner } from "./reminder-banner";
+import { TeamAvailabilityWidget } from "./team-availability-widget";
 
 // KAN-186 — compact preview on the dashboard; the full filterable feed lives at /activity.
 const ACTIVITY_ICON: Record<ActivityType, LucideIcon> = { leave: CalendarDays, claim: FileText, wallet: Wallet };
@@ -68,6 +71,7 @@ export default async function DashboardPage() {
   const data = await getDashboardData(user.id);
   const reminderBanner = await getReminderBannerData(user.id);
   const recentActivity = (await getRecentActivity(user.id, currentFy().label)).slice(0, 5);
+  const teamAvailability = await getTeamAvailabilityToday(user);
   const first = user.name.split(" ")[0];
 
   return (
@@ -105,6 +109,8 @@ export default async function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      <TeamAvailabilityWidget data={teamAvailability} showCalendarLink={canAccessPath(user.role, "/calendar")} />
 
       <div className="grid grid-cols-[1.5fr_1fr] items-start gap-[18px]">
         <Card className="overflow-hidden">
