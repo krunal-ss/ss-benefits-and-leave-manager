@@ -17,6 +17,8 @@ import { Row } from "@/app/(app)/submit/balance-row";
 import { CategoryButton } from "@/app/(app)/submit/category-button";
 import { VerifyResultCard } from "@/app/(app)/submit/verify-result-card";
 import { useDraftAutosave } from "@/app/(app)/submit/use-draft-autosave";
+import { FavoriteVendorChips } from "@/app/(app)/submit/favorite-vendor-chips";
+import type { FavoriteVendor } from "@/server/employee/favorite-vendors";
 
 type Variant = "single" | "split";
 type CategoryKey = "sports" | "learning";
@@ -62,6 +64,7 @@ export function SubmitForm({
   learningCap,
   draft,
   resubmit,
+  favoriteVendors,
 }: {
   sportsAvail: number;
   learningAvail: number;
@@ -69,6 +72,7 @@ export function SubmitForm({
   learningCap: number;
   draft?: DraftPrefill | null;
   resubmit?: ResubmitPrefill | null;
+  favoriteVendors?: FavoriteVendor[];
 }) {
   const { flash } = useToast();
   const isResubmit = !!resubmit;
@@ -368,6 +372,12 @@ export function SubmitForm({
             />
             {submitTried && descriptionMissing && (
               <p className="mt-1.5 text-[12px] text-destructive">A description is required.</p>
+            )}
+            {favoriteVendors && (
+              <FavoriteVendorChips
+                initialFavorites={favoriteVendors}
+                onSelect={(vendorName) => setField({ vendor: vendorName })}
+              />
             )}
           </div>
 

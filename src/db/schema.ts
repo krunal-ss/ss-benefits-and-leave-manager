@@ -362,6 +362,20 @@ export const leavePolicyDocument = pgTable("leave_policy_document", {
 export type LeavePolicyDocumentRow = typeof leavePolicyDocument.$inferSelect;
 // ---- end KAN-187 ----
 
+// KAN-207 — a user's saved/pinned expense vendors, used to power submit-form
+// suggestions. usageCount increments on claim finalize (verifyAndScoreClaim),
+// never on draft save.
+export const favoriteVendors = pgTable("favorite_vendors", {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid()
+    .notNull()
+    .references((): AnyPgColumn => users.id),
+  vendorName: text().notNull(),
+  usageCount: integer().notNull().default(0),
+  pinned: boolean().notNull().default(false),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 // ---- shared ----
 export const holidays = pgTable("holidays", {
   id: uuid().primaryKey().defaultRandom(),

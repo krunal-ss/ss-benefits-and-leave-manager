@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { getCategoryBalances } from "@/server/employee/balances";
 import { getDraftClaim, getRejectedClaim, listMyClaims } from "@/server/employee/claims";
 import { getWalletLedger } from "@/server/employee/ledger";
+import { getFavoriteVendors } from "@/server/employee/favorite-vendors";
 import { currentFy } from "@/lib/fy";
 import { pageParam } from "@/lib/page-param";
 import { Pager } from "@/components/ui/pager";
@@ -34,6 +35,7 @@ export default async function SubmitPage({
   // KAN-126 — resubmitting a rejected claim via /submit?resubmit=<id>; silently
   // ignored if not found/not owned/no longer rejected (form just starts blank).
   const resubmit = sp.resubmit ? await getRejectedClaim(user.id, sp.resubmit) : null;
+  const favoriteVendors = await getFavoriteVendors(user.id);
 
   return (
     <div className="flex flex-col gap-9">
@@ -43,6 +45,7 @@ export default async function SubmitPage({
         learningAvail={(learning?.availablePaise ?? 0) / 100}
         sportsCap={(sports?.capPaise ?? 1500000) / 100}
         learningCap={(learning?.capPaise ?? 4500000) / 100}
+        favoriteVendors={favoriteVendors}
         draft={
           draft
             ? {
