@@ -15,6 +15,14 @@ vi.mock("@/server/hr/staffing-thresholds", () => ({ listThresholds }));
 const sendEmail = vi.fn();
 vi.mock("@/server/email", () => ({ sendEmail }));
 
+// KAN-168 — mocked at the preferences-module boundary (not the raw DB) so
+// these pre-existing tests don't need to know about the extra
+// notification_preferences select per recipient; defaults to "allowed" like a
+// user who never touched their preferences. See the dedicated test below for
+// the "recipient opted out" behavior.
+const isNotificationAllowed = vi.fn().mockResolvedValue(true);
+vi.mock("@/server/notifications/preferences", () => ({ isNotificationAllowed }));
+
 let selectQueue: unknown[] = [];
 let insertedValues: unknown[] = [];
 
@@ -41,6 +49,7 @@ vi.mock("@/db", () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  isNotificationAllowed.mockReset().mockResolvedValue(true);
   selectQueue = [];
   insertedValues = [];
 });
@@ -150,6 +159,21 @@ describe("checkLowStaffingAndNotify", () => {
 
     expect(sendEmail).not.toHaveBeenCalled();
     expect(insertedValues).toHaveLength(0);
+  });
+
+  it("KAN-168: skips an HR Head who has email notifications off, still sends to the rest", async () => {
+    listThresholds.mockResolvedValue({ orgDefault: { minAvailablePercent: 80 }, departmentOverrides: [] });
+    selectQueue.push([]); // no existing log
+    selectQueue.push([
+      { id: "hr-1", email: "opted-out@acme.test" },
+      { id: "hr-2", email: "hr@acme.test" },
+    ]);
+    isNotificationAllowed.mockImplementation(async (userId: string) => userId !== "hr-1");
+
+    const { checkLowStaffingAndNotify } = await import("./capacity-alert");
+    await checkLowStaffingAndNotify(makeSnapshot({ capacityPercent: 50 }));
+
+    expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: ["hr@acme.test"] }));
   });
 
   it("logs a failed emailLog row when sendEmail rejects, so the attempt stays traceable", async () => {

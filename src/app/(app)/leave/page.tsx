@@ -5,6 +5,7 @@ import { leaveBalances, leaveRequests, leaveTypes } from "@/db/schema";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { listApproverOptions } from "@/server/manager/directory";
 import { listMyRequests, listActiveRequestRanges } from "@/server/employee/requests";
+import { getLeaveBalanceHistory } from "@/server/employee/leave-ledger";
 import { currentFy, todayISO } from "@/lib/fy";
 import { pageParam } from "@/lib/page-param";
 import { Pager } from "@/components/ui/pager";
@@ -50,9 +51,10 @@ export default async function LeavePage({
 
   const page = pageParam((await searchParams).page);
   // Overlap check needs ALL active ranges; the list below is paginated for display.
-  const [myRequests, existingRanges] = await Promise.all([
+  const [myRequests, existingRanges, history] = await Promise.all([
     listMyRequests(user.id, { page }),
     listActiveRequestRanges(user.id),
+    getLeaveBalanceHistory(user.id, fy),
   ]);
 
   return (
@@ -65,7 +67,7 @@ export default async function LeavePage({
         defaultProjectManagerId={user.projectManagerId}
         existingRanges={existingRanges}
       />
-      <MyRequests requests={myRequests.items} />
+      <MyRequests requests={myRequests.items} history={history} fy={fy} />
       <Pager basePath="/leave" page={myRequests.page} hasMore={myRequests.hasMore} />
     </div>
   );

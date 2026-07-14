@@ -1,6 +1,6 @@
 {
-  "id": "23b716de-9b06-44b7-a5fe-c08df80c0658",
-  "prevId": "8c22f493-f7af-49a7-8587-c10078dd86b4",
+  "id": "41dba61b-6d0b-45f8-8b22-320322655f00",
+  "prevId": "23b716de-9b06-44b7-a5fe-c08df80c0658",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -696,6 +696,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "vendorKey": {
+          "name": "vendorKey",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "usageCount": {
           "name": "usageCount",
           "type": "integer",
@@ -718,7 +724,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "favorite_vendors_user_vendor_key_idx": {
+          "name": "favorite_vendors_user_vendor_key_idx",
+          "columns": [
+            {
+              "expression": "userId",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vendorKey",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "favorite_vendors_userId_users_id_fk": {
           "name": "favorite_vendors_userId_users_id_fk",
