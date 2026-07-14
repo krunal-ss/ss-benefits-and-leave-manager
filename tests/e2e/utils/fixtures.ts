@@ -131,6 +131,12 @@ export async function setCriticalRole(employeeEmail: string, isCriticalRole: boo
   await db.update(schema.users).set({ isCriticalRole }).where(eq(schema.users.email, employeeEmail));
 }
 
+/** KAN-206: set a user's office/region for the holiday countdown widget's location filter. */
+export async function setUserLocation(employeeEmail: string, location: string): Promise<void> {
+  const db = testDb();
+  await db.update(schema.users).set({ location }).where(eq(schema.users.email, employeeEmail));
+}
+
 /**
  * KAN-77: create a department-scoped staffing threshold override directly
  * (bypassing the HR settings UI) so a test's team has a known, isolated
@@ -176,6 +182,35 @@ export async function ensureReceiptsBucket(): Promise<boolean> {
   }
   console.warn(
     `ensureReceiptsBucket: Supabase Storage unreachable after retries — ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
+  );
+  return false;
+}
+
+/**
+ * KAN-187 — the leave-policy PDF upload flow writes to the private
+ * `policy-docs` bucket, so it must exist. Same idempotent/retry shape as
+ * ensureReceiptsBucket above (literal name kept in sync with
+ * POLICY_DOCS_BUCKET in src/server/supabase/storage.ts).
+ */
+export async function ensurePolicyDocsBucket(): Promise<boolean> {
+  const admin = supabaseAdmin();
+  const isNetworkError = (msg: string) =>
+    /fetch failed|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|network/i.test(msg);
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const { error } = await admin.storage.createBucket("policy-docs", { public: false });
+      if (error && !/exist/i.test(error.message)) throw error;
+      return true;
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!isNetworkError(msg)) throw err;
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+    }
+  }
+  console.warn(
+    `ensurePolicyDocsBucket: Supabase Storage unreachable after retries — ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
   );
   return false;
 }

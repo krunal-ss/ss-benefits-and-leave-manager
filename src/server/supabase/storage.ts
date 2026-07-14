@@ -167,3 +167,42 @@ export async function getReceiptUrlForClaim(
 
   return { ok: true, url };
 }
+
+// ---- KAN-187: Leave Policy Viewer — the company-wide policy PDF. Same
+// private-bucket + signed-URL discipline as receipts, but there's exactly one
+// document (not per-user), so it lives at a single stable path that HR
+// re-uploads (upsert) to replace.
+export const POLICY_DOCS_BUCKET = "policy-docs";
+export const POLICY_DOCUMENT_PATH = "leave-policy.pdf";
+const MAX_POLICY_PDF_BYTES = 10 * 1024 * 1024; // 10 MB, same cap as receipts
+
+/** Validate + upload the company leave-policy PDF. Returns the storage path. */
+export async function uploadPolicyDocument(file: File): Promise<string> {
+  if (file.type !== "application/pdf") {
+    throw new Error("The policy document must be a PDF.");
+  }
+  if (file.size <= 0) throw new Error("The uploaded file is empty.");
+  if (file.size > MAX_POLICY_PDF_BYTES) {
+    throw new Error("File too large — the policy PDF must be under 10 MB.");
+  }
+
+  const buf = await file.arrayBuffer();
+  const supabase = await storageClient();
+  const { error } = await supabase.storage
+    .from(POLICY_DOCS_BUCKET)
+    .upload(POLICY_DOCUMENT_PATH, new Uint8Array(buf), { contentType: file.type, upsert: true });
+  if (error) throw new Error(`Could not store the policy document: ${error.message}`);
+
+  return POLICY_DOCUMENT_PATH;
+}
+
+/** Short-lived signed URL for the policy PDF, or null if none has been uploaded / storage failed. */
+export async function getPolicyDocumentSignedUrl(path: string): Promise<string | null> {
+  if (!path) return null;
+  const supabase = await storageClient();
+  const { data, error } = await supabase.storage
+    .from(POLICY_DOCS_BUCKET)
+    .createSignedUrl(path, RECEIPT_URL_TTL_SEC);
+  if (error || !data) return null;
+  return data.signedUrl;
+}
