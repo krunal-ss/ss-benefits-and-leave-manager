@@ -9,6 +9,7 @@ import { requireUser } from "@/server/auth/current-user";
 import { assertCan } from "@/server/auth/rbac";
 import { getCategoryBalanceByKey } from "@/server/employee/balances";
 import { verifyAndScoreClaim } from "@/server/expense-pipeline";
+import { recordVendorUsage } from "@/server/employee/favorite-vendors";
 import { currentFy } from "@/lib/fy";
 import { formString } from "@/lib/form-data";
 import type { SubmitResult } from "@/server/actions/expense";
@@ -145,6 +146,12 @@ export async function resubmitClaimAction(formData: FormData): Promise<SubmitRes
     entityId: claim.id,
     payload: { aiScore: verified.receiptVerification.aiScore, verdict: verified.receiptVerification.verdict },
   });
+
+  // KAN-207 — only after the claim is re-finalized, so a favorites-bookkeeping
+  // failure can never block a successful resubmission.
+  await recordVendorUsage(user.id, parsed.data.vendor).catch((err) =>
+    console.error("recordVendorUsage failed", err),
+  );
 
   revalidatePath("/dashboard");
   revalidatePath("/submit");

@@ -29,6 +29,10 @@ export type QueuedClaim = {
   aiVerdict: AiVerdict;
   /** KAN-147 — ISO timestamp; the SLA clock's start. Raw, not pre-computed, so `<SlaBadge>` can tick it live client-side. */
   createdAt: string;
+  /** KAN-155 — milliseconds since createdAt, computed at read time (not live-ticking). */
+  elapsedMs: number;
+  /** KAN-155 — true once the SLA target has passed; drives the overdue-escalation cron's row selection too. */
+  isOverdue: boolean;
 };
 
 // Flags that represent a hard failure (red) vs a soft warning (amber).

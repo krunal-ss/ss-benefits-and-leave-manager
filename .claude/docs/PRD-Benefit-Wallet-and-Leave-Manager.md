@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
 ## Employee Benefit Wallet + Leave & WFH Manager
 
-**Document status:** Draft v0.1
+**Document status:** Consolidated (merges all prior standalone PRDs — see §14)
 **Owner:** (you)
-**Last updated:** 2026-06-26
+**Last updated:** 2026-07-09
 
 ---
 
@@ -15,6 +15,8 @@ An internal employee portal with two product areas sharing one login, one role m
 2. **Leave & WFH Manager** — A KEKA-style module for applying for leave and work-from-home, with hierarchy-based multi-level approvals (Team Lead → Project Manager) and email notifications to the relevant approvers and stakeholders.
 
 This is also a **learning vehicle**: the build is structured so that planning, design, coding, and QA are driven through Claude (CLAUDE.md project memory, custom Skills, MCP connectors including JIRA, and subagent/parallel workflows).
+
+Beyond the v1 core (§2–§13), this document also folds in every follow-on epic that was previously tracked as its own PRD — AI Expense Verification & Receipt Intelligence, Smart Team Availability & Capacity Planner, Productivity & Usability Enhancements, Employee Experience Enhancements, and Employee Self-Service Enhancements (§14). Most of those are already shipped; see CLAUDE.md's "Architecture (big picture)" section for the current implementation state of each.
 
 ---
 
@@ -76,6 +78,8 @@ The "verify the uploaded document" step. v1 should be **rule-based and explainab
 - **Pass** → auto-approve. **Any check fails or low OCR confidence** → route to HR Head with the extracted fields + flags shown, so the human decision is fast.
 - Every auto-decision stores the rule outcomes for audit (never a black box).
 
+See §14.1 for the expanded AI-scoring/fraud-detection scope layered onto this in a later epic.
+
 ### 4.4 Balances & reporting
 - Employee dashboard: per-category Allocated / Used (approved + pending) / Available.
 - Pending claims hold (reserve) balance so an employee can't over-commit.
@@ -109,12 +113,14 @@ The "verify the uploaded document" step. v1 should be **rule-based and explainab
 5. Final state updates the calendar and deducts balance (for leave; WFH does not deduct leave balance).
 
 States: `Applied → Pending L1 → Pending L2 → Approved | Rejected | Cancelled`.
-Cancellation/withdrawal allowed before start date (restores balance).
+Cancellation/withdrawal allowed before start date (restores balance). See §14.3 for the post-approval cancellation-request flow.
 
 ### 5.3 Views
 - Personal: balances per type, request history, upcoming approved leave/WFH.
 - Manager (TL/PM): pending approvals queue, team calendar, who's on leave/WFH today.
 - HR: org-wide calendar, leave reports, policy configuration.
+
+See §14.2 for the manager/HR capacity-planning views layered onto this.
 
 ### 5.4 Email notifications
 - Triggered on: submit, each approval level decision, final decision, cancellation.
@@ -231,3 +237,80 @@ Each epic → stories (user-facing increments) → sub-tasks (FE, BE, schema, te
 4. Carry-forward rules per leave type and for unused benefit balance?
 5. Org size & whether SSO is needed later.
 6. Does "credited at FY-end" mean via payroll (we only export) — confirmed as out-of-scope payout?
+
+---
+
+## 14. Follow-on epics (merged from standalone PRDs)
+
+These were originally tracked as separate PRD files; they're folded in here as appendices to keep a single source of truth. Each notes its shipped/unshipped state — cross-check CLAUDE.md's "Architecture (big picture)" section for the authoritative, up-to-date implementation status and file pointers, since that's updated on every ship.
+
+### 14.1 AI Expense Verification & Receipt Intelligence
+
+**Status:** Shipped (KAN-113 and related; see `receiptVerifications`, `src/lib/verdict-style.ts`, `/expenses/[claimId]/intelligence`).
+
+Extends §4.3's rule engine with an AI/OCR layer.
+
+- **Goals:** OCR extraction, duplicate detection, fraud detection, AI confidence scoring, manual HR review.
+- **Functional requirements:** receipt upload; OCR extraction; AI validation; fraud detection; confidence score; HR override; audit log.
+- **Business rules:** duplicate receipts blocked; low confidence → HR review; claims outside FY reviewed.
+- **Database:** `ReceiptVerification` table with OCR data, AI score, and status.
+- **APIs:** `POST /api/receipt/upload`, `POST /api/receipt/verify`, `GET /api/receipt/{id}`, `POST /api/receipt/approve`, `POST /api/receipt/reject`.
+- **UI:** upload screen, verification panel, HR queue.
+- **Acceptance:** OCR extracts data, AI validates, HR override logged.
+- **Future enhancements:** GST API, LLM parsing, mobile scanning.
+
+### 14.2 Smart Team Availability & Capacity Planner
+
+**Status:** Partially shipped — `teamCapacitySnapshot` (KAN-79) and low-staffing alerts (KAN-81) ship via the daily cron job; the historical-trend UI reading that snapshot table is still a follow-up (the live forecast on `/availability` computes on the fly from `leaveRequests` instead).
+
+Extends §5.3's manager/HR calendar views with real-time staffing visibility.
+
+- **Executive summary:** real-time team availability and capacity planning for Leave & WFH approvals.
+- **Business problem:** managers need staffing visibility before approvals.
+- **Goals:** real-time heatmap, capacity planning, conflict detection, workforce insights.
+- **Functional requirements:** team calendar; heatmap; capacity summary; leave conflict detection; critical-role protection; department overview; forecasting; filters.
+- **Business rules:** exclude weekends/holidays; half-day = 50%; WFH counts as available.
+- **Database:** `TeamCapacity` and `StaffingThreshold` tables.
+- **APIs:** `GET /availability/team/{teamId}`, `GET /availability/calendar`, `GET /availability/forecast`, `POST /availability/export`.
+- **UI:** manager dashboard, HR dashboard, team heatmap.
+- **Notifications:** manager, employee, and HR alerts.
+- **Acceptance:** heatmap updates instantly, configurable thresholds, export support.
+- **Future enhancements:** AI staffing, Jira integration, predictive planning.
+
+### 14.3 Productivity & Usability Enhancements
+
+**Status:** Shipped (Expense Draft Save — KAN-125 draft claims; Claim Resubmission — KAN-126; Leave Cancellation Request — KAN-127).
+
+- **Expense Draft Save**
+  - Objective: save incomplete claims.
+  - Requirements: save, autosave, edit, delete, submit drafts.
+  - Business rules: drafts don't reserve balance.
+  - Acceptance: resume later and submit.
+- **Claim Resubmission**
+  - Objective: resubmit rejected claims.
+  - Requirements: edit rejected claims, replace receipt, version history.
+  - Business rules: same claim ID, versioned history.
+  - Acceptance: HR can compare versions.
+- **Leave Cancellation Request**
+  - Objective: cancel approved leave before start date.
+  - Requirements: cancellation request, optional approval, balance restore, notifications.
+  - Business rules: only before leave starts.
+  - Acceptance: calendar and balances update.
+
+### 14.4 Employee Experience Enhancements (v1.2)
+
+**Status:** Shipped (KAN-145/146/147/148) — UI/config only; no automated cron/email fan-out yet for SLA escalation or per-employee reminders (both noted as follow-ups).
+
+- **Wallet Transaction History** — Objective: complete ledger of benefit wallet transactions. Requirements: history, filters, export, details.
+- **Approval SLA Timer** — Objective: show countdown for approvals. Requirements: SLA timer, overdue alerts, escalation.
+- **Remaining Benefit Reminder** — Objective: notify employees before FY-end about unused balances. Requirements: dashboard reminders, email reminders, configurable schedule.
+- **Benefits:** transparency, faster approvals, higher benefit utilization.
+
+### 14.5 Employee Self-Service Enhancements (v1.4)
+
+**Status:** Shipped (KAN-184/185/186/187).
+
+- **Quick Search** — search leave requests, expense claims, employees, and policies.
+- **Recent Activities Widget** — display latest employee activities with filters.
+- **Leave Policy Viewer** — view leave policies, eligibility, carry-forward rules, FAQs, and download policy PDF.
+- **Benefits:** faster navigation, reduced HR queries, improved self-service.

@@ -66,6 +66,12 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   // --- KAN-148 (benefit reminder settings) START ---
   { prefix: "/reminders", roles: ["hr_head", "admin"] },
   // --- KAN-148 END ---
+  // --- KAN-185/186/187 (Quick Search, Recent Activities, Leave Policy Viewer) START ---
+  { prefix: "/search", roles: ALL_ROLES },
+  { prefix: "/activity", roles: ALL_ROLES },
+  { prefix: "/leave-policy", roles: ALL_ROLES },
+  { prefix: "/settings/leave-policy", roles: ["hr_head", "admin"] },
+  // --- KAN-185/186/187 END ---
 ];
 
 /** May `role` access `path`? Unknown paths (e.g. "/") are allowed. */
@@ -92,6 +98,12 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       { href: "/dashboard", label: "Dashboard", key: "dashboard" },
       { href: "/submit", label: "Submit expense", key: "submit" },
       { href: "/leave", label: "Apply leave / WFH", key: "leave" },
+      // --- KAN-186 (Recent Activities Widget) START ---
+      { href: "/activity", label: "Recent activity", key: "activity" },
+      // --- KAN-186 END ---
+      // --- KAN-187 (Leave Policy Viewer) START ---
+      { href: "/leave-policy", label: "Leave policies", key: "leave-policy" },
+      // --- KAN-187 END ---
     ],
   },
   {
@@ -129,6 +141,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       // --- KAN-74 (staffing threshold configuration) START ---
       { href: "/settings/staffing-thresholds", label: "Staffing thresholds", key: "settings-staffing-thresholds" },
       // --- KAN-74 END ---
+      // --- KAN-187 (leave policy content + PDF) START ---
+      { href: "/settings/leave-policy", label: "Leave policy content", key: "settings-leave-policy" },
+      // --- KAN-187 END ---
     ],
   },
   // --- KAN-49 (admin console) START ---

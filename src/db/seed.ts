@@ -29,6 +29,38 @@ async function main() {
         openingBalanceDays: "0",
         maxBalanceDays: "12",
         deductsBalance: true,
+        summary: "Short, planned personal time off.",
+        eligibility: [
+          "All confirmed full-time employees (after the 90-day probation).",
+          "Interns and contractors are not eligible.",
+          "Pro-rated in the joining year based on the month you joined.",
+        ],
+        approver: "Reporting manager",
+        noticeText: "Apply 1 working day in advance",
+        encashText: "Not encashable",
+        carryHeadline: "Does not carry forward",
+        carryText:
+          "Unused Casual Leave lapses at the end of the financial year (31 Mar). It does not roll into the next year and is not encashed.",
+        processSteps: [
+          "Open Apply leave / WFH from the sidebar",
+          "Choose Casual Leave and pick your dates",
+          "Add a short reason and submit",
+          "Your manager approves — the balance is deducted on approval",
+        ],
+        faqs: [
+          {
+            q: "Can I take Casual Leave for half a day?",
+            a: "Yes. Toggle the half-day option when applying; it counts as 0.5 day against your balance.",
+          },
+          {
+            q: "What happens if I have no Casual Leave left?",
+            a: "Extra days are automatically marked as Loss of Pay (LOP) unless you have another applicable balance.",
+          },
+          {
+            q: "Can Casual Leave be clubbed with weekends?",
+            a: "Yes, but intervening weekends and public holidays are not counted as leave days.",
+          },
+        ],
       },
       {
         code: "SL",
@@ -38,6 +70,31 @@ async function main() {
         openingBalanceDays: "8",
         maxBalanceDays: "8",
         deductsBalance: true,
+        summary: "Time off for illness and recovery.",
+        eligibility: [
+          "All confirmed full-time employees.",
+          "A medical certificate is required for absences longer than 2 consecutive days.",
+        ],
+        approver: "Reporting manager",
+        noticeText: "Inform manager by 10:00 AM on the day",
+        encashText: "Not encashable",
+        carryHeadline: "Does not carry forward",
+        carryText: "Unused Sick Leave lapses at year-end and cannot be encashed or carried into the next year.",
+        processSteps: [
+          "Apply via Apply leave / WFH as soon as you are able",
+          "Attach a medical certificate for 3+ days",
+          "Manager approves; HR is notified for extended leave",
+        ],
+        faqs: [
+          {
+            q: "Do I need to apply before taking sick leave?",
+            a: "Notify your manager as early as possible. You can file the request in the portal once you are able to.",
+          },
+          {
+            q: "What counts as extended sick leave?",
+            a: "More than 2 consecutive days requires a medical certificate uploaded with the request.",
+          },
+        ],
       },
       {
         code: "EL",
@@ -48,6 +105,33 @@ async function main() {
         maxBalanceDays: "18",
         carryForward: true,
         deductsBalance: true,
+        summary: "Accrued privilege leave for longer breaks.",
+        eligibility: ["All confirmed full-time employees.", "Recommended for planned vacations and travel."],
+        approver: "Manager + HR for 5+ days",
+        noticeText: "Apply 7 working days in advance",
+        encashText: "Encashable at year-end",
+        carryHeadline: "Carries forward — up to the plan's max balance",
+        carryText:
+          "Unused Earned Leave carries into the next financial year up to the configured maximum balance. Anything above the cap is encashed at basic pay in the March payroll.",
+        processSteps: [
+          "Apply via Apply leave / WFH at least 7 days ahead",
+          "Requests of 5+ days route to HR after manager approval",
+          "Balance is held on submission and deducted on final approval",
+        ],
+        faqs: [
+          {
+            q: "How much Earned Leave can I carry over?",
+            a: "Up to the maximum balance shown above. Days beyond the cap are automatically encashed at year-end.",
+          },
+          {
+            q: "Is Earned Leave encashable if I resign?",
+            a: "Yes, your accrued and unused Earned Leave balance is paid out in the final settlement.",
+          },
+          {
+            q: "Can I take Earned Leave during probation?",
+            a: "No. It accrues during probation but can only be availed after confirmation.",
+          },
+        ],
       },
       {
         code: "LOP",

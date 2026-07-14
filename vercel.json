@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/capacity-snapshot",
       "schedule": "30 18 * * *"
+    },
+    {
+      "path": "/api/cron/overdue-escalation",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/fy-end-reminder",
+      "schedule": "0 4 * * *"
     }
   ]
 }
