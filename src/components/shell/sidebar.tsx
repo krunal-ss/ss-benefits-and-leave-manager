@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Activity, // KAN-186: recent activity icon
   BarChart3,
   Bell, // KAN-148: benefit reminders icon
   BellRing, // KAN-168: notification preferences icon
+  BookOpen, // KAN-187: leave policies icon
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
   Download,
   FileCheck2,
+  FileText, // KAN-187: leave policy content settings icon
   Grid3x3, // KAN-75: availability heatmap icon
   History,
   LayoutDashboard,
@@ -44,6 +47,9 @@ const ICONS: Record<string, LucideIcon> = {
   "expenses-export": Download,
   admin: Settings, // KAN-49
   "settings-approvals": SlidersHorizontal, // KAN-46
+  activity: Activity, // KAN-186
+  "leave-policy": BookOpen, // KAN-187
+  "settings-leave-policy": FileText, // KAN-187
 };
 
 function initialsOf(name: string): string {
@@ -59,7 +65,7 @@ export function Sidebar({
   user,
   approvalCount = 0,
 }: {
-  user: { name: string; role: AppRole };
+  user: { name: string; email: string; role: AppRole };
   approvalCount?: number;
 }) {
   const pathname = usePathname();
@@ -117,6 +123,7 @@ export function Sidebar({
         <Avatar initials={initialsOf(user.name)} tone="primary" className="size-8 text-xs" />
         <div className="flex min-w-0 flex-1 flex-col leading-[1.3]">
           <span className="truncate text-[12.5px] font-medium">{user.name}</span>
+          <span className="truncate text-[11px] text-muted-foreground">{user.email}</span>
           <span className="truncate text-[11px] text-muted-foreground">{ROLE_LABEL[user.role]}</span>
         </div>
         <button

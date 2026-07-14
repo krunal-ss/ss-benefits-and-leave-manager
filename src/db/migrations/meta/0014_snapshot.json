@@ -1,5 +1,5 @@
 {
-  "id": "ac5a9abb-adda-456b-849c-3d670c3905be",
+  "id": "8c22f493-f7af-49a7-8587-c10078dd86b4",
   "prevId": "e22af3ed-3cdc-4c2e-8eb8-2eedfb3d39a7",
   "version": "7",
   "dialect": "postgresql",
@@ -783,6 +783,59 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.leave_policy_document": {
+      "name": "leave_policy_document",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "'default'"
+        },
+        "documentPath": {
+          "name": "documentPath",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedBy": {
+          "name": "updatedBy",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "leave_policy_document_updatedBy_users_id_fk": {
+          "name": "leave_policy_document_updatedBy_users_id_fk",
+          "tableFrom": "leave_policy_document",
+          "tableTo": "users",
+          "columnsFrom": [
+            "updatedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.leave_requests": {
       "name": "leave_requests",
       "schema": "",
@@ -1015,6 +1068,63 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "eligibility": {
+          "name": "eligibility",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "approver": {
+          "name": "approver",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "noticeText": {
+          "name": "noticeText",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "encashText": {
+          "name": "encashText",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carryHeadline": {
+          "name": "carryHeadline",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "carryText": {
+          "name": "carryText",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "processSteps": {
+          "name": "processSteps",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "faqs": {
+          "name": "faqs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         }
       },
       "indexes": {},
@@ -1026,94 +1136,6 @@
           "nullsNotDistinct": false,
           "columns": [
             "code"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.notification_preferences": {
-      "name": "notification_preferences",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "userId": {
-          "name": "userId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "emailEnabled": {
-          "name": "emailEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "pushEnabled": {
-          "name": "pushEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "inAppEnabled": {
-          "name": "inAppEnabled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "quietHoursStart": {
-          "name": "quietHoursStart",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "quietHoursEnd": {
-          "name": "quietHoursEnd",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "notification_preferences_userId_users_id_fk": {
-          "name": "notification_preferences_userId_users_id_fk",
-          "tableFrom": "notification_preferences",
-          "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "notification_preferences_userId_unique": {
-          "name": "notification_preferences_userId_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "userId"
           ]
         }
       },
