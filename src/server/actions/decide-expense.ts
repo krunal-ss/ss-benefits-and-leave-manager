@@ -8,6 +8,7 @@ import { auditLog, benefitCategories, benefitClaims, emailLog, users } from "@/d
 import { requireUser } from "@/server/auth/current-user";
 import { assertCan, ForbiddenError } from "@/server/auth/rbac";
 import { sendEmail } from "@/server/email";
+import { isNotificationAllowed } from "@/server/notifications/preferences";
 import { formatINR } from "@/lib/format";
 
 const schema = z.object({
@@ -47,6 +48,7 @@ export async function decideExpenseAction(input: z.input<typeof schema>): Promis
       id: benefitClaims.id,
       status: benefitClaims.status,
       amountPaise: benefitClaims.amountPaise,
+      applicantId: benefitClaims.userId,
       applicantName: users.name,
       applicantEmail: users.email,
       category: benefitCategories.name,
@@ -85,14 +87,18 @@ export async function decideExpenseAction(input: z.input<typeof schema>): Promis
   const html = approve
     ? `<p>Hi ${row.applicantName},</p><p>Your ${row.category} expense claim for ${amount} has been approved by HR and will be reimbursed at financial year-end.</p>`
     : `<p>Hi ${row.applicantName},</p><p>Your ${row.category} expense claim for ${amount} was rejected.</p><p>Reason: ${reason?.trim()}</p>`;
-  try {
-    await sendEmail({ to: row.applicantEmail, subject, html });
-    await db.insert(emailLog).values({ toAddress: row.applicantEmail, subject, template: "expense_decision", status: "sent" });
-  } catch {
-    await db
-      .insert(emailLog)
-      .values({ toAddress: row.applicantEmail, subject, template: "expense_decision", status: "failed" })
-      .catch(() => {});
+  // KAN-168 — respect the applicant's own notification preferences + quiet hours
+  // before sending. Skipped sends are not logged (nothing was actually sent).
+  if (await isNotificationAllowed(row.applicantId, { channel: "email" })) {
+    try {
+      await sendEmail({ to: row.applicantEmail, subject, html });
+      await db.insert(emailLog).values({ toAddress: row.applicantEmail, subject, template: "expense_decision", status: "sent" });
+    } catch {
+      await db
+        .insert(emailLog)
+        .values({ toAddress: row.applicantEmail, subject, template: "expense_decision", status: "failed" })
+        .catch(() => {});
+    }
   }
 
   for (const path of ["/expenses", "/dashboard", "/submit"]) revalidatePath(path);

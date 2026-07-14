@@ -349,6 +349,35 @@ export const benefitReminderSettings = pgTable("benefit_reminder_settings", {
 export type BenefitReminderSettingsRow = typeof benefitReminderSettings.$inferSelect;
 // ---- end KAN-148 ----
 
+// ---- KAN-168: Notification Preferences (Employee Productivity Enhancements
+// epic, KAN-165). PER-USER row (unlike the single-row config tables above) —
+// one per `users.id`, lazily created with defaults on first read (see
+// src/server/notifications/preferences.ts). Scope for this pass is
+// intentionally limited to (a) capturing the preference and (b) enforcing it
+// for the EMAIL channel only. `pushEnabled`/`inAppEnabled` are recorded here
+// so the UI/schema are future-proof, but there is no push delivery (no
+// web-push/service worker/VAPID) or in-app notification center yet — they are
+// not read by any send path today.
+// Quiet hours are stored as "HH:MM" 24h wall-clock strings in IST (this org is
+// India-based), nullable — null on either means quiet hours are OFF. The
+// window may wrap midnight (e.g. "22:00" -> "07:00"); see isWithinQuietHours.
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid()
+    .notNull()
+    .unique()
+    .references(() => users.id),
+  emailEnabled: boolean().notNull().default(true),
+  pushEnabled: boolean().notNull().default(true),
+  inAppEnabled: boolean().notNull().default(true),
+  quietHoursStart: text(), // "HH:MM", IST wall-clock; null = no quiet hours
+  quietHoursEnd: text(), // "HH:MM", IST wall-clock; null = no quiet hours
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export type NotificationPreferencesRow = typeof notificationPreferences.$inferSelect;
+// ---- end KAN-168 ----
+
 // ---- KAN-187: Leave Policy Viewer — the company-wide policy PDF. One
 // single-row settings table (same lazily-defaulted pattern as approvalPolicy),
 // storing only the PRIVATE-bucket object path (never a public URL — see
