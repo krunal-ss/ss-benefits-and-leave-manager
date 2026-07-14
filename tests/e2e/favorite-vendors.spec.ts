@@ -63,7 +63,10 @@ test("pinning a vendor persists across reloads, and favorites are user-specific"
   await page.goto("/submit");
   const pinButton = page.getByRole("button", { name: `Pin ${vendor}` });
   await expect(pinButton).toBeVisible();
-  await pinButton.click();
+  // The pin toggle is optimistic-UI (aria-pressed flips instantly, before the
+  // server action resolves) — wait for that request to actually land so the
+  // reload right after doesn't race ahead of the persisted pinned state.
+  await Promise.all([page.waitForResponse((r) => r.request().method() === "POST"), pinButton.click()]);
   await expect(page.getByRole("button", { name: `Unpin ${vendor}` })).toHaveAttribute("aria-pressed", "true");
 
   await page.reload();

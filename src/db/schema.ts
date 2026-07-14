@@ -14,6 +14,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -365,16 +366,23 @@ export type LeavePolicyDocumentRow = typeof leavePolicyDocument.$inferSelect;
 // KAN-207 — a user's saved/pinned expense vendors, used to power submit-form
 // suggestions. usageCount increments on claim finalize (verifyAndScoreClaim),
 // never on draft save.
-export const favoriteVendors = pgTable("favorite_vendors", {
-  id: uuid().primaryKey().defaultRandom(),
-  userId: uuid()
-    .notNull()
-    .references((): AnyPgColumn => users.id),
-  vendorName: text().notNull(),
-  usageCount: integer().notNull().default(0),
-  pinned: boolean().notNull().default(false),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+export const favoriteVendors = pgTable(
+  "favorite_vendors",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid()
+      .notNull()
+      .references((): AnyPgColumn => users.id),
+    vendorName: text().notNull(),
+    // Lower-cased/trimmed form of vendorName, unique per user — lets recordVendorUsage
+    // upsert atomically (onConflictDoUpdate) and treats "Cult.fit"/"cult.fit" as one vendor.
+    vendorKey: text().notNull(),
+    usageCount: integer().notNull().default(0),
+    pinned: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("favorite_vendors_user_vendor_key_idx").on(table.userId, table.vendorKey)],
+);
 
 // ---- shared ----
 export const holidays = pgTable("holidays", {

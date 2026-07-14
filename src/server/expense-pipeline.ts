@@ -12,7 +12,6 @@ import {
   type ExtractedReceipt,
 } from "@/server/verification";
 import { isAllowedReceiptType, uploadReceipt } from "@/server/supabase/storage";
-import { recordVendorUsage } from "@/server/employee/favorite-vendors";
 import { todayISO } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
 
@@ -161,10 +160,6 @@ export async function verifyAndScoreClaim(input: VerifyClaimInput): Promise<Veri
   const verdictReason = result.passed
     ? "All verification checks passed."
     : `Flagged by: ${result.checks.filter((c) => !c.ok).map((c) => c.label).join(", ")}.`;
-
-  // KAN-207 — every finalize (fresh submit, draft finalize, resubmit) feeds
-  // the vendor-suggestion usage count; draft save never reaches this pipeline.
-  await recordVendorUsage(userId, vendor);
 
   return {
     ok: true,

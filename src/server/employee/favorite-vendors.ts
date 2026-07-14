@@ -4,7 +4,7 @@
 // draft save (src/server/actions/draft-expense.ts's saveDraftAction never
 // calls that pipeline).
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { favoriteVendors } from "@/db/schema";
 
@@ -28,24 +28,28 @@ export async function getFavoriteVendors(userId: string): Promise<FavoriteVendor
     .limit(SUGGESTION_LIMIT);
 }
 
-/** Bump (or create) this vendor's usage count for the user. Called once per finalized claim. */
+/**
+ * Bump (or create) this vendor's usage count for the user. Called once per finalized
+ * claim, and only after the caller's own claim write has already succeeded (never from
+ * inside the verification pipeline itself, so a bookkeeping failure here can't be
+ * mistaken for — or block — a successful claim submission).
+ *
+ * Matching is keyed on `vendorKey` (lower-cased/trimmed) so "Cult.fit" and "cult.fit"
+ * accumulate on the same row, and the insert/increment is a single atomic upsert
+ * (`onConflictDoUpdate` against the `(userId, vendorKey)` unique index) so two
+ * concurrent finalize calls for the same vendor can't race into duplicate rows.
+ */
 export async function recordVendorUsage(userId: string, vendorName: string): Promise<void> {
   const name = vendorName.trim();
   if (!name) return;
+  const key = name.toLowerCase();
 
   const db = getDb();
-  const [existing] = await db
-    .select({ id: favoriteVendors.id, usageCount: favoriteVendors.usageCount })
-    .from(favoriteVendors)
-    .where(and(eq(favoriteVendors.userId, userId), eq(favoriteVendors.vendorName, name)))
-    .limit(1);
-
-  if (existing) {
-    await db
-      .update(favoriteVendors)
-      .set({ usageCount: existing.usageCount + 1 })
-      .where(eq(favoriteVendors.id, existing.id));
-  } else {
-    await db.insert(favoriteVendors).values({ userId, vendorName: name, usageCount: 1 });
-  }
+  await db
+    .insert(favoriteVendors)
+    .values({ userId, vendorName: name, vendorKey: key, usageCount: 1 })
+    .onConflictDoUpdate({
+      target: [favoriteVendors.userId, favoriteVendors.vendorKey],
+      set: { usageCount: sql`${favoriteVendors.usageCount} + 1` },
+    });
 }

@@ -9,6 +9,7 @@ import { assertCan } from "@/server/auth/rbac";
 import { getCategoryBalanceByKey } from "@/server/employee/balances";
 import { isAllowedReceiptType } from "@/server/supabase/storage";
 import { verifyAndScoreClaim, type CheckOutcome } from "@/server/expense-pipeline";
+import { recordVendorUsage } from "@/server/employee/favorite-vendors";
 import { currentFy } from "@/lib/fy";
 import { formString } from "@/lib/form-data";
 
@@ -112,6 +113,12 @@ export async function submitExpenseAction(formData: FormData): Promise<SubmitRes
     entityId: claim.id,
     payload: { aiScore: verified.receiptVerification.aiScore, verdict: verified.receiptVerification.verdict },
   });
+
+  // KAN-207 — only after the claim itself is persisted, so a favorites-bookkeeping
+  // failure can never orphan a receipt upload or block a successful submission.
+  await recordVendorUsage(user.id, parsed.data.vendor).catch((err) =>
+    console.error("recordVendorUsage failed", err),
+  );
 
   revalidatePath("/dashboard");
   revalidatePath("/submit");

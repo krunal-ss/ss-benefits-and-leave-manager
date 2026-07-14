@@ -21,21 +21,25 @@ export default async function SubmitPage({
   if (!user) redirect("/login");
 
   const fy = currentFy().label;
-  const balances = await getCategoryBalances(user.id, fy);
-  const sports = balances.find((b) => b.key === "sports");
-  const learning = balances.find((b) => b.key === "learning");
-
   const sp = await searchParams;
   const page = pageParam(sp.page);
-  const claims = await listMyClaims(user.id, { page });
-  const ledger = await getWalletLedger(user.id, fy);
-  // KAN-125 — resuming a draft via /submit?draft=<id>; silently ignored if not
-  // found/not owned/no longer a draft (the form just starts blank instead).
-  const draft = sp.draft ? await getDraftClaim(user.id, sp.draft) : null;
-  // KAN-126 — resubmitting a rejected claim via /submit?resubmit=<id>; silently
-  // ignored if not found/not owned/no longer rejected (form just starts blank).
-  const resubmit = sp.resubmit ? await getRejectedClaim(user.id, sp.resubmit) : null;
-  const favoriteVendors = await getFavoriteVendors(user.id);
+
+  // All of these are independent per-user/per-FY reads — fetch concurrently
+  // rather than as a chain of sequential round-trips.
+  const [balances, claims, ledger, draft, resubmit, favoriteVendors] = await Promise.all([
+    getCategoryBalances(user.id, fy),
+    listMyClaims(user.id, { page }),
+    getWalletLedger(user.id, fy),
+    // KAN-125 — resuming a draft via /submit?draft=<id>; silently ignored if not
+    // found/not owned/no longer a draft (the form just starts blank instead).
+    sp.draft ? getDraftClaim(user.id, sp.draft) : Promise.resolve(null),
+    // KAN-126 — resubmitting a rejected claim via /submit?resubmit=<id>; silently
+    // ignored if not found/not owned/no longer rejected (form just starts blank).
+    sp.resubmit ? getRejectedClaim(user.id, sp.resubmit) : Promise.resolve(null),
+    getFavoriteVendors(user.id),
+  ]);
+  const sports = balances.find((b) => b.key === "sports");
+  const learning = balances.find((b) => b.key === "learning");
 
   return (
     <div className="flex flex-col gap-9">
