@@ -55,6 +55,28 @@ test("a finalized claim's vendor becomes a suggested chip, and clicking it fills
   await expect(vendorInput).toHaveValue(vendor);
 });
 
+test("an over-long vendor name is rejected server-side and never becomes a chip", async ({ page }) => {
+  // 121 chars — one past the 120 cap. The client input has no maxLength, so this
+  // reaches the server action, whose schema .max() rejects it with a toast.
+  const longVendor = "A".repeat(121);
+  await signup(page, { name: uniqueName("Long Vendor Employee"), email: uniqueEmail("long-vendor"), password: "Pass-1234" });
+
+  await page.goto("/submit");
+  await page.locator("button").filter({ hasText: "Sports" }).click();
+  await page.locator("input[inputmode='numeric']").fill("500");
+  await page.locator("input[type='date']").fill(today);
+  await page.getByPlaceholder("e.g. Cult.fit annual membership").fill(longVendor);
+  await page.locator("input[type='file']").setInputFiles({ name: "receipt.png", mimeType: "image/png", buffer: receiptBytes() });
+  await expect(page.getByText("ready to verify")).toBeVisible();
+  await page.getByRole("button", { name: "Run verification & submit" }).click();
+
+  await expect(page.getByText("Vendor name is too long.")).toBeVisible();
+
+  // The rejected submission created no claim, so no "Frequently used" chip appears.
+  await page.goto("/submit");
+  await expect(page.getByText("Frequently used:")).toHaveCount(0);
+});
+
 test("pinning a vendor persists across reloads, and favorites are user-specific", async ({ page }) => {
   const vendor = `Only Employee A Vendor ${Math.floor(Math.random() * 1e6)}`;
   await signup(page, { name: uniqueName("Vendor Owner"), email: uniqueEmail("vendor-owner"), password: "Pass-1234" });

@@ -12,6 +12,13 @@ export type FavoriteVendor = { id: string; vendorName: string; usageCount: numbe
 
 const SUGGESTION_LIMIT = 8;
 
+/**
+ * Max stored length of a vendor name. Matches the repo's short-label cap (e.g.
+ * staffingThreshold.scopeValue). The finalize schemas import this to reject over-long
+ * input up front; recordVendorUsage also slices to it as a last-line backstop.
+ */
+export const MAX_VENDOR_NAME_LENGTH = 120;
+
 /** This user's favorite vendors — pinned first, then by usage — for the submit form's suggestion chips. */
 export async function getFavoriteVendors(userId: string): Promise<FavoriteVendor[]> {
   const db = getDb();
@@ -40,7 +47,11 @@ export async function getFavoriteVendors(userId: string): Promise<FavoriteVendor
  * concurrent finalize calls for the same vendor can't race into duplicate rows.
  */
 export async function recordVendorUsage(userId: string, vendorName: string): Promise<void> {
-  const name = vendorName.trim();
+  // Backstop the length cap here too — this is the single write choke point, so even a
+  // caller that skips the schema's .max() can't persist an over-long row. Slice (don't
+  // reject): this runs after the claim is already persisted and is wrapped in .catch(),
+  // so favorites bookkeeping must never throw or block a completed submission.
+  const name = vendorName.trim().slice(0, MAX_VENDOR_NAME_LENGTH);
   if (!name) return;
   const key = name.toLowerCase();
 
