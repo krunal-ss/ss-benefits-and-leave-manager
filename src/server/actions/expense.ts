@@ -9,7 +9,7 @@ import { assertCan } from "@/server/auth/rbac";
 import { getCategoryBalanceByKey } from "@/server/employee/balances";
 import { isAllowedReceiptType } from "@/server/supabase/storage";
 import { verifyAndScoreClaim, type CheckOutcome } from "@/server/expense-pipeline";
-import { recordVendorUsage } from "@/server/employee/favorite-vendors";
+import { recordVendorUsage, MAX_VENDOR_NAME_LENGTH } from "@/server/employee/favorite-vendors";
 import { currentFy } from "@/lib/fy";
 import { formString } from "@/lib/form-data";
 
@@ -17,7 +17,7 @@ const schema = z.object({
   category: z.enum(["sports", "learning"]),
   amountRupees: z.number().positive("Enter an amount."),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date."),
-  vendor: z.string().trim().min(1, "Description is required."),
+  vendor: z.string().trim().min(1, "Description is required.").max(MAX_VENDOR_NAME_LENGTH, "Vendor name is too long."),
 });
 
 export type { CheckOutcome };
