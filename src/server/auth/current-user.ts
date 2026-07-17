@@ -79,6 +79,15 @@ export async function requireUser(): Promise<User> {
 export async function requireAccess(path: string): Promise<User> {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (!canAccessPath(user.role, path)) redirect(homeRouteFor(user.role));
+  if (!canAccessPath(user.role, path)) {
+    // KAN-225 — an active delegate may reach the delegated approval surface even
+    // though their own role can't. Nav visibility stays role-based (canAccessPath);
+    // this server-side gate is where a live delegation grants the extra access.
+    const { activeLeaveDelegatorsFor, activeExpenseDelegatorsFor } = await import("@/server/manager/delegation");
+    const grantedByDelegation =
+      (path.startsWith("/approvals") && (await activeLeaveDelegatorsFor(user.id)).length > 0) ||
+      (path.startsWith("/expenses") && (await activeExpenseDelegatorsFor(user.id)).length > 0);
+    if (!grantedByDelegation) redirect(homeRouteFor(user.role));
+  }
   return user;
 }

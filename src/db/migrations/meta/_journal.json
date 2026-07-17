@@ -148,6 +148,13 @@
       "when": 1784271600748,
       "tag": "0020_perpetual_mikhail_rasputin",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1784281389600,
+      "tag": "0021_motionless_cyclops",
+      "breakpoints": true
     }
   ]
 }

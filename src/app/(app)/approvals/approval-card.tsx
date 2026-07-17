@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { ShieldAlert, TriangleAlert, Zap } from "lucide-react";
+import { ShieldAlert, TriangleAlert, UserCog, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -50,6 +50,14 @@ export function ApprovalCard({ request }: { request: ApprovalRequest }) {
           {request.type}
         </span>
       </div>
+
+      {/* KAN-225 — visible via a delegation, not your own report. */}
+      {request.onBehalfOf && (
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-[7px] bg-blue-600/10 px-2.5 py-1 text-[11.5px] font-medium text-blue-700 dark:text-blue-400">
+          <UserCog className="size-[13px]" strokeWidth={2} />
+          Acting on behalf of {request.onBehalfOf}
+        </span>
+      )}
 
       <div className="flex flex-wrap gap-[22px]">
         <Field label="Dates" value={request.dates} />

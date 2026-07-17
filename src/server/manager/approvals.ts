@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { leaveRequests, leaveTypes, users, type User } from "@/db/schema";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { checkStaffingWarnings, type StaffingWarning } from "@/server/manager/staffing-guard"; // KAN-77
+import { activeLeaveDelegatorsFor } from "@/server/manager/delegation"; // KAN-225
 import { todayISO } from "@/lib/fy";
 import { buildPage, normalizePage, type PageParams, type Paginated } from "@/server/pagination";
 import { computeSla, LEAVE_SLA_HOURS, summarizeSla } from "@/server/sla"; // KAN-147
@@ -24,6 +25,8 @@ export type ApprovalRequest = {
   days: string;
   level: 1 | 2; // current pending level
   reason: string;
+  /** KAN-225 — set to the delegating manager's name when this row is visible via a delegation (not the viewer's own report). */
+  onBehalfOf: string | null;
   /** KAN-77 — advisory only; empty when nothing is flagged for this request's date range. */
   warnings: StaffingWarning[];
   /** KAN-147 — ISO timestamp; the SLA clock's start. Raw, not pre-computed, so `<SlaBadge>` can tick it live client-side. */
@@ -96,15 +99,39 @@ function approverScope(role: User["role"], parallel = false) {
   return null;
 }
 
-/** A page of requests from this manager's reports awaiting their decision (L1 for TL, L2 for PM). KAN-46 + KAN-70. */
+/**
+ * A page of requests awaiting this user's decision — their own reports (L1 for TL,
+ * L2 for PM) PLUS any routed to a manager who has delegated leave approvals to
+ * them (KAN-225). Delegated rows carry `onBehalfOf` = the delegating manager's
+ * name and are decided at that manager's level. KAN-46 + KAN-70.
+ */
 export async function getApprovalQueue(
   user: User,
   params: PageParams = {},
 ): Promise<Paginated<ApprovalRequest>> {
   const policy = await loadApprovalPolicy(); // KAN-46 — routing mode affects PM queue scope
-  const scope = approverScope(user.role, policy.routingMode === "parallel");
+  const parallel = policy.routingMode === "parallel";
   const np = normalizePage(params);
-  if (!scope) return buildPage<ApprovalRequest>([], np);
+
+  // Approver "contexts": my own scope (if I'm an approver) + one per manager who
+  // has delegated LEAVE approvals to me — I act at THAT manager's level.
+  type Ctx = {
+    approverId: string;
+    col: "tl" | "pm";
+    status: "pending_l1" | "pending_l2";
+    level: 1 | 2;
+    onBehalfOf: string | null;
+  };
+  const contexts: Ctx[] = [];
+  const mine = approverScope(user.role, parallel);
+  if (mine) contexts.push({ approverId: user.id, col: mine.level === 1 ? "tl" : "pm", status: mine.status, level: mine.level, onBehalfOf: null });
+  for (const d of await activeLeaveDelegatorsFor(user.id)) {
+    const s = approverScope(d.managerRole, parallel);
+    if (s) contexts.push({ approverId: d.managerId, col: s.level === 1 ? "tl" : "pm", status: s.status, level: s.level, onBehalfOf: d.managerName });
+  }
+  if (contexts.length === 0) return buildPage<ApprovalRequest>([], np);
+
+  const columnFor = (col: "tl" | "pm") => (col === "tl" ? leaveRequests.teamLeadId : leaveRequests.projectManagerId);
 
   const db = getDb();
   const rows = await db
@@ -121,52 +148,58 @@ export async function getApprovalQueue(
       days: leaveRequests.workingDays,
       reason: leaveRequests.reason,
       createdAt: leaveRequests.createdAt, // KAN-147 — SLA clock start
-      // KAN-77 — the applicant's own reporting line/critical-role flag, used
-      // to compute the staffing guard warnings for this row (see "team"
-      // definition in staffing-guard.ts — the applicant's real reports-to-TL
-      // siblings, independent of which TL this request happens to be routed to).
+      status: leaveRequests.status,
+      teamLeadId: leaveRequests.teamLeadId,
+      projectManagerId: leaveRequests.projectManagerId,
+      // KAN-77 — the applicant's own reporting line/critical-role flag, used to
+      // compute the staffing guard warnings for this row.
       applicantTeamLeadId: users.teamLeadId,
       applicantIsCriticalRole: users.isCriticalRole,
     })
     .from(leaveRequests)
     .innerJoin(users, eq(leaveRequests.userId, users.id))
     .leftJoin(leaveTypes, eq(leaveRequests.leaveTypeId, leaveTypes.id))
-    .where(and(eq(scope.column, user.id), eq(leaveRequests.status, scope.status)))
+    .where(or(...contexts.map((c) => and(eq(columnFor(c.col), c.approverId), eq(leaveRequests.status, c.status)))))
     .orderBy(leaveRequests.fromDate)
-    .limit(np.limit + 1) // fetch one extra to detect hasMore
+    .limit(np.limit + 1) // fetch one extra to detect hasMore — bounds the per-row warning work to one page
     .offset(np.offset);
 
-  // Advisory-only warnings, computed per row so the approver sees them on the
-  // queue itself (before they act), not just as a toast after deciding. The
-  // request is already persisted (pending), so the guard reads current DB
-  // availability directly — no simulation needed.
+  // Exactly one context matches a given row (approver ids are distinct; no self-delegation).
+  const matchCtx = (r: (typeof rows)[number]): Ctx =>
+    contexts.find((c) => (c.col === "tl" ? r.teamLeadId : r.projectManagerId) === c.approverId && r.status === c.status) ??
+    contexts[0];
+
   const mapped = await Promise.all(
-    rows.map(async (r) => ({
-      id: r.id,
-      name: r.name,
-      initials: initialsOf(r.name),
-      role: r.department ?? "Team member",
-      type: typeLabel(r.kind, r.code),
-      kind: r.kind,
-      dates: fmtRange(r.from, r.to),
-      days: fmtDays(Number(r.days)),
-      level: scope.level,
-      reason: r.reason ?? "—",
-      createdAt: r.createdAt.toISOString(),
-      elapsedMs: Date.now() - r.createdAt.getTime(),
-      isOverdue: computeSla(r.createdAt, LEAVE_SLA_HOURS).state === "overdue",
-      warnings: await checkStaffingWarnings({
-        requesterId: r.userId,
-        teamLeadId: r.applicantTeamLeadId,
-        department: r.department,
-        isCriticalRole: r.applicantIsCriticalRole,
+    rows.map(async (r) => {
+      const ctx = matchCtx(r);
+      return {
+        id: r.id,
+        name: r.name,
+        initials: initialsOf(r.name),
+        role: r.department ?? "Team member",
+        type: typeLabel(r.kind, r.code),
         kind: r.kind,
-        fromDate: r.from,
-        toDate: r.to,
-        halfDay: r.halfDay,
-        persisted: true,
-      }),
-    })),
+        dates: fmtRange(r.from, r.to),
+        days: fmtDays(Number(r.days)),
+        level: ctx.level,
+        reason: r.reason ?? "—",
+        onBehalfOf: ctx.onBehalfOf,
+        createdAt: r.createdAt.toISOString(),
+        elapsedMs: Date.now() - r.createdAt.getTime(),
+        isOverdue: computeSla(r.createdAt, LEAVE_SLA_HOURS).state === "overdue",
+        warnings: await checkStaffingWarnings({
+          requesterId: r.userId,
+          teamLeadId: r.applicantTeamLeadId,
+          department: r.department,
+          isCriticalRole: r.applicantIsCriticalRole,
+          kind: r.kind,
+          fromDate: r.from,
+          toDate: r.to,
+          halfDay: r.halfDay,
+          persisted: true,
+        }),
+      };
+    }),
   );
 
   return buildPage(mapped, np);

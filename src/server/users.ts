@@ -64,6 +64,9 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   // --- KAN-74 (staffing threshold configuration) START ---
   { prefix: "/settings/staffing-thresholds", roles: ["hr_head", "admin"] },
   // --- KAN-74 END ---
+  // --- KAN-225 (manager delegation) — any approver may delegate their own approvals ---
+  { prefix: "/settings/delegation", roles: ["team_lead", "project_manager", "hr_head", "admin"] },
+  // --- KAN-225 END ---
   // --- KAN-78 (HR department-wide availability overview) START ---
   { prefix: "/departments", roles: ["hr_head", "admin"] },
   // --- KAN-78 END ---
@@ -133,6 +136,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       // --- KAN-75 (team availability heatmap) START ---
       { href: "/availability", label: "Availability heatmap", key: "availability" },
       // --- KAN-75 END ---
+      // --- KAN-225 (manager delegation) START ---
+      { href: "/settings/delegation", label: "Delegation", key: "settings-delegation" },
+      // --- KAN-225 END ---
     ],
   },
   {

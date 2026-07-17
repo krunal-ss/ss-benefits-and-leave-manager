@@ -7,6 +7,7 @@ import { getDb } from "@/db";
 import { approvals, auditLog, emailLog, leaveBalances, leaveRequests, leaveTypes, users } from "@/db/schema";
 import { requireUser } from "@/server/auth/current-user";
 import { assertCan, ForbiddenError } from "@/server/auth/rbac";
+import { isActiveLeaveDelegate } from "@/server/manager/delegation"; // KAN-225
 import { sendEmail } from "@/server/email";
 import { isNotificationAllowed } from "@/server/notifications/preferences";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
@@ -75,30 +76,41 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
   const policy = await loadApprovalPolicy();
   const parallel = policy.routingMode === "parallel";
 
-  // Which level is this approver acting at — and may they?
+  // Which level is this approver acting at, and who is the routed approver for it?
   let level: 1 | 2;
-  try {
-    if (row.status === "pending_l1") {
-      if (parallel && me.role === "project_manager") {
-        // Parallel: the PM may act on the still-pending request directly.
-        level = 2;
-        assertCan(me.role, "approveLeaveL2");
-        if (row.projectManagerId !== me.id) throw new ForbiddenError("Not your direct report.");
-      } else {
-        level = 1;
-        assertCan(me.role, "approveLeaveL1");
-        if (row.teamLeadId !== me.id) throw new ForbiddenError("Not your direct report.");
-      }
-    } else if (row.status === "pending_l2") {
+  let routedApproverId: string | null;
+  if (row.status === "pending_l1") {
+    if (parallel && me.role === "project_manager") {
+      // Parallel: the PM may act on the still-pending request directly.
       level = 2;
-      assertCan(me.role, "approveLeaveL2");
-      if (row.projectManagerId !== me.id) throw new ForbiddenError("Not your direct report.");
+      routedApproverId = row.projectManagerId;
     } else {
-      return { ok: false, message: "This request is no longer pending." };
+      level = 1;
+      routedApproverId = row.teamLeadId;
     }
-  } catch (err) {
-    if (err instanceof ForbiddenError) return { ok: false, message: err.message };
-    throw err;
+  } else if (row.status === "pending_l2") {
+    level = 2;
+    routedApproverId = row.projectManagerId;
+  } else {
+    return { ok: false, message: "This request is no longer pending." };
+  }
+
+  // Authorization: act on your OWN routed request (needs the matching L1/L2
+  // capability), OR as an active delegate of the routed approver (KAN-225). A
+  // delegate acts WITH the delegator's authority — the delegator is the routed
+  // approver, so the delegate's own role/capability isn't re-checked.
+  let actingForId: string | null = null;
+  if (routedApproverId && routedApproverId === me.id) {
+    try {
+      assertCan(me.role, level === 1 ? "approveLeaveL1" : "approveLeaveL2");
+    } catch (err) {
+      if (err instanceof ForbiddenError) return { ok: false, message: err.message };
+      throw err;
+    }
+  } else if (routedApproverId && (await isActiveLeaveDelegate(me.id, routedApproverId))) {
+    actingForId = routedApproverId;
+  } else {
+    return { ok: false, message: "Not your direct report." };
   }
 
   const decision = approve ? "approved" : "rejected";
@@ -139,7 +151,7 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
       action: `${decision}_leave_l${level}`,
       entity: "leave_request",
       entityId: requestId,
-      payload: { decision, level, kind: row.kind },
+      payload: { decision, level, kind: row.kind, onBehalfOf: actingForId },
     });
 
     // Hard rule: deduct balance only on final approval of a balance-deducting leave,
