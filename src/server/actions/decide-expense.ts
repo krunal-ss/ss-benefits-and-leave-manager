@@ -7,6 +7,7 @@ import { getDb } from "@/db";
 import { auditLog, benefitCategories, benefitClaims, emailLog, users } from "@/db/schema";
 import { requireUser } from "@/server/auth/current-user";
 import { assertCan, ForbiddenError } from "@/server/auth/rbac";
+import { hasActiveExpenseDelegation } from "@/server/manager/delegation"; // KAN-225
 import { sendEmail } from "@/server/email";
 import { isNotificationAllowed } from "@/server/notifications/preferences";
 import { formatINR } from "@/lib/format";
@@ -35,11 +36,19 @@ export async function decideExpenseAction(input: z.input<typeof schema>): Promis
   if (!approve && !reason?.trim()) return { ok: false, message: "Add a reason for the rejection." };
 
   const me = await requireUser();
+  // Capability gate — OR an active expense delegation (KAN-225). Expense approval
+  // is capability-scoped (not per-report), so a delegate approves with the
+  // delegating HR Head's authority for the window; recorded in the audit row.
+  let actingAsDelegate = false;
   try {
     assertCan(me.role, "approveExpense");
   } catch (err) {
-    if (err instanceof ForbiddenError) return { ok: false, message: err.message };
-    throw err;
+    if (!(err instanceof ForbiddenError)) throw err;
+    if (await hasActiveExpenseDelegation(me.id)) {
+      actingAsDelegate = true;
+    } else {
+      return { ok: false, message: err.message };
+    }
   }
 
   const db = getDb();
@@ -75,7 +84,7 @@ export async function decideExpenseAction(input: z.input<typeof schema>): Promis
       action: `${status}_expense`,
       entity: "benefit_claim",
       entityId: claimId,
-      payload: { status, amountPaise: row.amountPaise, category: row.category, reason: reason?.trim() ?? null },
+      payload: { status, amountPaise: row.amountPaise, category: row.category, reason: reason?.trim() ?? null, viaDelegation: actingAsDelegate },
     });
   });
 

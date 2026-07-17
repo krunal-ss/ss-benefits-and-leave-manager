@@ -423,6 +423,31 @@ export const favoriteVendors = pgTable(
   (table) => [uniqueIndex("favorite_vendors_user_vendor_key_idx").on(table.userId, table.vendorKey)],
 );
 
+// KAN-225 — Manager Delegation. A manager (any approver: team_lead /
+// project_manager / hr_head / admin) may hand their approval authority to a
+// delegate for a date range. Enforcement is at the decision layer + queue/access
+// checks (never by changing the decision logic itself); a delegate acts WITH the
+// delegator's authority. `scope` picks which approvals it covers; `status` is the
+// lifecycle (auto-expired by a daily cron once endDate passes).
+export const delegationScopeEnum = pgEnum("delegation_scope", ["leave", "expense", "both"]);
+export const delegationStatusEnum = pgEnum("delegation_status", ["active", "cancelled", "expired"]);
+
+export const approvalDelegations = pgTable("approval_delegations", {
+  id: uuid().primaryKey().defaultRandom(),
+  managerId: uuid()
+    .notNull()
+    .references((): AnyPgColumn => users.id),
+  delegateId: uuid()
+    .notNull()
+    .references((): AnyPgColumn => users.id),
+  scope: delegationScopeEnum().notNull().default("both"),
+  startDate: date().notNull(),
+  endDate: date().notNull(),
+  status: delegationStatusEnum().notNull().default("active"),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 // ---- shared ----
 export const holidays = pgTable("holidays", {
   id: uuid().primaryKey().defaultRandom(),
