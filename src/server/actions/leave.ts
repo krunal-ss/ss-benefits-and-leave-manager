@@ -8,6 +8,7 @@ import { auditLog, emailLog, leaveBalances, leaveRequests, leaveTypes, users } f
 import { requireUser } from "@/server/auth/current-user";
 import { assertCan } from "@/server/auth/rbac";
 import { sendEmail } from "@/server/email";
+import { isNotificationAllowed } from "@/server/notifications/preferences";
 import { splitAgainstBalance } from "@/server/leave/accrual";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { decideRouting } from "@/server/policy/approval-policy"; // KAN-46
@@ -179,19 +180,21 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
   if (autoApproved) {
     // WFH auto-approved: no balance to deduct — just confirm to the applicant (CC'd).
     const subject = "Your WFH request was auto-approved";
-    try {
-      await sendEmail({
-        to: user.email,
-        cc,
-        subject,
-        html: `<p>Hi ${user.name},</p><p>Your WFH request (${days} working day(s), ${parsed.data.from} – ${parsed.data.to}) was automatically approved under the current policy.</p>`,
-      });
-      await db.insert(emailLog).values({ toAddress: user.email, subject, template: "leave_auto_approved", status: "sent" });
-    } catch {
-      await db
-        .insert(emailLog)
-        .values({ toAddress: user.email, subject, template: "leave_auto_approved", status: "failed" })
-        .catch(() => {});
+    if (await isNotificationAllowed(user.id, { channel: "email" })) {
+      try {
+        await sendEmail({
+          to: user.email,
+          cc,
+          subject,
+          html: `<p>Hi ${user.name},</p><p>Your WFH request (${days} working day(s), ${parsed.data.from} – ${parsed.data.to}) was automatically approved under the current policy.</p>`,
+        });
+        await db.insert(emailLog).values({ toAddress: user.email, subject, template: "leave_auto_approved", status: "sent" });
+      } catch {
+        await db
+          .insert(emailLog)
+          .values({ toAddress: user.email, subject, template: "leave_auto_approved", status: "failed" })
+          .catch(() => {});
+      }
     }
     revalidatePath("/dashboard");
     revalidatePath("/leave");
@@ -201,24 +204,26 @@ export async function applyLeaveAction(input: z.input<typeof schema>): Promise<L
 
   // Notify the chosen Team Lead that a request awaits their L1 decision (CC'd).
   const subject = "A leave/WFH request awaits your approval (L1)";
-  try {
-    await sendEmail({
-      to: teamLead.email,
-      cc,
-      subject,
-      html: `<p>Hi ${teamLead.name},</p><p>${user.name} submitted a ${parsed.data.requestType} request (${days} working day(s), ${parsed.data.from} – ${parsed.data.to}) for your approval.</p>`,
-    });
-    await db.insert(emailLog).values({ toAddress: teamLead.email, subject, template: "leave_l1_request", status: "sent" });
-  } catch {
-    await db
-      .insert(emailLog)
-      .values({ toAddress: teamLead.email, subject, template: "leave_l1_request", status: "failed" })
-      .catch(() => {});
+  if (await isNotificationAllowed(teamLead.id, { channel: "email" })) {
+    try {
+      await sendEmail({
+        to: teamLead.email,
+        cc,
+        subject,
+        html: `<p>Hi ${teamLead.name},</p><p>${user.name} submitted a ${parsed.data.requestType} request (${days} working day(s), ${parsed.data.from} – ${parsed.data.to}) for your approval.</p>`,
+      });
+      await db.insert(emailLog).values({ toAddress: teamLead.email, subject, template: "leave_l1_request", status: "sent" });
+    } catch {
+      await db
+        .insert(emailLog)
+        .values({ toAddress: teamLead.email, subject, template: "leave_l1_request", status: "failed" })
+        .catch(() => {});
+    }
   }
 
   // KAN-46 — parallel routing: notify the Project Manager (L2) up-front too, so
   // both approvers see the request at once (either may act; see decideLeaveAction).
-  if (policy.routingMode === "parallel") {
+  if (policy.routingMode === "parallel" && (await isNotificationAllowed(projectManager.id, { channel: "email" }))) {
     const pmSubject = "A leave/WFH request awaits your approval (L2)";
     try {
       await sendEmail({

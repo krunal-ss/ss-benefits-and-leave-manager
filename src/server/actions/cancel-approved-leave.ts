@@ -11,6 +11,7 @@ import { getDb } from "@/db";
 import { auditLog, emailLog, leaveBalances, leaveRequests, leaveTypes, users } from "@/db/schema";
 import { requireUser } from "@/server/auth/current-user";
 import { sendEmail } from "@/server/email";
+import { isNotificationAllowed } from "@/server/notifications/preferences";
 import { loadApprovalPolicy } from "@/server/policy/settings";
 import { currentFy, todayISO } from "@/lib/fy";
 
@@ -75,7 +76,10 @@ async function finalizeCancellation(db: Db, row: CancellableRow, actorId: string
   });
 }
 
-async function notify(toAddress: string, subject: string, html: string, template: string) {
+// KAN-168 — `recipientUserId` gates the send on that recipient's own
+// notification preferences + quiet hours. A skipped send writes no emailLog row.
+async function notify(recipientUserId: string, toAddress: string, subject: string, html: string, template: string) {
+  if (!(await isNotificationAllowed(recipientUserId, { channel: "email" }))) return;
   try {
     await sendEmail({ to: toAddress, subject, html });
     await getDb().insert(emailLog).values({ toAddress, subject, template, status: "sent" });
@@ -159,6 +163,7 @@ export async function requestLeaveCancellationAction(input: z.input<typeof reque
     const subject = `${row.applicantName} requested to cancel an approved leave`;
     for (const approver of approvers) {
       await notify(
+        approver.id,
         approver.email,
         subject,
         `<p>Hi ${approver.name},</p><p>${row.applicantName} has requested to cancel their approved leave/WFH${reason ? ` — reason: ${reason}` : "."}. Please review and decide.</p>`,
@@ -212,6 +217,7 @@ export async function decideLeaveCancellationAction(input: z.input<typeof decide
   if (parsed.data.approve) {
     await finalizeCancellation(db, row, me.id, reason);
     await notify(
+      row.userId,
       row.applicantEmail,
       "Your leave cancellation was approved",
       `<p>Hi ${row.applicantName},</p><p>Your cancellation request was approved — your balance has been restored.</p>`,
@@ -236,6 +242,7 @@ export async function decideLeaveCancellationAction(input: z.input<typeof decide
     });
   });
   await notify(
+    row.userId,
     row.applicantEmail,
     "Your leave cancellation request was declined",
     `<p>Hi ${row.applicantName},</p><p>Your cancellation request was declined — your leave remains approved.</p>`,

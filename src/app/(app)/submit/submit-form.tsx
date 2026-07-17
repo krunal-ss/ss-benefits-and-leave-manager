@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition } from "react";
-import { Check, Dumbbell, FileText, GraduationCap, RotateCcw, Save, Upload, X } from "lucide-react";
+import { Check, Dumbbell, FileText, GraduationCap, RotateCcw, Save, Upload } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { cn } from "@/lib/cn";
 import { Row } from "@/app/(app)/submit/balance-row";
 import { CategoryButton } from "@/app/(app)/submit/category-button";
 import { VerifyResultCard } from "@/app/(app)/submit/verify-result-card";
+import { ReceiptPreview } from "@/app/(app)/submit/receipt-preview";
 import { useDraftAutosave } from "@/app/(app)/submit/use-draft-autosave";
 import { FavoriteVendorChips } from "@/app/(app)/submit/favorite-vendor-chips";
 import type { FavoriteVendor } from "@/server/employee/favorite-vendors";
@@ -50,12 +51,6 @@ const EMPTY = { amount: "", date: "2026-06-20", vendor: "" };
 
 const ACCEPT = "application/pdf,image/jpeg,image/png";
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB — mirrors the server-side cap
-
-function fmtBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export function SubmitForm({
   sportsAvail,
@@ -162,7 +157,8 @@ export function SubmitForm({
     }
     setFile(f);
     setHasExistingDocument(false); // a freshly-picked file replaces whatever was stored
-    if (f.type.startsWith("image/")) setPreviewUrl(URL.createObjectURL(f));
+    // KAN-166 — preview covers image and PDF (rendered via <img>/<iframe> in ReceiptPreview).
+    if (f.type.startsWith("image/") || f.type === "application/pdf") setPreviewUrl(URL.createObjectURL(f));
   };
 
   const removeFile = () => {
@@ -394,31 +390,12 @@ export function SubmitForm({
               onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
             />
             {file ? (
-              <div className="flex items-center gap-3 rounded-[10px] border bg-muted px-3.5 py-3">
-                {previewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={previewUrl}
-                    alt="Receipt preview"
-                    className="size-[34px] shrink-0 rounded-lg border object-cover"
-                  />
-                ) : (
-                  <span className="flex size-[34px] shrink-0 items-center justify-center rounded-lg border bg-background text-red-600">
-                    <FileText className="size-[17px]" strokeWidth={2} />
-                  </span>
-                )}
-                <div className="min-w-0">
-                  <div className="truncate text-[13px] font-medium">{file.name}</div>
-                  <div className="text-[11.5px] text-muted-foreground">{fmtBytes(file.size)} · ready to verify</div>
-                </div>
-                <button
-                  onClick={removeFile}
-                  aria-label="Remove file"
-                  className="ml-auto flex size-7 cursor-pointer items-center justify-center rounded-[7px] text-muted-foreground hover:bg-background"
-                >
-                  <X className="size-[15px]" strokeWidth={2} />
-                </button>
-              </div>
+              <ReceiptPreview
+                file={file}
+                previewUrl={previewUrl}
+                onReplace={() => fileInputRef.current?.click()}
+                onRemove={removeFile}
+              />
             ) : hasExistingDocument ? (
               <button
                 type="button"

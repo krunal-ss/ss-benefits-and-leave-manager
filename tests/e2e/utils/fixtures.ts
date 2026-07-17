@@ -131,6 +131,12 @@ export async function setCriticalRole(employeeEmail: string, isCriticalRole: boo
   await db.update(schema.users).set({ isCriticalRole }).where(eq(schema.users.email, employeeEmail));
 }
 
+/** KAN-206: set a user's office/region for the holiday countdown widget's location filter. */
+export async function setUserLocation(employeeEmail: string, location: string): Promise<void> {
+  const db = testDb();
+  await db.update(schema.users).set({ location }).where(eq(schema.users.email, employeeEmail));
+}
+
 /**
  * KAN-77: create a department-scoped staffing threshold override directly
  * (bypassing the HR settings UI) so a test's team has a known, isolated

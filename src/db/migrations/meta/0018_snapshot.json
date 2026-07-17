@@ -1,6 +1,6 @@
 {
-  "id": "8e6aeec4-348a-4ff3-bf01-cd4bb11192ad",
-  "prevId": "41dba61b-6d0b-45f8-8b22-320322655f00",
+  "id": "e7295501-8e11-4189-ac9a-e4e78209a780",
+  "prevId": "8e6aeec4-348a-4ff3-bf01-cd4bb11192ad",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1615,6 +1615,12 @@
         "joinDate": {
           "name": "joinDate",
           "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },

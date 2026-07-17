@@ -13,6 +13,7 @@ import { requireUser } from "@/server/auth/current-user";
 import { assertCan, ForbiddenError } from "@/server/auth/rbac";
 import { sendEmail } from "@/server/email";
 import { getCategoryBalances } from "@/server/employee/balances";
+import { isNotificationAllowed } from "@/server/notifications/preferences";
 import { getReminderAudienceCount, upsertReminderSettings } from "@/server/hr/reminder-settings";
 import { currentFy } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
@@ -112,6 +113,14 @@ export async function sendReminderTestAction(): Promise<SendTestResult> {
       <p style="font-size:11px;color:#888;">Sent by SmartSense People Ops · you can manage reminder settings in the portal.</p>
     </div>
   `;
+
+  // KAN-168 — this is an explicit manual action, but it's still an email send,
+  // so it respects the same personal preference/quiet-hours gate as every
+  // other sendEmail() call site (distinct from the emailEnabled toggle above,
+  // which is the org-wide reminder FEATURE switch, not a personal preference).
+  if (!(await isNotificationAllowed(me.id, { channel: "email" }))) {
+    return { ok: false, message: "Email notifications are off (or it's currently your quiet hours) — see Notification preferences." };
+  }
 
   const db = getDb();
   try {

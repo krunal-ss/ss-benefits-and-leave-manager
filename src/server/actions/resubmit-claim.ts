@@ -9,7 +9,7 @@ import { requireUser } from "@/server/auth/current-user";
 import { assertCan } from "@/server/auth/rbac";
 import { getCategoryBalanceByKey } from "@/server/employee/balances";
 import { verifyAndScoreClaim } from "@/server/expense-pipeline";
-import { recordVendorUsage } from "@/server/employee/favorite-vendors";
+import { recordVendorUsage, MAX_VENDOR_NAME_LENGTH } from "@/server/employee/favorite-vendors";
 import { currentFy } from "@/lib/fy";
 import { formString } from "@/lib/form-data";
 import type { SubmitResult } from "@/server/actions/expense";
@@ -24,7 +24,7 @@ const resubmitSchema = z.object({
   category: z.enum(["sports", "learning"]),
   amountRupees: z.number().positive("Enter an amount."),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date."),
-  vendor: z.string().trim().min(1, "Description is required."),
+  vendor: z.string().trim().min(1, "Description is required.").max(MAX_VENDOR_NAME_LENGTH, "Vendor name is too long."),
 });
 
 /** Finalize an edit to a `rejected` claim: snapshot the old version, apply the edit, and re-verify. */

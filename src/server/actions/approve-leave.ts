@@ -8,6 +8,7 @@ import { approvals, auditLog, emailLog, leaveBalances, leaveRequests, leaveTypes
 import { requireUser } from "@/server/auth/current-user";
 import { assertCan, ForbiddenError } from "@/server/auth/rbac";
 import { sendEmail } from "@/server/email";
+import { isNotificationAllowed } from "@/server/notifications/preferences";
 import { loadApprovalPolicy } from "@/server/policy/settings"; // KAN-46
 import { checkStaffingWarnings, type StaffingWarning } from "@/server/manager/staffing-guard"; // KAN-77
 import { currentFy } from "@/lib/fy";
@@ -187,19 +188,21 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
       ? "Your leave request advanced to L2"
       : "Your leave request was approved"
     : "Your leave request was rejected";
-  try {
-    await sendEmail({
-      to: row.applicantEmail,
-      cc,
-      subject,
-      html: `<p>Hi ${row.applicantName},</p><p>${subject}${reason ? ` — ${reason}` : "."}</p>`,
-    });
-    await db.insert(emailLog).values({ toAddress: row.applicantEmail, subject, template: "leave_decision", status: "sent" });
-  } catch {
-    await db
-      .insert(emailLog)
-      .values({ toAddress: row.applicantEmail, subject, template: "leave_decision", status: "failed" })
-      .catch(() => {});
+  if (await isNotificationAllowed(row.userId, { channel: "email" })) {
+    try {
+      await sendEmail({
+        to: row.applicantEmail,
+        cc,
+        subject,
+        html: `<p>Hi ${row.applicantName},</p><p>${subject}${reason ? ` — ${reason}` : "."}</p>`,
+      });
+      await db.insert(emailLog).values({ toAddress: row.applicantEmail, subject, template: "leave_decision", status: "sent" });
+    } catch {
+      await db
+        .insert(emailLog)
+        .values({ toAddress: row.applicantEmail, subject, template: "leave_decision", status: "failed" })
+        .catch(() => {});
+    }
   }
 
   // Sequential only: when L1 approves, the request advances to the chosen Project
@@ -210,7 +213,7 @@ export async function decideLeaveAction(input: z.input<typeof schema>): Promise<
       .from(users)
       .where(eq(users.id, row.projectManagerId))
       .limit(1);
-    if (pm) {
+    if (pm && (await isNotificationAllowed(row.projectManagerId, { channel: "email" }))) {
       const pmSubject = "A leave/WFH request awaits your approval (L2)";
       try {
         await sendEmail({
