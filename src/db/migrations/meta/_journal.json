@@ -134,6 +134,13 @@
       "when": 1784033455727,
       "tag": "0018_loose_tomorrow_man",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784267620092,
+      "tag": "0019_hesitant_green_goblin",
+      "breakpoints": true
     }
   ]
 }
