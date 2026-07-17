@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
 import { getEnv } from "@/lib/env";
 import { getDb } from "@/db";
-import { auditLog, benefitClaims, type User } from "@/db/schema";
+import { auditLog, benefitClaims, employeeDocuments, type User } from "@/db/schema";
 import { assertOwnership } from "@/server/auth/rbac";
 
 // Receipt uploads go to a PRIVATE bucket — never public. We serve them back only
@@ -205,4 +205,102 @@ export async function getPolicyDocumentSignedUrl(path: string): Promise<string |
     .createSignedUrl(path, RECEIPT_URL_TTL_SEC);
   if (error || !data) return null;
   return data.signedUrl;
+}
+
+// ---- KAN-224: Employee Document Vault — a per-user private store. Same
+// private-bucket + short-TTL signed-URL + ownership + audit discipline as
+// receipts, but keyed by a document row (not a claim). Unlike receipts, we do
+// NOT dedupe by content hash — the same bytes can legitimately be two different
+// documents — so each upload gets a unique object path.
+export const EMPLOYEE_DOCS_BUCKET = "employee-docs";
+export const MAX_EMPLOYEE_DOC_BYTES = MAX_RECEIPT_BYTES; // 10 MB, same cap/types as receipts
+
+export type StoredEmployeeDocument = {
+  path: string;
+  fileName: string;
+  contentType: ReceiptMediaType;
+  sizeBytes: number;
+};
+
+/** Validate + upload one vault document (PDF/JPG/PNG). Returns the storage path + metadata; never a URL. */
+export async function uploadEmployeeDocument(file: File, userId: string): Promise<StoredEmployeeDocument> {
+  if (!isAllowedReceiptType(file.type)) {
+    throw new Error("Unsupported file type — upload a PDF, JPG, or PNG.");
+  }
+  if (file.size <= 0) throw new Error("The uploaded file is empty.");
+  if (file.size > MAX_EMPLOYEE_DOC_BYTES) {
+    throw new Error("File too large — documents must be under 10 MB.");
+  }
+
+  const buf = await file.arrayBuffer();
+  const ext = EXT_FOR_TYPE[file.type];
+  // Unique per upload (no content dedupe): a fresh random object each time so
+  // uploading the same bytes as a new document never overwrites the old one.
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+
+  const supabase = await storageClient();
+  const { error } = await supabase.storage
+    .from(EMPLOYEE_DOCS_BUCKET)
+    .upload(path, new Uint8Array(buf), { contentType: file.type, upsert: false });
+  if (error) throw new Error(`Could not store the document: ${error.message}`);
+
+  return { path, fileName: file.name, contentType: file.type, sizeBytes: file.size };
+}
+
+/** Best-effort removal of a vault object (on replace/delete). Never throws — the DB row is the source of truth. */
+export async function removeEmployeeDocumentObject(path: string): Promise<void> {
+  if (!path) return;
+  const supabase = await storageClient();
+  await supabase.storage
+    .from(EMPLOYEE_DOCS_BUCKET)
+    .remove([path])
+    .catch(() => {});
+}
+
+export type EmployeeDocumentUrlResult =
+  | { ok: true; url: string }
+  | { ok: false; reason: "not_found" | "forbidden" | "unavailable" };
+
+/**
+ * Ownership-checked, audited signed URL for a vault document — the single
+ * sanctioned way to obtain one (mirrors getReceiptUrlForClaim). Owner may view
+ * their own; hr_head/admin may view any (assertOwnership default).
+ */
+export async function getEmployeeDocumentUrl(
+  requester: Pick<User, "id" | "role">,
+  documentId: string,
+): Promise<EmployeeDocumentUrlResult> {
+  const db = getDb();
+  const [doc] = await db
+    .select({ userId: employeeDocuments.userId, storagePath: employeeDocuments.storagePath })
+    .from(employeeDocuments)
+    .where(eq(employeeDocuments.id, documentId))
+    .limit(1);
+
+  if (!doc) return { ok: false, reason: "not_found" };
+
+  try {
+    assertOwnership({ role: requester.role, actorId: requester.id, resourceOwnerId: doc.userId });
+  } catch {
+    return { ok: false, reason: "forbidden" };
+  }
+
+  const supabase = await storageClient();
+  const { data, error } = await supabase.storage
+    .from(EMPLOYEE_DOCS_BUCKET)
+    .createSignedUrl(doc.storagePath, RECEIPT_URL_TTL_SEC);
+  if (error || !data) return { ok: false, reason: "unavailable" };
+
+  await db
+    .insert(auditLog)
+    .values({
+      actorId: requester.id,
+      action: "view_document",
+      entity: "employee_document",
+      entityId: documentId,
+      payload: { ownerId: doc.userId, ttlSec: RECEIPT_URL_TTL_SEC },
+    })
+    .catch(() => {});
+
+  return { ok: true, url: data.signedUrl };
 }

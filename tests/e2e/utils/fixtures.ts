@@ -215,6 +215,35 @@ export async function ensurePolicyDocsBucket(): Promise<boolean> {
   return false;
 }
 
+/**
+ * KAN-224 — the document-vault upload flow writes to the private `employee-docs`
+ * bucket, so it must exist. Same idempotent/retry shape as ensureReceiptsBucket
+ * (literal name kept in sync with EMPLOYEE_DOCS_BUCKET in
+ * src/server/supabase/storage.ts).
+ */
+export async function ensureEmployeeDocsBucket(): Promise<boolean> {
+  const admin = supabaseAdmin();
+  const isNetworkError = (msg: string) =>
+    /fetch failed|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNRESET|network/i.test(msg);
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const { error } = await admin.storage.createBucket("employee-docs", { public: false });
+      if (error && !/exist/i.test(error.message)) throw error;
+      return true;
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!isNetworkError(msg)) throw err;
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+    }
+  }
+  console.warn(
+    `ensureEmployeeDocsBucket: Supabase Storage unreachable after retries — ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
+  );
+  return false;
+}
+
 export async function getUserIdByEmail(email: string): Promise<string> {
   const db = testDb();
   const [row] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)).limit(1);

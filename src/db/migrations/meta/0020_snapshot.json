@@ -1,110 +1,9 @@
 {
-  "id": "67293527-0634-4e1e-8d18-4a322a1a522f",
+  "id": "73766574-6407-4212-a493-2f35ad680dc8",
   "prevId": "2c136fa5-0285-4eec-aec9-a8f7e394e773",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.approval_delegations": {
-      "name": "approval_delegations",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "managerId": {
-          "name": "managerId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "delegateId": {
-          "name": "delegateId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "scope": {
-          "name": "scope",
-          "type": "delegation_scope",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'both'"
-        },
-        "startDate": {
-          "name": "startDate",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "endDate": {
-          "name": "endDate",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "delegation_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'active'"
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "approval_delegations_managerId_users_id_fk": {
-          "name": "approval_delegations_managerId_users_id_fk",
-          "tableFrom": "approval_delegations",
-          "tableTo": "users",
-          "columnsFrom": [
-            "managerId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "approval_delegations_delegateId_users_id_fk": {
-          "name": "approval_delegations_delegateId_users_id_fk",
-          "tableFrom": "approval_delegations",
-          "tableTo": "users",
-          "columnsFrom": [
-            "delegateId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.approval_policy": {
       "name": "approval_policy",
       "schema": "",
@@ -768,6 +667,98 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.employee_documents": {
+      "name": "employee_documents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "userId": {
+          "name": "userId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "employee_document_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'other'"
+        },
+        "fileName": {
+          "name": "fileName",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storagePath": {
+          "name": "storagePath",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contentType": {
+          "name": "contentType",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sizeBytes": {
+          "name": "sizeBytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expiryDate": {
+          "name": "expiryDate",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "employee_documents_userId_users_id_fk": {
+          "name": "employee_documents_userId_users_id_fk",
+          "tableFrom": "employee_documents",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1811,22 +1802,16 @@
         "rejected"
       ]
     },
-    "public.delegation_scope": {
-      "name": "delegation_scope",
+    "public.employee_document_category": {
+      "name": "employee_document_category",
       "schema": "public",
       "values": [
-        "leave",
-        "expense",
-        "both"
-      ]
-    },
-    "public.delegation_status": {
-      "name": "delegation_status",
-      "schema": "public",
-      "values": [
-        "active",
-        "cancelled",
-        "expired"
+        "identity",
+        "education",
+        "employment",
+        "financial",
+        "medical",
+        "other"
       ]
     },
     "public.leave_request_status": {

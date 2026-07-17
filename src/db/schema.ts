@@ -423,6 +423,36 @@ export const favoriteVendors = pgTable(
   (table) => [uniqueIndex("favorite_vendors_user_vendor_key_idx").on(table.userId, table.vendorKey)],
 );
 
+// KAN-224 — Employee Document Vault. A per-user store of personal documents
+// (PDF/JPG/PNG) uploaded to the private `employee-docs` bucket; the row holds the
+// storage PATH (never a URL), the original file name, category, size, and an
+// optional expiry date the in-app reminder keys off. Cascade-delete with the
+// user. Category values mirror src/lib/document-categories.ts.
+export const documentCategoryEnum = pgEnum("employee_document_category", [
+  "identity",
+  "education",
+  "employment",
+  "financial",
+  "medical",
+  "other",
+]);
+
+export const employeeDocuments = pgTable("employee_documents", {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid()
+    .notNull()
+    .references((): AnyPgColumn => users.id, { onDelete: "cascade" }),
+  category: documentCategoryEnum().notNull().default("other"),
+  fileName: text().notNull(),
+  storagePath: text().notNull(),
+  contentType: text().notNull(),
+  sizeBytes: integer().notNull(),
+  // Nullable — not every document expires; the reminder only flags rows that have one.
+  expiryDate: date(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
 // KAN-225 — Manager Delegation. A manager (any approver: team_lead /
 // project_manager / hr_head / admin) may hand their approval authority to a
 // delegate for a date range. Enforcement is at the decision layer + queue/access
