@@ -72,6 +72,13 @@ export const users = pgTable("users", {
   // holder for a day. HR/Admin-managed; defaults false for every existing user.
   isCriticalRole: boolean().notNull().default(false),
   joinDate: date(),
+  // KAN-223 — self-service profile fields. Nullable so existing rows stay valid
+  // and a freshly-created user (id/email/name/role only) reads as "incomplete";
+  // "mandatory-ness" is enforced by the profile-completion calc + the
+  // updateMyProfile action layer, never at the DB layer. These are the only
+  // employee-editable profile columns — role/reporting lines remain admin-only.
+  phone: text(),
+  emergencyContact: text(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 

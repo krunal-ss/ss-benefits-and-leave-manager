@@ -6,11 +6,13 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { available, type Category } from "@/server/benefits";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getDashboardData } from "@/server/employee/dashboard";
+import { getProfileCompletion } from "@/server/employee/profile";
 import { getReminderBannerData } from "@/server/employee/reminder-banner";
 import { getRecentActivity, type ActivityType } from "@/server/employee/activity-feed";
 import { currentFy } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
 import { ReminderBanner } from "./reminder-banner";
+import { ProfileCompletionCard } from "./profile-completion-card";
 
 // KAN-186 — compact preview on the dashboard; the full filterable feed lives at /activity.
 const ACTIVITY_ICON: Record<ActivityType, LucideIcon> = { leave: CalendarDays, claim: FileText, wallet: Wallet };
@@ -66,6 +68,7 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const data = await getDashboardData(user.id);
+  const profileCompletion = await getProfileCompletion(user.id);
   const reminderBanner = await getReminderBannerData(user.id);
   const recentActivity = (await getRecentActivity(user.id, currentFy().label)).slice(0, 5);
   const first = user.name.split(" ")[0];
@@ -84,6 +87,8 @@ export default async function DashboardPage() {
           {data.fyLabel}
         </span>
       </div>
+
+      {profileCompletion.percent < 100 && <ProfileCompletionCard completion={profileCompletion} />}
 
       {reminderBanner && <ReminderBanner data={reminderBanner} />}
 

@@ -40,6 +40,8 @@ const MODULE_ACCESS: { prefix: string; roles: AppRole[] }[] = [
   { prefix: "/dashboard", roles: ALL_ROLES },
   { prefix: "/submit", roles: ALL_ROLES },
   { prefix: "/leave", roles: ALL_ROLES },
+  // --- KAN-223 (self-service profile) — personal, all roles ---
+  { prefix: "/profile", roles: ALL_ROLES },
   { prefix: "/approvals", roles: ["team_lead", "project_manager"] },
   { prefix: "/calendar", roles: ["team_lead", "project_manager", "hr_head", "admin"] },
   // --- KAN-75 (team availability heatmap) START ---
@@ -104,6 +106,9 @@ export const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       // --- KAN-187 (Leave Policy Viewer) START ---
       { href: "/leave-policy", label: "Leave policies", key: "leave-policy" },
       // --- KAN-187 END ---
+      // --- KAN-223 (Profile Completion Tracker) START ---
+      { href: "/profile", label: "My profile", key: "profile" },
+      // --- KAN-223 END ---
     ],
   },
   {

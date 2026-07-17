@@ -3,7 +3,7 @@
 
 **Document status:** Consolidated (merges all prior standalone PRDs — see §14)
 **Owner:** (you)
-**Last updated:** 2026-07-09
+**Last updated:** 2026-07-17
 
 ---
 
@@ -16,7 +16,7 @@ An internal employee portal with two product areas sharing one login, one role m
 
 This is also a **learning vehicle**: the build is structured so that planning, design, coding, and QA are driven through Claude (CLAUDE.md project memory, custom Skills, MCP connectors including JIRA, and subagent/parallel workflows).
 
-Beyond the v1 core (§2–§13), this document also folds in every follow-on epic that was previously tracked as its own PRD — AI Expense Verification & Receipt Intelligence, Smart Team Availability & Capacity Planner, Productivity & Usability Enhancements, Employee Experience Enhancements, and Employee Self-Service Enhancements (§14). Most of those are already shipped; see CLAUDE.md's "Architecture (big picture)" section for the current implementation state of each.
+Beyond the v1 core (§2–§13), this document also folds in every follow-on epic that was previously tracked as its own PRD — AI Expense Verification & Receipt Intelligence, Smart Team Availability & Capacity Planner, Productivity & Usability Enhancements, Employee Experience Enhancements, Employee Self-Service Enhancements, and Employee Administration Enhancements (§14). Most of those are already shipped; see CLAUDE.md's "Architecture (big picture)" section for the current implementation state of each.
 
 ---
 
@@ -314,3 +314,28 @@ Extends §5.3's manager/HR calendar views with real-time staffing visibility.
 - **Recent Activities Widget** — display latest employee activities with filters.
 - **Leave Policy Viewer** — view leave policies, eligibility, carry-forward rules, FAQs, and download policy PDF.
 - **Benefits:** faster navigation, reduced HR queries, improved self-service.
+
+### 14.6 Employee Administration Enhancements (v1.6)
+
+**Status:** In progress — Profile Completion Tracker (KAN-223) is the first story under this epic (KAN-222). Employee Document Vault (KAN-224) and Manager Delegation (KAN-225) are planned. Source: `PRD-Employee-Administration-Enhancements-v1.6.md`.
+
+Gives employees more control over their own records and gives managers approval continuity while away, without changing any existing verification, leave-balance, or approval-decision core logic.
+
+- **Profile Completion Tracker**
+  - Objective: help employees complete mandatory profile information.
+  - Requirements: completion percentage, missing-field highlights, progress bar, edit shortcuts, reminder notifications.
+  - Business rules: completion % is derived (not stored); the self-service edit may update only the employee's own editable fields — role and reporting lines stay admin-managed.
+  - Acceptance: percentage updates automatically; missing fields are clearly displayed.
+- **Employee Document Vault**
+  - Objective: securely manage employee documents.
+  - Requirements: upload (PDF/JPG/PNG), download, replace, expiry reminders, categorize.
+  - Database: `EmployeeDocument` (id, userId, documentType, fileName, expiryDate).
+  - Business rules: private bucket + ownership-scoped, audited, short-TTL signed URLs only — never public.
+  - Acceptance: documents upload/download successfully; expiry reminders work.
+- **Manager Delegation**
+  - Objective: temporarily assign approval responsibilities.
+  - Requirements: select delegate, date range, leave approvals, expense approvals, cancel delegation.
+  - Database: `ApprovalDelegation` (managerId, delegateId, startDate, endDate, status).
+  - Business rules: delegation is enforced at the authorization gates only, never by changing the decision logic; delegated decisions are audited as acting-on-behalf-of.
+  - Acceptance: requests route to the delegate; delegation expires automatically.
+- **Benefits:** better employee records, secure document storage, continuous approval workflow.
