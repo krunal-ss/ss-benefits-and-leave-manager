@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { available, type Category } from "@/server/benefits";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getDashboardData } from "@/server/employee/dashboard";
+import { getProfileCompletion } from "@/server/employee/profile";
 import { getReminderBannerData } from "@/server/employee/reminder-banner";
 import { getRecentActivity, type ActivityType } from "@/server/employee/activity-feed";
 import { getNextHoliday } from "@/server/employee/holiday-countdown";
@@ -14,6 +15,7 @@ import { canAccessPath } from "@/server/users";
 import { currentFy } from "@/lib/fy";
 import { formatINR } from "@/lib/format";
 import { ReminderBanner } from "./reminder-banner";
+import { ProfileCompletionCard } from "./profile-completion-card";
 import { HolidayCountdownWidget } from "./holiday-countdown-widget";
 import { TeamAvailabilityWidget } from "./team-availability-widget";
 
@@ -71,6 +73,7 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const data = await getDashboardData(user.id);
+  const profileCompletion = await getProfileCompletion(user.id);
   const reminderBanner = await getReminderBannerData(user.id);
   const recentActivity = (await getRecentActivity(user.id, currentFy().label)).slice(0, 5);
   const nextHoliday = await getNextHoliday(user.location);
@@ -91,6 +94,8 @@ export default async function DashboardPage() {
           {data.fyLabel}
         </span>
       </div>
+
+      {profileCompletion.percent < 100 && <ProfileCompletionCard completion={profileCompletion} />}
 
       {nextHoliday && <HolidayCountdownWidget data={nextHoliday} />}
 

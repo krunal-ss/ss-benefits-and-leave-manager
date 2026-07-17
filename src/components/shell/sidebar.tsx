@@ -22,6 +22,7 @@ import {
   Plus,
   Settings, // KAN-49: admin console icon
   SlidersHorizontal, // KAN-46
+  UserRound, // KAN-223: my profile icon
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { signOutAction } from "@/app/login/actions";
@@ -49,6 +50,7 @@ const ICONS: Record<string, LucideIcon> = {
   "settings-approvals": SlidersHorizontal, // KAN-46
   activity: Activity, // KAN-186
   "leave-policy": BookOpen, // KAN-187
+  profile: UserRound, // KAN-223
   "settings-leave-policy": FileText, // KAN-187
 };
 

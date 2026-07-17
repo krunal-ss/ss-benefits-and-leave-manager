@@ -75,6 +75,13 @@ export const users = pgTable("users", {
   // KAN-206 — office/region, used to filter which holidays apply to this user.
   // Nullable: unset means "no location filter", so org-wide holidays still show.
   location: text(),
+  // KAN-223 — self-service profile fields. Nullable so existing rows stay valid
+  // and a freshly-created user (id/email/name/role only) reads as "incomplete";
+  // "mandatory-ness" is enforced by the profile-completion calc + the
+  // updateMyProfile action layer, never at the DB layer. These are the only
+  // employee-editable profile columns — role/reporting lines remain admin-only.
+  phone: text(),
+  emergencyContact: text(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
